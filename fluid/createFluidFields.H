@@ -9,6 +9,7 @@
     PtrList<volScalarField> ghFluid(fluidRegions.size());
     PtrList<surfaceScalarField> ghfFluid(fluidRegions.size());
     PtrList<radiation::radiationModel> radiation(fluidRegions.size());
+	PtrList<solarLoad::solarLoadModel> solarLoad(fluidRegions.size());
 
     List<scalar> initialMassFluid(fluidRegions.size());
     List<label> pRefCellFluid(fluidRegions.size(),0);
@@ -157,6 +158,12 @@
             i,
             radiation::radiationModel::New(thermoFluid[i].T())
         );
+		
+        solarLoad.set
+        (
+            i,
+            solarLoad::solarLoadModel::New(thermoFluid[i].T())
+        );		
 
         initialMassFluid[i] = fvc::domainIntegrate(rhoFluid[i]).value();
 

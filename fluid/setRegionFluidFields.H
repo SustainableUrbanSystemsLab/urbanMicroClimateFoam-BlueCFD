@@ -22,6 +22,7 @@
     );
 
     radiation::radiationModel& rad = radiation[i];
+	solarLoad::solarLoadModel& sol = solarLoad[i];
 
     const label pRefCell = pRefCellFluid[i];
     const scalar pRefValue = pRefValueFluid[i];

@@ -1,6 +1,7 @@
 EXE_INC = \
     -Ifluid \
     -Isolid \
+    -I_LIB/solarLoadModel/lnInclude \
     -I$(LIB_SRC)/finiteVolume/lnInclude \
     -I$(LIB_SRC)/meshTools/lnInclude \
     -I$(LIB_SRC)/finiteVolume/cfdTools \
@@ -16,6 +17,7 @@ EXE_INC = \
     -I$(LIB_SRC)/regionModels/regionModel/lnInclude
 
 EXE_LIBS = \
+    $(FOAM_USER_LIBBIN)/libsolarLoad.so \
     -lfiniteVolume \
     -lfluidThermophysicalModels \
     -lsolidThermo \

@@ -36,6 +36,7 @@ Description
 #include "regionProperties.H"
 #include "solidThermo.H"
 #include "radiationModel.H"
+#include "solarLoadModel.H"
 #include "fvIOoptionList.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
