@@ -660,6 +660,11 @@ void Foam::solarLoad::directAndDiffuse::calculate()
         }
         else //Constant emissivity
         {
+            dimensionedScalar S(coeffs_.lookup("S"));           
+            dimensionedScalar D(coeffs_.lookup("D"));   
+            //Info << "sunViewCoeffList_: " << sunViewCoeffList_() << endl;
+            //Info << "skyViewCoeffList_: " << skyViewCoeffList_() << endl;
+
             // Initial iter calculates CLU and chaches it
             if (iterCounter_ == 0)
             {
@@ -667,14 +672,14 @@ void Foam::solarLoad::directAndDiffuse::calculate()
                 {
                     for (label j=0; j<totalNCoarseFaces_; j++)
                     {
-                        scalar invEj = 1.0/E[j]; 
+                        //scalar invEj = 1/E[j];
                         if (i==j)
                         {
-                            CLU_()[i][j] = invEj-(invEj-1.0)*Fmatrix_()[i][j];
+							CLU_()[i][j] = (1/(1-E[j]));//+(E[j]/(1-E[j]))*Fmatrix_()[i][j];
                         }
                         else
                         {
-                            CLU_()[i][j] = (1.0 - invEj)*Fmatrix_()[i][j];
+							CLU_()[i][j] = (E[j]/(1-E[j]))*Fmatrix_()[i][j];
                         }
                     }
                 }
@@ -682,21 +687,18 @@ void Foam::solarLoad::directAndDiffuse::calculate()
                 LUDecompose(CLU_(), pivotIndices_);
             }
 			
-			dimensionedScalar S(coeffs_.lookup("S"));			
-			dimensionedScalar D(coeffs_.lookup("D"));				
-			
             for (label i=0; i<totalNCoarseFaces_; i++)
             {
                 for (label j=0; j<totalNCoarseFaces_; j++)
                 {
-
+					scalar Id = (D.value()*skyViewCoeffList_()[j] + S.value()*sunViewCoeffList_()[j]);
                     if (i==j)
                     {
-						q[i] += (Fmatrix_()[i][j] - 1.0)*(D.value()*skyViewCoeffList_()[j] + S.value()*sunViewCoeffList_()[j]) - QsExt[j];
+						q[i] += (Fmatrix_()[i][j] + 1.0)*Id - QsExt[j];
                     }
                     else
                     {
-						q[i] += Fmatrix_()[i][j]*(D.value()*skyViewCoeffList_()[j] + S.value()*sunViewCoeffList_()[j]) - QsExt[j];
+						q[i] += (Fmatrix_()[i][j])*Id - QsExt[j];
                     }
                 }
             }
