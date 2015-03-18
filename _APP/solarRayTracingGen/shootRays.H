@@ -10,13 +10,14 @@ for (label procI = 0; procI < Pstream::nProcs(); procI++)
     // 0 faces we still need to call findLine to keep calls synced.
 
     DynamicField<point> start(coarseMesh.nFaces());
+    DynamicField<vector> startArea(coarseMesh.nFaces());
     DynamicField<point> end(start.size());
     DynamicList<label> startIndex(start.size());
     DynamicList<label> endIndex(start.size());
 
 
     const pointField& myFc = localCoarseCf_[Pstream::myProcNo()];
-    //const vectorField& myArea = remoteCoarseSf[Pstream::myProcNo()];
+    const vectorField& myArea = localCoarseSf_[Pstream::myProcNo()];
 
     //const pointField& remoteArea = remoteCoarseSf[procI];
     const pointField& remoteFc = remoteCoarseCf_[procI];
@@ -27,12 +28,14 @@ for (label procI = 0; procI < Pstream::nProcs(); procI++)
         for (; i < myFc.size(); i++)
         {
             const point& fc = myFc[i];
+            const vector& area = myArea[i];
 			const point& remFc = remoteFc[i];
 			
 			const vector& d = remFc - fc;
            
 			start.append(fc + 0.0001*d);
 			startIndex.append(i);
+            startArea.append(area);
 			end.append(fc + 0.9999*d);
 			label globalI = globalNumbering.toGlobal(procI, i);
 			endIndex.append(globalI);
@@ -46,14 +49,19 @@ for (label procI = 0; procI < Pstream::nProcs(); procI++)
         surfacesMesh.findLine(start, end, hitInfo);
 		
 		//Info << "start: " << start << endl;
+        //Info << "startArea: " << startArea << endl;
 		//Info << "end: " << end << endl;
 		
         forAll (hitInfo, rayI)
         {
-            if (!hitInfo[rayI].hit())
+            if (!hitInfo[rayI].hit()) // if the ray did not hit any surface between start and end positions...
             {
-                rayStartFace.append(startIndex[rayI]);
-                rayEndFace.append(endIndex[rayI]);
+                scalar cosPhiTest = (startArea[rayI] & sunPos)/(mag(startArea[rayI])*mag(sunPos) + SMALL);
+                if (cosPhiTest < 0) // ... and if the surface is looking towards the sun
+                {
+                    rayStartFace.append(startIndex[rayI]);
+                    rayEndFace.append(endIndex[rayI]);
+                }
             }
         }
 

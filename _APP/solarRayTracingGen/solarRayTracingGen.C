@@ -399,11 +399,38 @@ int main(int argc, char *argv[])
 	forAll(solarStart, pointI)
 	{
 		scalar i1 = 0; scalar i2 = 0; scalar i3 = 0;
-		if (sunPos.x() != 0){i1 = (max_.x() - solarStart[pointI].x())/sunPos.x();} else{i1 = VGREAT;}
-		if (sunPos.y() != 0){i2 = (max_.y() - solarStart[pointI].y())/sunPos.y();} else{i2 = VGREAT;}
-		if (sunPos.z() != 0){i3 = (max_.z() - solarStart[pointI].z())/sunPos.z();} else{i3 = VGREAT;}
+
+		if (sunPos.x() > 0.0)
+        {
+            i1 = (max_.x() - solarStart[pointI].x())/sunPos.x();
+        } 
+        else if (sunPos.x() < 0.0)
+        {
+            i1 = (min_.x() - solarStart[pointI].x())/sunPos.x();
+        } 
+        else {i1 = VGREAT;}
+
+		if (sunPos.y() > 0.0)
+        {
+            i2 = (max_.y() - solarStart[pointI].y())/sunPos.y();
+        } 
+        else if (sunPos.y() < 0.0)
+        {
+            i2 = (min_.y() - solarStart[pointI].y())/sunPos.y();
+        }
+        else{i2 = VGREAT;}
+
+		if (sunPos.z() > 0.0)
+        {
+            i3 = (max_.z() - solarStart[pointI].z())/sunPos.z();
+        } 
+        else if (sunPos.z() < 0.0)
+        {
+            i3 = (min_.z() - solarStart[pointI].z())/sunPos.z();
+        }
+        else{i3 = VGREAT;}
+
 		scalar i = min(i1, min(i2, i3));
-		
 		point solarEndPoint = i*point(sunPos.x(),sunPos.y(),sunPos.z())+solarStart[pointI];
 		solarEnd.append(solarEndPoint);
 	}
@@ -418,7 +445,10 @@ int main(int argc, char *argv[])
     //remoteCoarseSf[Pstream::myProcNo()] = localCoarseSf; 
 	
     List<pointField> localCoarseCf_(Pstream::nProcs());
-    localCoarseCf_[Pstream::myProcNo()] = solarStart; 	
+    localCoarseCf_[Pstream::myProcNo()] = solarStart; 
+
+    List<pointField> localCoarseSf_(Pstream::nProcs());
+    localCoarseSf_[Pstream::myProcNo()] = localCoarseSf;  	
 
 	// Collect remote Cf and Sf on fine mesh
     // #############################################
@@ -436,6 +466,8 @@ int main(int argc, char *argv[])
     Pstream::scatterList(remoteCoarseCf_);
 	Pstream::gatherList(localCoarseCf_);
 	Pstream::scatterList(localCoarseCf_);
+    Pstream::gatherList(localCoarseSf_);
+    Pstream::scatterList(localCoarseSf_);
     //Pstream::gatherList(remoteCoarseSf);
     //Pstream::scatterList(remoteCoarseSf);
 
