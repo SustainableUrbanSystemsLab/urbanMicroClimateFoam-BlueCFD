@@ -1,4 +1,5 @@
 {
+
     volScalarField& he = thermo.he();
 
     fvScalarMatrix EEqn
@@ -12,7 +13,7 @@
       - fvm::laplacian(turb.alphaEff(), he)
      ==
         rad.Sh(thermo)
-	  +	sol.Sh(thermo)
+	    +	sol.Sh(thermo)
       + fvOptions(rho, he)
     );
 
@@ -26,7 +27,7 @@
 
     thermo.correct();
     rad.correct();
-	sol.correct();
+	  sol.correct();
 
     Info<< "Min/max T:" << min(thermo.T()).value() << ' '
         << max(thermo.T()).value() << endl;

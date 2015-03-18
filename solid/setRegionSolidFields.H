@@ -1,7 +1,7 @@
     fvMesh& mesh = solidRegions[i];
     solidThermo& thermo = thermos[i];
-    const radiation::radiationModel& radiation = radiations[i];
-    const solarLoad::solarLoadModel& solarLoad = solarLoads[i];	
+    const radiation::radiationModel& rads = radiations[i];
+    const solarLoad::solarLoadModel& sols = solarLoads[i];	
 
     tmp<volScalarField> trho = thermo.rho();
     const volScalarField& rho = trho();

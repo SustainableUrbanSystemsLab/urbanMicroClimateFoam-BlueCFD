@@ -220,7 +220,7 @@ void turbulentTemperatureRadSolarCoupledMixedFvPatchScalarField::updateCoeffs()
         mpp.distribute(QsNbr);
     }	
 
-    scalarField alpha(KDeltaNbr - (Qr + QrNbr)/Tp);
+    scalarField alpha(KDeltaNbr - (Qr + QrNbr + Qs + QsNbr)/Tp);
 
     valueFraction() = alpha/(alpha + KDelta);
 
