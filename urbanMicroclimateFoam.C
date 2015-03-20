@@ -37,6 +37,7 @@ Description
 #include "solidThermo.H"
 #include "radiationModel.H"
 #include "solarLoadModel.H"
+#include "simpleControlFluid.H"
 #include "fvIOoptionList.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

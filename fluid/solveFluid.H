@@ -1,3 +1,9 @@
+simpleControlFluid simpleControlFluid(fluidRegions[i]);
+
+label fluidIteration = 0;
+
+while (simpleControlFluid.loop())
+{
 //  Pressure-velocity SIMPLE corrector
 
     p_rgh.storePrevIter();
@@ -9,3 +15,10 @@
     }
 
     turb.correct();
+
+    fluidIteration++;
+    Info << nl;
+}
+
+Info<< nl << fluidRegions[i].name() << " region solution converged in "
+    << fluidIteration << " iterations" << nl << endl;
