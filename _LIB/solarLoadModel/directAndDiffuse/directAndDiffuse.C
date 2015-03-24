@@ -29,7 +29,7 @@ License
 #include "solarLoadViewFactorFixedValueFvPatchScalarField.H"
 #include "wallFvPatch.H"
 #include "typeInfo.H"
-
+#include "Time.H"
 
 using namespace Foam::constant;
 
@@ -174,7 +174,7 @@ void Foam::solarLoad::directAndDiffuse::initialise()
         )
     );	
 	
-    scalarIOList sunViewCoeffmyProc
+    scalarListIOList sunViewCoeffmyProc
     (
         IOobject
         (
@@ -185,7 +185,8 @@ void Foam::solarLoad::directAndDiffuse::initialise()
             IOobject::NO_WRITE,
             false
         )
-    );		
+    );
+    sunViewCoeffSize = sunViewCoeffmyProc.size();
 
     labelListIOList globalFaceFaces
     (
@@ -212,7 +213,7 @@ void Foam::solarLoad::directAndDiffuse::initialise()
     skyViewCoeff[Pstream::myProcNo()] = skyViewCoeffmyProc;
     Pstream::gatherList(skyViewCoeff);	
 	
-    List<scalarList> sunViewCoeff(Pstream::nProcs());
+    List<scalarListList> sunViewCoeff(Pstream::nProcs());
     sunViewCoeff[Pstream::myProcNo()] = sunViewCoeffmyProc;
     Pstream::gatherList(sunViewCoeff);		
 
@@ -232,8 +233,8 @@ void Foam::solarLoad::directAndDiffuse::initialise()
 
         sunViewCoeffList_.reset
         (
-            new scalarList(totalNCoarseFaces_, 0.0)
-        );			
+            new scalarRectangularMatrix(sunViewCoeffSize, totalNCoarseFaces_, 0.0)
+        );
 
         Info<< "Insert elements in the matrix..." << endl;
 
@@ -263,7 +264,7 @@ void Foam::solarLoad::directAndDiffuse::initialise()
 
         for (label procI = 0; procI < Pstream::nProcs(); procI++)
         {
-            insertListElements
+            insertRectangularMatrixElements
             (
                 globalNumbering,
                 procI,
@@ -497,6 +498,31 @@ void Foam::solarLoad::directAndDiffuse::insertListElements
     }
 }
 
+void Foam::solarLoad::directAndDiffuse::insertRectangularMatrixElements
+(
+    const globalIndex& globalNumbering,
+    const label procI,
+    const labelListList& globalFaceFaces,
+    const scalarListList& sunViewCoeffs,
+    scalarRectangularMatrix& sunViewCoeffList
+)
+{
+    //Info << "sunViewCoeffs: " << sunViewCoeffs << endl;
+    //Info << "sunViewCoeffList: " << sunViewCoeffList << endl;
+    forAll(sunViewCoeffs, vectorId)
+    {
+        const scalarList& vf = sunViewCoeffs[vectorId];
+        
+        forAll(vf, faceI)
+        {        
+            const labelList& globalFaces = globalFaceFaces[faceI];
+            label globalI = globalNumbering.toGlobal(procI, faceI);
+
+            sunViewCoeffList[vectorId][faceI] = vf[faceI];
+        }
+    }
+}
+
 void Foam::solarLoad::directAndDiffuse::calculate()
 {
     // Store previous iteration
@@ -664,6 +690,11 @@ void Foam::solarLoad::directAndDiffuse::calculate()
             dimensionedScalar D(coeffs_.lookup("D"));   
             //Info << "sunViewCoeffList_: " << sunViewCoeffList_() << endl;
             //Info << "skyViewCoeffList_: " << skyViewCoeffList_() << endl;
+            Time& time = const_cast<Time&>(mesh_.time());
+            //Info << "time.value(): " << time.value() << endl;
+            label timestep = floor(time.value()/3600); timestep = timestep%24;
+            //Info << "timestep: " << timestep << endl;
+            //Info << "sunViewCoeffList_()[timestep][3]: " << sunViewCoeffList_()[timestep][3] << endl;
 
             // Initial iter calculates CLU and chaches it
             if (iterCounter_ == 0)
@@ -691,7 +722,7 @@ void Foam::solarLoad::directAndDiffuse::calculate()
             {
                 for (label j=0; j<totalNCoarseFaces_; j++)
                 {
-					scalar Id = (D.value()*skyViewCoeffList_()[j] + S.value()*sunViewCoeffList_()[j]);
+					scalar Id = (D.value()*skyViewCoeffList_()[j] + sunViewCoeffList_()[timestep][j]);
                     if (i==j)
                     {
 						q[i] += (Fmatrix_()[i][j] + 1.0)*Id - QsExt[j];
