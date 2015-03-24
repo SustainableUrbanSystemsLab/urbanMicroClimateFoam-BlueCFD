@@ -192,22 +192,22 @@ int main(int argc, char *argv[])
             IOobject::NO_WRITE
        )
     );
-    scalarIOList Eb // direct solar radiation intensity flux
+    scalarIOList IDN // direct solar radiation intensity flux
     (
        IOobject
        (
-            "Eb",
+            "IDN",
             runTime.constant(),
             mesh,
             IOobject::MUST_READ,
             IOobject::NO_WRITE
        )
     );    
-    scalarIOList Ed // diffuse solar radiation intensity flux
+    scalarIOList Idif // diffuse solar radiation intensity flux
     (
        IOobject
        (
-            "Ed",
+            "Idif",
             runTime.constant(),
             mesh,
             IOobject::MUST_READ,
@@ -631,14 +631,14 @@ int main(int argc, char *argv[])
     			sunVisibleOrNot[vectorId][k] = nVisibleFaceFaces3[vectorId][faceNo];
     			
     			cosPhi = (localCoarseSf[faceNo] & sunPos)/(mag(localCoarseSf[faceNo])*mag(sunPos) + SMALL);
-    			sunViewCoeff[vectorId][k] = nVisibleFaceFaces3[vectorId][faceNo]*mag(cosPhi) * Eb[vectorId];
+    			sunViewCoeff[vectorId][k] = nVisibleFaceFaces3[vectorId][faceNo]*mag(cosPhi) * IDN[vectorId];
 
     			cosPhi = (localCoarseSf[faceNo] & skyPos)/(mag(localCoarseSf[faceNo])*mag(skyPos) + SMALL);
     			radAngleBetween = Foam::acos( min(max(cosPhi, -1), 1) );
     			degAngleBetween = radToDeg(radAngleBetween);
     			if (degAngleBetween == 180){degAngleBetween=0;}
     			else if (degAngleBetween > 90){degAngleBetween-=90;}
-    			skyViewCoeff[vectorId][k] = (1-0.5*(degAngleBetween/90)) * Ed[vectorId];			
+    			skyViewCoeff[vectorId][k] = (1-0.5*(degAngleBetween/90)) * Idif[vectorId];			
     			
     			k++;
     			j++;
