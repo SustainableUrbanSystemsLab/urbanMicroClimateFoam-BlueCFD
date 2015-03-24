@@ -178,22 +178,21 @@ int main(int argc, char *argv[])
     const bool dumpRays =
         viewFactorDict.lookupOrDefault<bool>("dumpRays", false);
 		
-	//vector sunPos = viewFactorDict.lookup("sunPosVector");	
 	vector skyPos = viewFactorDict.lookup("skyPosVector");
 
-    // Read sunPosVector2 list
-    vectorIOList sunPosVector2
+    // Read sunPosVector list
+    vectorIOList sunPosVector
     (
        IOobject
        (
-            "sunPosVector2",
+            "sunPosVector",
             runTime.constant(),
             mesh,
             IOobject::MUST_READ,
             IOobject::NO_WRITE
        )
     );
-    scalarIOList Eb
+    scalarIOList Eb // direct solar radiation intensity flux
     (
        IOobject
        (
@@ -204,6 +203,17 @@ int main(int argc, char *argv[])
             IOobject::NO_WRITE
        )
     );    
+    scalarIOList Ed // diffuse solar radiation intensity flux
+    (
+       IOobject
+       (
+            "Ed",
+            runTime.constant(),
+            mesh,
+            IOobject::MUST_READ,
+            IOobject::NO_WRITE
+       )
+    );      
 
     const label debug = viewFactorDict.lookupOrDefault<label>("debug", 0);
 
@@ -422,13 +432,13 @@ int main(int argc, char *argv[])
 
     // Number of visible faces from local index
     labelList nVisibleFaceFaces(nCoarseFaces, 0);
-    labelListList nVisibleFaceFaces3(sunPosVector2.size());
+    labelListList nVisibleFaceFaces3(sunPosVector.size());
 
-    forAll(sunPosVector2, vectorId)
+    forAll(sunPosVector, vectorId)
     {
         labelList nVisibleFaceFaces2(nCoarseFaces, 0);
         
-        vector sunPos = sunPosVector2[vectorId];
+        vector sunPos = sunPosVector[vectorId];
 
     	//List<pointIndexHit> hitInfo(1);
     	forAll(solarStart, pointI)
@@ -551,7 +561,7 @@ int main(int argc, char *argv[])
             IOobject::NO_WRITE,
             false
         ),
-        sunPosVector2.size()
+        sunPosVector.size()
     ); 
     scalarListIOList sunViewCoeff
     (
@@ -564,9 +574,9 @@ int main(int argc, char *argv[])
             IOobject::NO_WRITE,
             false
         ),
-        sunPosVector2.size()
+        sunPosVector.size()
     );
-    scalarIOList skyViewCoeff
+    scalarListIOList skyViewCoeff
     (
         IOobject
         (
@@ -577,7 +587,7 @@ int main(int argc, char *argv[])
             IOobject::NO_WRITE,
             false
         ),
-        nCoarseFacesAll
+        sunPosVector.size()
     );	
     
     labelList dummy(nCoarseFacesAll, -1);
@@ -586,10 +596,7 @@ int main(int argc, char *argv[])
     {
         sunVisibleOrNot[vectorId] = dummy;
         sunViewCoeff[vectorId] = dummy2;
-	}
-	forAll(skyViewCoeff, faceI)
-	{
-		skyViewCoeff[faceI] = 0;
+        skyViewCoeff[vectorId] = dummy2;
 	}
 
 	scalar cosPhi = 0;
@@ -601,9 +608,9 @@ int main(int argc, char *argv[])
 	label j = 0;
 	label k = 0;
 
-    forAll(sunPosVector2, vectorId)
+    forAll(sunPosVector, vectorId)
     {    
-        vector sunPos = sunPosVector2[vectorId];
+        vector sunPos = sunPosVector[vectorId];
 
     	forAll(viewFactorsPatches, patchID)
     	{
@@ -624,14 +631,14 @@ int main(int argc, char *argv[])
     			sunVisibleOrNot[vectorId][k] = nVisibleFaceFaces3[vectorId][faceNo];
     			
     			cosPhi = (localCoarseSf[faceNo] & sunPos)/(mag(localCoarseSf[faceNo])*mag(sunPos) + SMALL);
-    			sunViewCoeff[vectorId][k] = nVisibleFaceFaces3[vectorId][faceNo]*mag(cosPhi)*Eb[vectorId];
+    			sunViewCoeff[vectorId][k] = nVisibleFaceFaces3[vectorId][faceNo]*mag(cosPhi) * Eb[vectorId];
 
     			cosPhi = (localCoarseSf[faceNo] & skyPos)/(mag(localCoarseSf[faceNo])*mag(skyPos) + SMALL);
     			radAngleBetween = Foam::acos( min(max(cosPhi, -1), 1) );
     			degAngleBetween = radToDeg(radAngleBetween);
     			if (degAngleBetween == 180){degAngleBetween=0;}
     			else if (degAngleBetween > 90){degAngleBetween-=90;}
-    			skyViewCoeff[k] = 1-0.5*(degAngleBetween/90);			
+    			skyViewCoeff[vectorId][k] = (1-0.5*(degAngleBetween/90)) * Ed[vectorId];			
     			
     			k++;
     			j++;

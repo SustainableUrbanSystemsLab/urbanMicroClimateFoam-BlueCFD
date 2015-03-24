@@ -90,7 +90,9 @@ class directAndDiffuse
         autoPtr<scalarSquareMatrix> CLU_;
 		
 		//- skyViewCoeffList_
-		autoPtr<scalarList> skyViewCoeffList_;
+		autoPtr<scalarRectangularMatrix> skyViewCoeffList_;
+
+        label skyViewCoeffSize; 
 		
 		//- sunViewCoeffList_
 		autoPtr<scalarRectangularMatrix> sunViewCoeffList_;	
@@ -150,8 +152,8 @@ class directAndDiffuse
             const globalIndex& index,
             const label fromProcI,
             const labelListList& globalFaceFaces,
-            const scalarListList& skyViewCoeffs,
-            scalarRectangularMatrix& skyViewCoeffList
+            const scalarListList& skysunViewCoeffs,
+            scalarRectangularMatrix& skysunViewCoeffList
         );          	
 
         //- Disallow default bitwise copy construct
