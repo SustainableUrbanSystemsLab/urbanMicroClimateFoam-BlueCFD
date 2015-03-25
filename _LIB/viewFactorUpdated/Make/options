@@ -23,4 +23,5 @@ LIB_LIBS = \
     -lsolidMixtureProperties \
     -lliquidMixtureProperties \
     -lsolidProperties \
-    -lliquidProperties
+    -lliquidProperties \
+    -lradiationModels
