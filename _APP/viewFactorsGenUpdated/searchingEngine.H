@@ -45,6 +45,7 @@ const triSurface localSurface = triangulate
     coarsePatches
 );
 
+
 distributedTriSurfaceMesh surfacesMesh
 (
     IOobject
@@ -59,6 +60,7 @@ distributedTriSurfaceMesh surfacesMesh
     localSurface,
     dict
 );
+
 
 triSurfaceToAgglom.resize(surfacesMesh.size());
 

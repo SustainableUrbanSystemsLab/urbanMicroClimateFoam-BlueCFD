@@ -67,6 +67,99 @@ Description
 
 using namespace Foam;
 
+triSurface triangulate
+(
+    const polyBoundaryMesh& bMesh,
+    const labelHashSet& includePatches,
+    const labelListIOList& finalAgglom,
+    labelList& triSurfaceToAgglom,
+    const globalIndex& globalNumbering,
+    const polyBoundaryMesh& coarsePatches
+)
+{
+    const polyMesh& mesh = bMesh.mesh();
+
+    // Storage for surfaceMesh. Size estimate.
+    DynamicList<labelledTri> triangles
+    (
+        mesh.nFaces() - mesh.nInternalFaces()
+    );
+
+    label newPatchI = 0;
+    label localTriFaceI = 0;
+
+    forAllConstIter(labelHashSet, includePatches, iter)
+    {
+        const label patchI = iter.key();
+        const polyPatch& patch = bMesh[patchI];
+        const pointField& points = patch.points();
+
+        label nTriTotal = 0;
+
+        forAll(patch, patchFaceI)
+        {
+            const face& f = patch[patchFaceI];
+
+            faceList triFaces(f.nTriangles(points));
+
+            label nTri = 0;
+
+            f.triangles(points, nTri, triFaces);
+
+            forAll(triFaces, triFaceI)
+            {
+                const face& f = triFaces[triFaceI];
+
+                triangles.append(labelledTri(f[0], f[1], f[2], newPatchI));
+
+                nTriTotal++;
+
+                triSurfaceToAgglom[localTriFaceI++] = globalNumbering.toGlobal
+                (
+                    Pstream::myProcNo(),
+                    finalAgglom[patchI][patchFaceI]
+                  + coarsePatches[patchI].start()
+                );
+            }
+        }
+
+        newPatchI++;
+    }
+
+    triSurfaceToAgglom.resize(localTriFaceI-1);
+
+    triangles.shrink();
+
+    // Create globally numbered tri surface
+    triSurface rawSurface(triangles, mesh.points());
+
+    // Create locally numbered tri surface
+    triSurface surface
+    (
+        rawSurface.localFaces(),
+        rawSurface.localPoints()
+    );
+
+    // Add patch names to surface
+    surface.patches().setSize(newPatchI);
+
+    newPatchI = 0;
+
+    forAllConstIter(labelHashSet, includePatches, iter)
+    {
+        const label patchI = iter.key();
+        const polyPatch& patch = bMesh[patchI];
+
+        surface.patches()[newPatchI].index() = patchI;
+        surface.patches()[newPatchI].name() = patch.name();
+        surface.patches()[newPatchI].geometricType() = patch.type();
+
+        newPatchI++;
+    }
+
+    return surface;
+}
+
 void writeRays
 (
     const fileName& fName,
@@ -266,6 +359,10 @@ int main(int argc, char *argv[])
         finalAgglom
     );
 
+    if (debug)
+    {
+        Pout << "\nCreated single cell mesh..." << endl;
+    }
 
     // Calculate total number of fine and coarse faces
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -273,16 +370,19 @@ int main(int argc, char *argv[])
     label nCoarseFaces = 0;      //total number of coarse faces
 	label nCoarseFacesAll = 0;   //Also includes non-wall faces with greyDiffusive boundary
     label nFineFaces = 0;        //total number of fine faces
+    label nFineFacesTotal = 0;        //total number of fine faces including non-fixedValueFvPatchScalarField patches following advise from bug report
 
     const polyBoundaryMesh& patches = mesh.boundaryMesh();
     const polyBoundaryMesh& coarsePatches = coarseMesh.boundaryMesh();
 
     labelList viewFactorsPatches(patches.size());
 	labelList howManyCoarseFacesPerPatch(patches.size());
+    DynamicList<label> sunskyMap_(nCoarseFaces);
     const volScalarField::GeometricBoundaryField& Qrb = Qr.boundaryField();
 
     label count = 0;
 	label countAll = 0;
+    label countForMapping = 0;
     forAll(Qrb, patchI)
     {
         const polyPatch& pp = patches[patchI];
@@ -297,23 +397,74 @@ int main(int argc, char *argv[])
             nFineFaces += patches[patchI].size();
 			count ++;
 			
-			howManyCoarseFacesPerPatch[countAll] = coarsePatches[patchI].size();          
+			howManyCoarseFacesPerPatch[countAll] = coarsePatches[patchI].size();
+
+            label i = 0;
+            for (; i < howManyCoarseFacesPerPatch[countAll]; i++)
+            {
+                sunskyMap_.append(countForMapping);
+                countForMapping ++;
+            }
+            nFineFacesTotal += patches[patchI].size();             
         }
 		else if ((isA<fixedValueFvPatchScalarField>(QrpI)) && (pp.size() > 0))
 		{
 			nCoarseFacesAll += coarsePatches[patchI].size();
 			
-			howManyCoarseFacesPerPatch[countAll] = coarsePatches[patchI].size();          
+			howManyCoarseFacesPerPatch[countAll] = coarsePatches[patchI].size();  
+
+            label i = 0;
+            for (; i < howManyCoarseFacesPerPatch[countAll]; i++)
+            {
+                sunskyMap_.append(countForMapping);
+                countForMapping ++;
+            }        
+
+            nFineFacesTotal += patches[patchI].size();        
 		}
 		else 
 		{
-			howManyCoarseFacesPerPatch[countAll] = 0;          
+			howManyCoarseFacesPerPatch[countAll] = 0;  
+
+            nFineFacesTotal += patches[patchI].size();        
 		}
 		countAll ++;
     }
     viewFactorsPatches.resize(count--);
-	
 	Info << "howManyCoarseFacesPerPatch: " << howManyCoarseFacesPerPatch << endl;
+
+    List<labelField> sunskyMap__(Pstream::nProcs());
+    sunskyMap__[Pstream::myProcNo()] = sunskyMap_;  
+    Pstream::gatherList(sunskyMap__);
+    Pstream::scatterList(sunskyMap__);
+
+    label sunskyMapCounter = 0;
+    for (label procI = 0; procI < Pstream::nProcs(); procI++)
+    { 
+        if (procI > 0)
+        {
+            sunskyMap__[procI] += sunskyMapCounter;
+        }   
+        sunskyMapCounter += sunskyMap__[procI].size();           
+    }
+
+    sunskyMap_ = sunskyMap__[Pstream::myProcNo()];
+
+    labelIOList sunskyMap
+    (
+        IOobject
+        (
+            "sunskyMap",
+            mesh.facesInstance(),
+            mesh,
+            IOobject::NO_READ,
+            IOobject::NO_WRITE,
+            false
+        ),
+        sunskyMap_.size()
+    );
+    sunskyMap = sunskyMap_;
+    sunskyMap.write();
 	
     // total number of coarse faces
     label totalNCoarseFaces = nCoarseFaces;
@@ -337,6 +488,8 @@ int main(int argc, char *argv[])
     DynamicList<point> localCoarseCf(nCoarseFaces);
     DynamicList<point> localCoarseSf(nCoarseFaces);
 
+    DynamicList<label> localAgg(nCoarseFaces);
+
     forAll (viewFactorsPatches, i)
     {
         const label patchID = viewFactorsPatches[i];
@@ -351,11 +504,18 @@ int main(int argc, char *argv[])
         const pointField& coarseCf = coarseMesh.Cf().boundaryField()[patchID];
         const pointField& coarseSf = coarseMesh.Sf().boundaryField()[patchID];
 
+        labelHashSet includePatches;
+        includePatches.insert(patchID);
+
         forAll(coarseCf, faceI)
         {
             point cf = coarseCf[faceI];
+
             const label coarseFaceI = coarsePatchFace[faceI];
             const labelList& fineFaces = coarseToFine[coarseFaceI];
+            const label agglomI =
+                agglom[fineFaces[0]] + coarsePatches[patchID].start();
+
             // Construct single face
             uindirectPrimitivePatch upp
             (
@@ -397,55 +557,64 @@ int main(int argc, char *argv[])
             point sf = coarseSf[faceI];
             localCoarseCf.append(cf);
             localCoarseSf.append(sf);
+            localAgg.append(agglomI);            
         }
     }
 
-	
+    globalIndex globalNumbering(nCoarseFaces);       
+    
     // Set up searching engine for obstacles
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    #include "searchingEngine.H"
-	
+    #include "searchingEngine.H"    
+
 
     // Determine rays between coarse face centres
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     DynamicList<label> rayStartFace(nCoarseFaces + 0.01*nCoarseFaces);
 
-    DynamicList<label> rayEndFace(rayStartFace.size());
+    DynamicList<label> rayEndFace(rayStartFace.size());  
 
-    globalIndex globalNumbering(nCoarseFaces);
-	
-	
-	// Find the bounding box of the domain
+
+    // Find the bounding box of the domain
     // ######################################
-	point min_(point::zero);
-	point max_(point::zero);
-	for (label i = 1; i < mesh.points().size(); i++)
-	{
-		min_ = ::Foam::min(min_, mesh.points()[i]);
-		max_ = ::Foam::max(max_, mesh.points()[i]);
-	}
+    List<point> minList(Pstream::nProcs());
+    List<point> maxList(Pstream::nProcs());
+    minList[Pstream::myProcNo()] = Foam::min(mesh.points());
+    maxList[Pstream::myProcNo()] = Foam::max(mesh.points());
+    Pstream::gatherList(minList);
+    Pstream::gatherList(maxList);
+    Pstream::scatterList(minList);
+    Pstream::scatterList(maxList);
 
-	// Find the Solar Ray Start Points within domain
-    // ######################################	
-	List<point> solarStart(localCoarseCf);
-	DynamicField<point> solarEnd(solarStart.size());
+    point min_(point::zero);
+    point max_(point::zero);
+    for (label i = 0; i < minList.size(); i++)
+    {
+        min_ = ::Foam::min(min_, minList[i]);
+        max_ = ::Foam::max(max_, maxList[i]);
+    }    
+
+    // Find the Solar Ray Start Points within domain
+    // ######################################   
+    List<point> solarStart(localCoarseCf);
+    List<point> solarEnd(solarStart.size());   
 
     // Number of visible faces from local index
-    labelList nVisibleFaceFaces(nCoarseFaces, 0);
-    labelListList nVisibleFaceFaces3(sunPosVector.size());
+    labelListList nVisibleFaceFacesList(sunPosVector.size());    
+    labelListList visibleFaceFaces(nCoarseFaces); 
 
     forAll(sunPosVector, vectorId)
-    {
-        labelList nVisibleFaceFaces2(nCoarseFaces, 0);
-        
+    {   
+        labelList nVisibleFaceFaces(nCoarseFaces, 0);
+
         vector sunPos = sunPosVector[vectorId];
 
-    	//List<pointIndexHit> hitInfo(1);
-    	forAll(solarStart, pointI)
-    	{
-    		scalar i1 = 0; scalar i2 = 0; scalar i3 = 0;
+        //List<pointIndexHit> hitInfo(1);
+        forAll(solarStart, pointI)
+        {
+            scalar i1 = 0; scalar i2 = 0; scalar i3 = 0;
 
-    		if (sunPos.x() > 0.0)
+            if (sunPos.x() > 0.0)
             {
                 i1 = (max_.x() - solarStart[pointI].x())/sunPos.x();
             } 
@@ -455,7 +624,7 @@ int main(int argc, char *argv[])
             } 
             else {i1 = VGREAT;}
 
-    		if (sunPos.y() > 0.0)
+            if (sunPos.y() > 0.0)
             {
                 i2 = (max_.y() - solarStart[pointI].y())/sunPos.y();
             } 
@@ -465,7 +634,7 @@ int main(int argc, char *argv[])
             }
             else{i2 = VGREAT;}
 
-    		if (sunPos.z() > 0.0)
+            if (sunPos.z() > 0.0)
             {
                 i3 = (max_.z() - solarStart[pointI].z())/sunPos.z();
             } 
@@ -475,47 +644,44 @@ int main(int argc, char *argv[])
             }
             else{i3 = VGREAT;}
 
-    		scalar i = min(i1, min(i2, i3));
-    		point solarEndPoint = i*point(sunPos.x(),sunPos.y(),sunPos.z())+solarStart[pointI];
-    		solarEnd.append(solarEndPoint);
-    	}
-    	
-    	// Collect Cf and Sf on coarse mesh
+            scalar i = min(i1, min(i2, i3));
+            point solarEndPoint = i*point(sunPos.x(),sunPos.y(),sunPos.z())+solarStart[pointI];
+            solarEnd[pointI] = solarEndPoint;
+        }  
+
+        //Info << "solarStart: " << solarStart << endl;
+        //Info << "solarEnd: " << solarEnd << endl;
+
+        // Collect Cf and Sf on coarse mesh
         // #############################################
 
         List<pointField> remoteCoarseCf_(Pstream::nProcs());
-        //List<pointField> remoteCoarseSf(Pstream::nProcs());
-
         remoteCoarseCf_[Pstream::myProcNo()] = solarEnd;
-        //remoteCoarseSf[Pstream::myProcNo()] = localCoarseSf; 
-    	
+        
         List<pointField> localCoarseCf_(Pstream::nProcs());
-        localCoarseCf_[Pstream::myProcNo()] = solarStart; 
+        localCoarseCf_[Pstream::myProcNo()] = solarStart;
 
         List<pointField> localCoarseSf_(Pstream::nProcs());
-        localCoarseSf_[Pstream::myProcNo()] = localCoarseSf;  	
+        localCoarseSf_[Pstream::myProcNo()] = localCoarseSf;         
 
-    	// Collect remote Cf and Sf on fine mesh
+        // Collect remote Cf and Sf on fine mesh
         // #############################################
 
-     /*   List<pointField> remoteFineCf(Pstream::nProcs());
+        /*List<pointField> remoteFineCf(Pstream::nProcs());
         List<pointField> remoteFineSf(Pstream::nProcs());
 
         remoteCoarseCf[Pstream::myProcNo()] = solarEnd;
         remoteCoarseSf[Pstream::myProcNo()] = localCoarseSf;*/
-    	
+        
         // Distribute local coarse Cf and Sf for shooting rays
         // #############################################
 
         Pstream::gatherList(remoteCoarseCf_);
         Pstream::scatterList(remoteCoarseCf_);
-    	Pstream::gatherList(localCoarseCf_);
-    	Pstream::scatterList(localCoarseCf_);
+        Pstream::gatherList(localCoarseCf_);
+        Pstream::scatterList(localCoarseCf_);
         Pstream::gatherList(localCoarseSf_);
-        Pstream::scatterList(localCoarseSf_);
-        //Pstream::gatherList(remoteCoarseSf);
-        //Pstream::scatterList(remoteCoarseSf);
-
+        Pstream::scatterList(localCoarseSf_);   
 
         // Return rayStartFace in local index and rayEndFace in global index
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -525,27 +691,26 @@ int main(int argc, char *argv[])
 
         forAll(rayStartFace, i)
         {
-            nVisibleFaceFaces2[rayStartFace[i]]++;
+            nVisibleFaceFaces[rayStartFace[i]]++;
         }
-
-        labelListList visibleFaceFaces(nCoarseFaces);
 
         label nViewFactors = 0;
-        forAll(nVisibleFaceFaces2, faceI)
+        forAll(nVisibleFaceFaces, faceI)
         {
-            visibleFaceFaces[faceI].setSize(nVisibleFaceFaces2[faceI]);
-            nViewFactors += nVisibleFaceFaces2[faceI];
+            visibleFaceFaces[faceI].setSize(nVisibleFaceFaces[faceI]);
+            nViewFactors += nVisibleFaceFaces[faceI];
         }
 
-    	//Info << "nVisibleFaceFaces2: " << nVisibleFaceFaces2 << endl;
-        nVisibleFaceFaces3[vectorId] = nVisibleFaceFaces2;
+        //Info << "nVisibleFaceFaces: " << nVisibleFaceFaces << endl;
+        nVisibleFaceFacesList[vectorId] = nVisibleFaceFaces;
 
         rayStartFace.clear();
         rayEndFace.clear();
 
-    }
+    }   
 
-    //Info << "nVisibleFaceFaces3: " << nVisibleFaceFaces3 << endl;
+    Info << "nVisibleFaceFacesList: " << nVisibleFaceFacesList << endl;
+    
 
     // Fill local view factor matrix
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -628,16 +793,15 @@ int main(int argc, char *argv[])
     		
     		while (j < howManyCoarseFacesPerPatch[i])
     		{
-    			sunVisibleOrNot[vectorId][k] = nVisibleFaceFaces3[vectorId][faceNo];
+    			sunVisibleOrNot[vectorId][k] = nVisibleFaceFacesList[vectorId][faceNo];
     			
     			cosPhi = (localCoarseSf[faceNo] & sunPos)/(mag(localCoarseSf[faceNo])*mag(sunPos) + SMALL);
-    			sunViewCoeff[vectorId][k] = nVisibleFaceFaces3[vectorId][faceNo]*mag(cosPhi) * IDN[vectorId];
+    			sunViewCoeff[vectorId][k] = nVisibleFaceFacesList[vectorId][faceNo]*mag(cosPhi) * IDN[vectorId];
 
     			cosPhi = (localCoarseSf[faceNo] & skyPos)/(mag(localCoarseSf[faceNo])*mag(skyPos) + SMALL);
     			radAngleBetween = Foam::acos( min(max(cosPhi, -1), 1) );
     			degAngleBetween = radToDeg(radAngleBetween);
-    			if (degAngleBetween == 180){degAngleBetween=0;}
-    			else if (degAngleBetween > 90){degAngleBetween-=90;}
+    			if (degAngleBetween > 90 && degAngleBetween <= 180){degAngleBetween=90 - (degAngleBetween-90);}
     			skyViewCoeff[vectorId][k] = (1-0.5*(degAngleBetween/90)) * Idif[vectorId];			
     			
     			k++;

@@ -136,7 +136,7 @@ void Foam::solarLoad::directAndDiffuse::initialise()
             IOobject::NO_WRITE,
             false
         )
-    );
+    );    
 
     map_.reset
     (
@@ -189,6 +189,19 @@ void Foam::solarLoad::directAndDiffuse::initialise()
     );
     sunViewCoeffSize = sunViewCoeffmyProc.size();
 
+    labelIOList sunskyMapmyProc
+    (
+        IOobject
+        (
+            "sunskyMap",
+            mesh_.facesInstance(),
+            mesh_,
+            IOobject::MUST_READ,
+            IOobject::NO_WRITE,
+            false
+        )
+    );    
+
     labelListIOList globalFaceFaces
     (
         IOobject
@@ -200,7 +213,11 @@ void Foam::solarLoad::directAndDiffuse::initialise()
             IOobject::NO_WRITE,
             false
         )
-    );
+    ); 
+
+    List<labelList> sunskyMap(Pstream::nProcs());
+    sunskyMap[Pstream::myProcNo()] = sunskyMapmyProc;
+    Pstream::gatherList(sunskyMap);
 
     List<labelListList> globalFaceFacesProc(Pstream::nProcs());
     globalFaceFacesProc[Pstream::myProcNo()] = globalFaceFaces;
@@ -227,12 +244,12 @@ void Foam::solarLoad::directAndDiffuse::initialise()
             new scalarSquareMatrix(totalNCoarseFaces_, totalNCoarseFaces_, 0.0)
         );	
 		
-        skyViewCoeffList_.reset
+        skyViewCoeffMatrix_.reset
         (
             new scalarRectangularMatrix(skyViewCoeffSize, totalNCoarseFaces_, 0.0)
         );	
 
-        sunViewCoeffList_.reset
+        sunViewCoeffMatrix_.reset
         (
             new scalarRectangularMatrix(sunViewCoeffSize, totalNCoarseFaces_, 0.0)
         );
@@ -257,9 +274,10 @@ void Foam::solarLoad::directAndDiffuse::initialise()
             (
                 globalNumbering,
                 procI,
+                sunskyMap,
                 globalFaceFacesProc[procI],
                 skyViewCoeff[procI],
-                skyViewCoeffList_()
+                skyViewCoeffMatrix_()
             );
         }
 
@@ -269,9 +287,10 @@ void Foam::solarLoad::directAndDiffuse::initialise()
             (
                 globalNumbering,
                 procI,
+                sunskyMap,
                 globalFaceFacesProc[procI],
                 sunViewCoeff[procI],
-                sunViewCoeffList_()
+                sunViewCoeffMatrix_()
             );
         }			
 
@@ -359,8 +378,8 @@ Foam::solarLoad::directAndDiffuse::directAndDiffuse(const volScalarField& T)
     ),
     Fmatrix_(),
     CLU_(),
-	skyViewCoeffList_(),
-	sunViewCoeffList_(),	
+	skyViewCoeffMatrix_(),
+	sunViewCoeffMatrix_(),	
     selectedPatches_(mesh_.boundary().size(), -1),
     wallPatchOrNot_(mesh_.boundary().size(), 0),	
     totalNCoarseFaces_(0),
@@ -421,8 +440,8 @@ Foam::solarLoad::directAndDiffuse::directAndDiffuse
     ),
     Fmatrix_(),
     CLU_(),
-	skyViewCoeffList_(),
-	sunViewCoeffList_(),	
+	skyViewCoeffMatrix_(),
+	sunViewCoeffMatrix_(),	
     selectedPatches_(mesh_.boundary().size(), -1),
     wallPatchOrNot_(mesh_.boundary().size(), 0),	
     totalNCoarseFaces_(0),
@@ -477,51 +496,36 @@ void Foam::solarLoad::directAndDiffuse::insertMatrixElements
             Fmatrix[globalI][globalFaces[i]] = vf[i];
         }
     }
-}
 
-void Foam::solarLoad::directAndDiffuse::insertListElements
-(
-    const globalIndex& globalNumbering,
-    const label procI,
-    const labelListList& globalFaceFaces,
-    const scalarList& skysunViewCoeffs,
-    scalarList& skysunViewCoeffList
-)
-{
-    forAll(skysunViewCoeffs, faceI)
-    {
-        const scalar& vf = skysunViewCoeffs[faceI];
-        const labelList& globalFaces = globalFaceFaces[faceI];
-		
-        label globalI = globalNumbering.toGlobal(procI, faceI);
-        
-		skysunViewCoeffList[faceI] = vf;
-    }
+    //Info << "Fmatrix: " << Fmatrix << endl;
 }
 
 void Foam::solarLoad::directAndDiffuse::insertRectangularMatrixElements
 (
     const globalIndex& globalNumbering,
     const label procI,
+    const labelListList& sunskyMap,
     const labelListList& globalFaceFaces,
     const scalarListList& skysunViewCoeffs,
-    scalarRectangularMatrix& skysunViewCoeffList
+    scalarRectangularMatrix& skysunViewCoeffMatrix
 )
 {
-    //Info << "sunViewCoeffs: " << sunViewCoeffs << endl;
-    //Info << "sunViewCoeffList: " << sunViewCoeffList << endl;
     forAll(skysunViewCoeffs, vectorId)
     {
         const scalarList& vf = skysunViewCoeffs[vectorId];
-        
+
+        //const labelList& globalFaces = globalFaceFaces[vectorId];
+        //label globalI = globalNumbering.toGlobal(procI, vectorId);
+
+        //Info << "globalFaces: " << globalFaces << endl; 
+
         forAll(vf, faceI)
         {        
-            const labelList& globalFaces = globalFaceFaces[faceI];
-            label globalI = globalNumbering.toGlobal(procI, faceI);
-
-            skysunViewCoeffList[vectorId][faceI] = vf[faceI];
+            skysunViewCoeffMatrix[vectorId][sunskyMap[procI][faceI]] = vf[faceI];
         }
     }
+
+   //Info << "skysunViewCoeffMatrix: " << skysunViewCoeffMatrix << endl;
 }
 
 void Foam::solarLoad::directAndDiffuse::calculate()
@@ -559,8 +563,8 @@ void Foam::solarLoad::directAndDiffuse::calculate()
 
         const scalarList& Hoi = Qsp.Qso();
 
-        const polyPatch& pp = coarseMesh_.boundaryMesh()[patchID];
-        const labelList& coarsePatchFace = coarseMesh_.patchFaceMap()[patchID];
+        const polyPatch& pp = coarseMesh_.boundaryMesh()[patchID]; 
+        const labelList& coarsePatchFace = coarseMesh_.patchFaceMap()[patchID]; 
 
         scalarList Tave(pp.size(), 0.0);
         scalarList Eave(Tave.size(), 0.0);
@@ -724,7 +728,7 @@ void Foam::solarLoad::directAndDiffuse::calculate()
             {
                 for (label j=0; j<totalNCoarseFaces_; j++)
                 {
-					scalar Id = (skyViewCoeffList_()[timestep][j] + sunViewCoeffList_()[timestep][j]);
+					scalar Id = (skyViewCoeffMatrix_()[timestep][j] + sunViewCoeffMatrix_()[timestep][j]);
                     if (i==j)
                     {
 						q[i] += (Fmatrix_()[i][j] + 1.0)*Id - QsExt[j];

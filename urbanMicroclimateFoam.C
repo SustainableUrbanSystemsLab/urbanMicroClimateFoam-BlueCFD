@@ -39,6 +39,7 @@ Description
 #include "solarLoadModel.H"
 #include "simpleControlFluid.H"
 #include "fvIOoptionList.H"
+#include "fixedFluxPressureFvPatchScalarField.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

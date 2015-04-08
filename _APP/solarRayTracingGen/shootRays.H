@@ -4,8 +4,8 @@
 // Maximum length for dynamicList
 const label maxDynListLength = 10000;
 
-for (label procI = 0; procI < Pstream::nProcs(); procI++)
-{
+//for (label procI = 0; procI < Pstream::nProcs(); procI++)
+//{
     // Shoot rays from me to procI. Note that even if processor has
     // 0 faces we still need to call findLine to keep calls synced.
 
@@ -15,12 +15,11 @@ for (label procI = 0; procI < Pstream::nProcs(); procI++)
     DynamicList<label> startIndex(start.size());
     DynamicList<label> endIndex(start.size());
 
-
     const pointField& myFc = localCoarseCf_[Pstream::myProcNo()];
     const vectorField& myArea = localCoarseSf_[Pstream::myProcNo()];
 
     //const pointField& remoteArea = remoteCoarseSf[procI];
-    const pointField& remoteFc = remoteCoarseCf_[procI];
+    const pointField& remoteFc = remoteCoarseCf_[Pstream::myProcNo()];
 
     label i = 0;
     do
@@ -37,7 +36,7 @@ for (label procI = 0; procI < Pstream::nProcs(); procI++)
 			startIndex.append(i);
             startArea.append(area);
 			end.append(fc + 0.9999*d);
-			label globalI = globalNumbering.toGlobal(procI, i);
+			label globalI = globalNumbering.toGlobal(Pstream::myProcNo(), i);
 			endIndex.append(globalI);
 			if (startIndex.size() > maxDynListLength)
 			{
@@ -48,9 +47,9 @@ for (label procI = 0; procI < Pstream::nProcs(); procI++)
         List<pointIndexHit> hitInfo(startIndex.size());
         surfacesMesh.findLine(start, end, hitInfo);
 		
-		//Info << "start: " << start << endl;
+		Info << "start: " << start << endl;
         //Info << "startArea: " << startArea << endl;
-		//Info << "end: " << end << endl;
+		Info << "end: " << end << endl;
 		
         forAll (hitInfo, rayI)
         {
@@ -72,4 +71,4 @@ for (label procI = 0; procI < Pstream::nProcs(); procI++)
 
     }while (returnReduce(i < myFc.size(), orOp<bool>()));
 
-}
+//}
