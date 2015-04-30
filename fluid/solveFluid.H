@@ -22,3 +22,8 @@ while (simpleControlFluid.loop())
 
 Info<< nl << fluidRegions[i].name() << " region solution converged in "
     << fluidIteration << " iterations" << nl << endl;
+
+Info << "Updating long-wave radiation heat transfer for region: " << fluidRegions[i].name();
+rad.correct();
+Info << "Updating short-wave radiation heat transfer for region: " << fluidRegions[i].name();
+sol.correct();

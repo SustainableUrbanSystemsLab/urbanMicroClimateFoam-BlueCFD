@@ -28,14 +28,14 @@
 
         forAll(fluidRegions, i)
         {
-            Info << "Updating radiation heat transfer for region: " << fluidRegions[i].name() << endl;
+            Info << "Updating long-wave radiation heat transfer for region: " << fluidRegions[i].name();
             radiation::radiationModel& rad = radiation[i];
             rad.correct();
         }
     }
 
     runTime.setDeltaT(runTime.deltaT().value()*10);
-    Info << "deltaT = " << runTime.deltaT().value() << endl;
+    Info << nl << "deltaT = " << runTime.deltaT().value() << endl;
 }
 
 
