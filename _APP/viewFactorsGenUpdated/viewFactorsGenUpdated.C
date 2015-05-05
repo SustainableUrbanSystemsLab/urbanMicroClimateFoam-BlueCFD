@@ -843,6 +843,20 @@ int main(int argc, char *argv[])
             dimensionedScalar("viewFactorField", dimless, 0)
         );
 
+        volScalarField viewFactorFieldSmoothened
+        (
+            IOobject
+            (
+                "viewFactorFieldSmoothened",
+                mesh.time().timeName(),
+                mesh,
+                IOobject::NO_READ,
+                IOobject::NO_WRITE
+            ),
+            mesh,
+            dimensionedScalar("viewFactorFieldSmoothened", dimless, 0)
+        );
+
         label compactI = 0;
         forAll(viewFactorsPatches, i)
         {
@@ -856,17 +870,22 @@ int main(int argc, char *argv[])
             forAll(coarseToFine, coarseI)
             {
                 const scalar Fij = sum(F[compactI]);
+                const scalar FSmoothened = Fij * (1.0 - (Fij-1.0)/(Fij+0.001));
+
                 const label coarseFaceID = coarsePatchFace[coarseI];
                 const labelList& fineFaces = coarseToFine[coarseFaceID];
                 forAll (fineFaces, fineId)
                 {
                     const label faceID = fineFaces[fineId];
                     viewFactorField.boundaryField()[patchID][faceID] = Fij;
+                    viewFactorFieldSmoothened.boundaryField()[patchID][faceID] = FSmoothened;
                 }
                 compactI++;
             }
         }
         viewFactorField.write();
+        viewFactorFieldSmoothened.write();
+
     }
 
 
