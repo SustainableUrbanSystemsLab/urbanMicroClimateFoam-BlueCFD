@@ -57,6 +57,7 @@ int main(int argc, char *argv[])
     #include "createSolidFields.H"
 
     #include "initContinuityErrs.H"
+    #include "readSolidTimeControls.H"
 
 	#include "readPhysics.H"
 
@@ -72,6 +73,8 @@ int main(int argc, char *argv[])
             #include "readFluidMultiRegionSIMPLEControls.H"
             #include "solveFluid.H"
         }
+        
+        scalar storeFluidDeltaT = runTime.deltaT().value();
 		
 		forAll(solidRegions, i)
 		{

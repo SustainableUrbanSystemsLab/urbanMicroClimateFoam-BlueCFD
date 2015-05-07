@@ -1,10 +1,11 @@
 simpleControlFluid simpleControlFluid(fluidRegions[i]);
 
-label fluidIteration = 0;
+label fluidIteration = 1;
 
 while (simpleControlFluid.loop())
 {
 //  Pressure-velocity SIMPLE corrector
+    Info << "Internal iteration number: " << fluidIteration << endl;
 
     p_rgh.storePrevIter();
     rho.storePrevIter();
