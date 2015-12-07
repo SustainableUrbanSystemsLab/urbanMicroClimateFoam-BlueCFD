@@ -22,10 +22,11 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Application
-    chtMultiRegionSimpleFoam
+    urbanMicroclimateFoam
 
 Description
-    Steady-state version of chtMultiRegionFoam
+    Solves for air flow and transport in building materials
+    Written by Aytac Kubilay, December 2015, ETH Zurich/Empa
 
 \*---------------------------------------------------------------------------*/
 
@@ -34,6 +35,7 @@ Description
 #include "turbulenceModel.H"
 #include "fixedGradientFvPatchFields.H"
 #include "regionProperties.H"
+#include "buildingMaterialModel.H"
 #include "solidThermo.H"
 #include "radiationModel.H"
 #include "solarLoadModel.H"
@@ -62,7 +64,7 @@ int main(int argc, char *argv[])
 	#include "readPhysics.H"
 
     while (runTime.loop())
-    {
+    {      
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
         forAll(fluidRegions, i)
@@ -71,7 +73,7 @@ int main(int argc, char *argv[])
                 << fluidRegions[i].name() << endl;
             #include "setRegionFluidFields.H"
             #include "readFluidMultiRegionSIMPLEControls.H"
-            #include "solveFluid.H"
+            //#include "solveFluid.H"
         }
         
         scalar storeFluidDeltaT = runTime.deltaT().value();

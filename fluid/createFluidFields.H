@@ -10,6 +10,7 @@
     PtrList<surfaceScalarField> ghfFluid(fluidRegions.size());
     PtrList<radiation::radiationModel> radiation(fluidRegions.size());
 	PtrList<solarLoad::solarLoadModel> solarLoad(fluidRegions.size());
+    PtrList<volScalarField> wFluid(fluidRegions.size());
 
     List<scalar> initialMassFluid(fluidRegions.size());
     List<label> pRefCellFluid(fluidRegions.size(),0);
@@ -69,6 +70,24 @@
                 fluidRegions[i]
             )
         );
+
+        Info<< "    Adding to wFluid\n" << endl;
+        wFluid.set
+        (
+            i,
+            new volScalarField
+            (
+                IOobject
+                (
+                    "w",
+                    runTime.timeName(),
+                    fluidRegions[i],
+                    IOobject::MUST_READ,
+                    IOobject::AUTO_WRITE
+                ),
+                fluidRegions[i]
+            )
+        );        
 
         Info<< "    Adding to phiFluid\n" << endl;
         phiFluid.set

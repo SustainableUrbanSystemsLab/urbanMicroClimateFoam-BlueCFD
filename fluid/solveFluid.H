@@ -13,6 +13,7 @@ while (simpleControlFluid.loop())
         #include "UEqn.H"
         #include "EEqn.H"
         #include "pEqn.H"
+        #include "wEqn.H"
     }
 
     turb.correct();

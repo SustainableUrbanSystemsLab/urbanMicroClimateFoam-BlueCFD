@@ -1,0 +1,9 @@
+DEPENDENCIES = \
+buildingMaterialModel/buildingMaterialModel.dep\
+buildingMaterialModel/newbuildingMaterialModel.dep\
+HamstadBrick/HamstadBrick.dep\
+HamstadPlaster/HamstadPlaster.dep\
+HamstadCase2/HamstadCase2.dep\
+Hamstad5Brick/Hamstad5Brick.dep\
+Hamstad5Insulation/Hamstad5Insulation.dep\
+Hamstad5Mortar/Hamstad5Mortar.dep

@@ -1,67 +1,213 @@
     // Initialise solid field pointer lists
-    PtrList<solidThermo> thermos(solidRegions.size());
-    PtrList<radiation::radiationModel> radiations(solidRegions.size());
-    PtrList<solarLoad::solarLoadModel> solarLoads(solidRegions.size());	
-    PtrList<fv::IOoptionList> solidHeatSources(solidRegions.size());
-    PtrList<volScalarField> betavSolid(solidRegions.size());
+    PtrList<IOdictionary> solidTransportProperties(solidRegions.size());
+    PtrList<volScalarField> rho_mSolid(solidRegions.size());
+    PtrList<volScalarField> cap_mSolid(solidRegions.size());
+    PtrList<volScalarField> lambda_mSolid(solidRegions.size());
+    PtrList<volScalarField> TsSolid(solidRegions.size());
+    PtrList<volScalarField> wsSolid(solidRegions.size());
+    PtrList<volScalarField> pcSolid(solidRegions.size());
+    PtrList<volScalarField> KrelSolid(solidRegions.size());
+    PtrList<volScalarField> K_vSolid(solidRegions.size());
+    PtrList<volScalarField> K_ptSolid(solidRegions.size());
+    PtrList<volScalarField> CrelSolid(solidRegions.size());
 
     // Populate solid field pointer lists
     forAll(solidRegions, i)
     {
-        Info<< "*** Reading solid mesh thermophysical properties for region "
-            << solidRegions[i].name() << nl << endl;
-
-        Info<< "    Adding to thermos\n" << endl;
-        thermos.set(i, solidThermo::New(solidRegions[i]));
-
-        Info<< "    Adding to radiations\n" << endl;
-        radiations.set(i, radiation::radiationModel::New(thermos[i].T()));
-		
-        Info<< "    Adding to solarLoads\n" << endl;
-        solarLoads.set(i, solarLoad::solarLoadModel::New(thermos[i].T()));		
-
-        Info<< "    Adding fvOptions\n" << endl;
-        solidHeatSources.set
+        Info<< "    Adding solidTransportProperties\n" << endl;
+        solidTransportProperties.set
         (
             i,
-            new fv::IOoptionList(solidRegions[i])
-        );
-
-        IOobject betavSolidIO
-        (
-            "betavSolid",
-            runTime.timeName(),
-            solidRegions[i],
-            IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
-        );
-
-        if (betavSolidIO.headerOk())
-        {
-            betavSolid.set
+            new IOdictionary
             (
-                i,
-                new volScalarField(betavSolidIO, solidRegions[i])
-            );
-        }
-        else
-        {
-            betavSolid.set
-            (
-                i,
-                new volScalarField
+                IOobject
                 (
-                    IOobject
-                    (
-                        "betavSolid",
-                        runTime.timeName(),
-                        solidRegions[i],
-                        IOobject::NO_READ,
-                        IOobject::NO_WRITE
-                    ),
+                    "transportProperties",
+                    runTime.constant(),
                     solidRegions[i],
-                    dimensionedScalar("1", dimless, scalar(1.0))
+                    IOobject::MUST_READ,
+                    IOobject::NO_WRITE
                 )
-            );
-        }
+            )
+        );
+
+        Info<< "    Adding to rho_mSolid\n" << endl;
+        rho_mSolid.set
+        (
+            i,
+            new volScalarField
+            (
+                IOobject
+                (
+                    "rho_m",
+                    runTime.timeName(),
+                    solidRegions[i],
+                    IOobject::MUST_READ,
+                    IOobject::AUTO_WRITE
+                ),
+                solidRegions[i]
+            )
+        );      
+
+        Info<< "    Adding to cap_mSolid\n" << endl;
+        cap_mSolid.set
+        (
+            i,
+            new volScalarField
+            (
+                IOobject
+                (
+                    "cap_m",
+                    runTime.timeName(),
+                    solidRegions[i],
+                    IOobject::MUST_READ,
+                    IOobject::AUTO_WRITE
+                ),
+                solidRegions[i]
+            )
+        );    
+
+        Info<< "    Adding to lambda_mSolid\n" << endl;
+        lambda_mSolid.set
+        (
+            i,
+            new volScalarField
+            (
+                IOobject
+                (
+                    "lambda_m",
+                    runTime.timeName(),
+                    solidRegions[i],
+                    IOobject::MUST_READ,
+                    IOobject::AUTO_WRITE
+                ),
+                solidRegions[i]
+            )
+        );   
+
+        Info<< "    Adding to TsSolid\n" << endl;
+        TsSolid.set
+        (
+            i,
+            new volScalarField
+            (
+                IOobject
+                (
+                    "Ts",
+                    runTime.timeName(),
+                    solidRegions[i],
+                    IOobject::MUST_READ,
+                    IOobject::AUTO_WRITE
+                ),
+                solidRegions[i]
+            )
+        ); 
+
+        Info<< "    Adding to wsSolid\n" << endl;
+        wsSolid.set
+        (
+            i,
+            new volScalarField
+            (
+                IOobject
+                (
+                    "ws",
+                    runTime.timeName(),
+                    solidRegions[i],
+                    IOobject::MUST_READ,
+                    IOobject::AUTO_WRITE
+                ),
+                solidRegions[i]
+            )
+        );                               
+
+        Info<< "    Adding to pcSolid\n" << endl;
+        pcSolid.set
+        (
+            i,
+            new volScalarField
+            (
+                IOobject
+                (
+                    "pc",
+                    runTime.timeName(),
+                    solidRegions[i],
+                    IOobject::MUST_READ,
+                    IOobject::AUTO_WRITE
+                ),
+                solidRegions[i]
+            )
+        );  
+
+        Info<< "    Adding to KrelSolid\n" << endl;
+        KrelSolid.set
+        (
+            i,
+            new volScalarField
+            (
+                IOobject
+                (
+                    "Krel",
+                    runTime.timeName(),
+                    solidRegions[i],
+                    IOobject::MUST_READ,
+                    IOobject::AUTO_WRITE
+                ),
+                solidRegions[i]
+            )
+        );  
+
+        Info<< "    Adding to K_vSolid\n" << endl;
+        K_vSolid.set
+        (
+            i,
+            new volScalarField
+            (
+                IOobject
+                (
+                    "K_v",
+                    runTime.timeName(),
+                    solidRegions[i],
+                    IOobject::MUST_READ,
+                    IOobject::AUTO_WRITE
+                ),
+                solidRegions[i]
+            )
+        ); 
+
+        Info<< "    Adding to K_ptSolid\n" << endl;
+        K_ptSolid.set
+        (
+            i,
+            new volScalarField
+            (
+                IOobject
+                (
+                    "K_pt",
+                    runTime.timeName(),
+                    solidRegions[i],
+                    IOobject::MUST_READ,
+                    IOobject::AUTO_WRITE
+                ),
+                solidRegions[i]
+            )
+        ); 
+
+        Info<< "    Adding to CrelSolid\n" << endl;
+        CrelSolid.set
+        (
+            i,
+            new volScalarField
+            (
+                IOobject
+                (
+                    "Crel",
+                    runTime.timeName(),
+                    solidRegions[i],
+                    IOobject::MUST_READ,
+                    IOobject::AUTO_WRITE
+                ),
+                solidRegions[i]
+            )
+        );                                
     }

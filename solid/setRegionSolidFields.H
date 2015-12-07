@@ -1,21 +1,20 @@
-    fvMesh& mesh = solidRegions[i];
-    solidThermo& thermo = thermos[i];
-    const radiation::radiationModel& rads = radiations[i];
-    const solarLoad::solarLoadModel& sols = solarLoads[i];	
+fvMesh& mesh = solidRegions[i];
 
-    tmp<volScalarField> trho = thermo.rho();
-    const volScalarField& rho = trho();
+Info<< "Reading buildingMaterial Information\n" << endl;
 
-    tmp<volScalarField> tcp = thermo.Cp();
-    const volScalarField& cp = tcp();
+labelList faceType(mesh.nFaces(), -1);
+labelList cellType(mesh.nCells(), -1);
+const labelList& own = mesh.faceOwner();
 
-    tmp<volScalarField> talpha = thermo.alpha();
-    const volScalarField& alpha = talpha();
-    tmp<volScalarField> tkappa = thermo.kappa();
-    const volScalarField& kappa = tkappa();
+PtrList<dictionary> Materials(solidTransportProperties[i].lookup("buildingMaterials"));   
 
-    volScalarField& h = thermo.he();
-
-    const volScalarField& betav = betavSolid[i];
-
-    fv::IOoptionList& fvOptions = solidHeatSources[i];
+volScalarField& rho_m = rho_mSolid[i];
+volScalarField& cap_m = cap_mSolid[i];
+volScalarField& lambda_m = lambda_mSolid[i];
+volScalarField& Ts = TsSolid[i];
+volScalarField& ws = wsSolid[i];
+volScalarField& pc = pcSolid[i];
+volScalarField& Krel = KrelSolid[i];
+volScalarField& K_v = K_vSolid[i];
+volScalarField& K_pt = K_ptSolid[i];
+volScalarField& Crel = CrelSolid[i];

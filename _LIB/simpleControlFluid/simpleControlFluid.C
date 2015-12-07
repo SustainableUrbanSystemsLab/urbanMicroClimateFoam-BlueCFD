@@ -77,7 +77,6 @@ bool Foam::simpleControlFluid::criteriaSatisfied()
             }
         }
     }
-
     return checked && achieved;
 }
 
