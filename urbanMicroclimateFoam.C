@@ -61,8 +61,6 @@ int main(int argc, char *argv[])
     #include "initContinuityErrs.H"
     #include "readSolidTimeControls.H"
 
-	#include "readPhysics.H"
-
     while (runTime.loop())
     {      
         Info<< "Time = " << runTime.timeName() << nl << endl;
@@ -73,9 +71,9 @@ int main(int argc, char *argv[])
                 << fluidRegions[i].name() << endl;
             #include "setRegionFluidFields.H"
             #include "readFluidMultiRegionSIMPLEControls.H"
-            //#include "solveFluid.H"
+            #include "solveFluid.H"
         }
-        
+      
         scalar storeFluidDeltaT = runTime.deltaT().value();
 		
 		forAll(solidRegions, i)

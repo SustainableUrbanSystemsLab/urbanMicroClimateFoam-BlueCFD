@@ -3,17 +3,15 @@
     runTime.setTime(timeDirs.last(),timeDirs.size()-1);
 
     runTime.setDeltaT(storeFluidDeltaT * initialSolidTimestepFactor); //this always resets to the small timestep for solid, could it be better?
-
-    scalar solidInternalTime = runTime.deltaT().value();
-
+ 
+    scalar solidInternalTime = 0;//runTime.deltaT().value();
+    scalar timeToOutput = storeFluidDeltaT;
     bool timeStepDecrease = false;
 
-    while ( solidInternalTime <= storeFluidDeltaT )
+    while ( solidInternalTime < storeFluidDeltaT )
     {         
-        runTime++;
-
         Info << nl << "Time = " << runTime.timeName() << ", deltaT = " << runTime.deltaT().value() << endl;  
-
+        Info << "solidInternalTime: " << solidInternalTime << endl;
         pc.storePrevIter();
         Ts.storePrevIter();
 
@@ -32,6 +30,7 @@
                 if (gMax(pc) >= 0 || gMax(pc.boundaryField()) >= 0)
                 {
                     Info << "This is going to crash (pc)! Decreasing timestep and reverting fields..." << endl;
+                    //pc.write();
                     timeStepDecrease = true;
                     pc=pc.prevIter(); 
                     forAll(pc.boundaryField(), patchi)
@@ -56,11 +55,11 @@
 
             //Heat transfer////////////////
             #include "TsEqn.H"
-
                 //Firstly, test if all Ts values are valid
                 if (gMin(Ts) <= 0 || gMin(Ts.boundaryField()) <= 0)
                 {           
                     Info << "This is going to crash (Ts)! Decreasing timestep and reverting fields..." << endl;
+                    Info << "gMin(Ts): " << gMin(Ts) << " gMin(Ts.boundaryField()): " << gMin(Ts.boundaryField()) << endl;
                     timeStepDecrease = true;
                     pc=pc.prevIter(); 
                     forAll(pc.boundaryField(), patchi)
@@ -151,13 +150,23 @@
             }
         }
 
-        scalar timeToOutput = storeFluidDeltaT - solidInternalTime;
+        if (timeStepDecrease != true) 
+        {
+            solidInternalTime += runTime.deltaT().value();
+            timeToOutput = storeFluidDeltaT - solidInternalTime;
+            if (timeToOutput >= 0.0)
+            {
+                runTime++;  
+            }
+        }
+
         if (timeToOutput > 0.0)
         {
             #include "readSolidTimeControls.H"
             #include "setSolidRegionDeltaT.H"
-        }
-        solidInternalTime += runTime.deltaT().value();
+        } 
+        
+        Info << "timeToOutput: " << timeToOutput << endl;
     }
 
     runTime.setDeltaT(storeFluidDeltaT);

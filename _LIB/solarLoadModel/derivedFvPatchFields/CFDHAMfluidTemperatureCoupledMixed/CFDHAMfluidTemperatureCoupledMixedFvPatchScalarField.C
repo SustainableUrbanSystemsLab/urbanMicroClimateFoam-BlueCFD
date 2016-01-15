@@ -219,7 +219,7 @@ void CFDHAMfluidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
         QsNbr = nbrPatch.lookupPatchField<volScalarField, scalar>(QsNbrName_);
         mpp.distribute(QsNbr);
     }   
-  
+
     valueFraction() = 1.0;//KDeltaNbr/(KDeltaNbr + KDelta);
     refValue() = TcNbr;
     refGrad() = 0.0;//(Qr + QrNbr + Qs + QsNbr)/(kappa(Tp));

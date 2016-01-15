@@ -175,53 +175,52 @@ void CFDHAMfluidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
         refCast<const fvMesh>(nbrMesh).boundary()[samplePatchI];
 
 //    scalarField Tc(patchInternalField());
-//    scalarField& Tp = *this;
+    scalarField& Tp = *this;
 
-    const mixedFvPatchScalarField& //CFDHAMfluidMoistureCoupledMixedFvPatchScalarField&
+/*    const mixedFvPatchScalarField& //CFDHAMfluidMoistureCoupledMixedFvPatchScalarField&
         nbrField = refCast
             <const mixedFvPatchScalarField>
             (
                 nbrPatch.lookupPatchField<volScalarField, scalar>(wnbrName_)
+            );   */
+
+    const mixedFvPatchScalarField& //CFDHAMfluidMoistureCoupledMixedFvPatchScalarField&
+        nbrTField = refCast
+            <const mixedFvPatchScalarField>
+            (
+                nbrPatch.lookupPatchField<volScalarField, scalar>(TnbrName_)
             );   
 
+    const mixedFvPatchScalarField& //CFDHAMfluidMoistureCoupledMixedFvPatchScalarField&
+        nbrpcField = refCast
+            <const mixedFvPatchScalarField>
+            (
+                nbrPatch.lookupPatchField<volScalarField, scalar>("pc")
+            );                       
+
     // Swap to obtain full local values of neighbour internal field
-    scalarField wcNbr(nbrField.patchInternalField());
+//    scalarField wcNbr(nbrField.patchInternalField());
+//    mpp.distribute(wcNbr);
 
-    // Swap to obtain full local values of neighbour K*delta
-/*    scalarField KDeltaNbr( (nbrField.kappa(nbrField) )*nbrPatch.deltaCoeffs());   
-    mpp.distribute(KDeltaNbr);*/
-    mpp.distribute(wcNbr);
+    scalarField TNbr(nbrTField.patchInternalField());
+    mpp.distribute(TNbr);  
 
-//    scalarField KDelta( (kappa(*this) )*patch().deltaCoeffs());
+    scalarField pcNbr(nbrpcField.patchInternalField());
+    mpp.distribute(pcNbr); 
 
-/*    scalarField Qr(Tp.size(), 0.0);
-    if (QrName_ != "none")
-    {
-        Qr = patch().lookupPatchField<volScalarField, scalar>(QrName_);
-    }
+    scalarField p(Tp.size(), 0.0);
+        p = patch().lookupPatchField<volScalarField, scalar>("p");    
 
-    scalarField QrNbr(Tp.size(), 0.0);
-    if (QrNbrName_ != "none")
-    {
-        QrNbr = nbrPatch.lookupPatchField<volScalarField, scalar>(QrNbrName_);
-        mpp.distribute(QrNbr);
-    }
+    scalarField rhoair(Tp.size(), 0.0);
+        rhoair = patch().lookupPatchField<volScalarField, scalar>("rho");            
+
+    scalar rhol=1.0e3; scalar Rv=8.31451*1000/(18.01534);
+    scalarField pvsat_s = exp(6.58094e1-7.06627e3/TNbr-5.976*log(TNbr));
     
-    scalarField Qs(Tp.size(), 0.0);
-    if (QsName_ != "none")
-    {
-        Qs = patch().lookupPatchField<volScalarField, scalar>(QsName_);
-    }
-
-    scalarField QsNbr(Tp.size(), 0.0);
-    if (QsNbrName_ != "none")
-    {
-        QsNbr = nbrPatch.lookupPatchField<volScalarField, scalar>(QsNbrName_);
-        mpp.distribute(QsNbr);
-    }   */
-  
+    scalarField pv_s = pvsat_s*exp((pcNbr)/(rhol*Rv*TNbr));
+    
     valueFraction() = 1.0;//KDeltaNbr/(KDeltaNbr + KDelta);
-    refValue() = wcNbr;
+    refValue() = 0.62198*pv_s/p;//pv_s/pvsat_s;
     refGrad() = 0.0;//(Qr + QrNbr + Qs + QsNbr)/(kappa(Tp));
 
     mixedFvPatchScalarField::updateCoeffs();
