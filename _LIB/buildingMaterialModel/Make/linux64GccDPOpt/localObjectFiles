@@ -8,4 +8,5 @@ Hamstad5Brick.o\
 Hamstad5Insulation.o\
 Hamstad5Mortar.o\
 Soil.o\
-HamstadConcrete.o
+HamstadConcrete.o\
+SabaBrick.o

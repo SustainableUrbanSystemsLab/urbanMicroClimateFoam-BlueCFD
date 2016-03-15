@@ -69,9 +69,9 @@ int main(int argc, char *argv[])
         {
             Info<< "\nSolving for fluid region "
                 << fluidRegions[i].name() << endl;
-            #include "setRegionFluidFields.H"
-            #include "readFluidMultiRegionSIMPLEControls.H"
-            #include "solveFluid.H"
+//            #include "setRegionFluidFields.H"
+//            #include "readFluidMultiRegionSIMPLEControls.H"
+//            #include "solveFluid.H"
         }
       
         scalar storeFluidDeltaT = runTime.deltaT().value();

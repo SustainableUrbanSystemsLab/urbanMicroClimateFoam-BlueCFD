@@ -8,3 +8,4 @@ include Hamstad5Insulation/Hamstad5Insulation.dep
 include Hamstad5Mortar/Hamstad5Mortar.dep
 include Soil/Soil.dep
 include HamstadConcrete/HamstadConcrete.dep
+include SabaBrick/SabaBrick.dep

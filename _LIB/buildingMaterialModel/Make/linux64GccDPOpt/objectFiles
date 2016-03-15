@@ -8,4 +8,5 @@ $(OBJECTS_DIR)/Hamstad5Brick.o\
 $(OBJECTS_DIR)/Hamstad5Insulation.o\
 $(OBJECTS_DIR)/Hamstad5Mortar.o\
 $(OBJECTS_DIR)/Soil.o\
-$(OBJECTS_DIR)/HamstadConcrete.o
+$(OBJECTS_DIR)/HamstadConcrete.o\
+$(OBJECTS_DIR)/SabaBrick.o

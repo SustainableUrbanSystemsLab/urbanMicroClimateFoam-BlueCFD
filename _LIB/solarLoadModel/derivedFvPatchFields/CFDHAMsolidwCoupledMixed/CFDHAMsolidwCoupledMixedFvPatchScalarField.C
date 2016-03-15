@@ -177,45 +177,16 @@ void CFDHAMsolidwCoupledMixedFvPatchScalarField::updateCoeffs()
     scalarField Tc(patchInternalField());
     scalarField& Tp = *this;
 
-/*    const mixedFvPatchScalarField& //CFDHAMsolidwCoupledMixedFvPatchScalarField&
-        nbrField = refCast
-            <const mixedFvPatchScalarField>
-            (
-                nbrPatch.lookupPatchField<volScalarField, scalar>(TnbrName_)
-            );*/
-
     const mixedFvPatchScalarField&
         nbrFieldw = refCast
             <const mixedFvPatchScalarField>
             (
                 nbrPatch.lookupPatchField<volScalarField, scalar>("w")
             );                               
-
-    // Swap to obtain full local values of neighbour internal field
-/*    scalarField TcNbr(nbrField.patchInternalField()); 
-        mpp.distribute(TcNbr); */
-
-/*    scalarField Krel(Tp.size(), 0.0);
-        Krel = patch().lookupPatchField<volScalarField, scalar>("Krel"); 
-
-    scalarField K_pt(Tp.size(), 0.0);
-        K_pt = patch().lookupPatchField<volScalarField, scalar>("K_pt"); */
-
-/*    // Swap to obtain full local values of neighbour K*delta
-    scalarField KDeltaNbr( (nbrField.kappa(nbrField)+K_ptNbr )*nbrPatch.deltaCoeffs());   
-    mpp.distribute(KDeltaNbr);*/
-
-//    scalarField KDelta( (kappa(*this)+(cap_v*(Tc-Tref)+L_v)*K_pt )*patch().deltaCoeffs());
-
-//    scalarField heatFlux = -1*0.0257*nbrField.snGrad();  
-//    mpp.distribute(heatFlux); 
-
-//    scalarField moistureFlux = -1*0.282e-4*nbrFieldw.snGrad(); 
-//    mpp.distribute(moistureFlux);  
   
-    valueFraction() = 0.0;//KDeltaNbr/(KDeltaNbr + KDelta);
-    refValue() = 0.0;//TcNbr;
-    refGrad() = 0.0;//(moistureFlux)/(Krel+K_pt);
+    valueFraction() = 0.0;
+    refValue() = 0.0;
+    refGrad() = 0.0;
 
     mixedFvPatchScalarField::updateCoeffs(); 
 

@@ -205,18 +205,35 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
         nbrFieldalphat = refCast
             <const fixedValueFvPatchScalarField>
             (
-                nbrPatch.lookupPatchField<volScalarField, scalar>("mut")
+                nbrPatch.lookupPatchField<volScalarField, scalar>("alphat")
             );
+
+    const fixedValueFvPatchScalarField&
+        nbrFieldmut = refCast
+            <const fixedValueFvPatchScalarField>
+            (
+                nbrPatch.lookupPatchField<volScalarField, scalar>("mut")
+            );            
+
+    const fixedValueFvPatchScalarField&
+        nbrFieldgcr = refCast
+            <const fixedValueFvPatchScalarField>
+            (
+                nbrPatch.lookupPatchField<volScalarField, scalar>("gcr")
+            );
+    scalarField gcrNbr(nbrFieldgcr.snGrad()/nbrPatch.deltaCoeffs());
+    mpp.distribute(gcrNbr);             
 
     scalarField alphatNbr(nbrFieldalphat.patchInternalField());
         mpp.distribute(alphatNbr);  
 
-    scalarField mutNbr(nbrFieldalphat.patchInternalField()); 
+    scalarField mutNbr(nbrFieldmut.patchInternalField()); 
         mpp.distribute(mutNbr); 
 
     scalar cap_v = 1880;
     scalar Tref = 273.15; 
     scalar L_v = 2.5e6;                 
+    scalar cap_l = 4182;
 
     // Swap to obtain full local values of neighbour internal field
     scalarField TcNbr(nbrField.patchInternalField()); 
@@ -225,6 +242,7 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
     scalarField wcNbr(nbrFieldw.patchInternalField());
     scalar rhoair = 1.2;
     scalarField pv_o = wcNbr*1e5/(0.621945*rhoair);
+        mpp.distribute(wcNbr);    
         mpp.distribute(pv_o);               
 
     scalarField K_pt(Tp.size(), 0.0);
@@ -232,26 +250,28 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
         K_pt = (cap_v*(Tc-Tref)+L_v)*K_pt; 
 
     scalarField lambda_m(Tp.size(), 0.0);
-        lambda_m = patch().lookupPatchField<volScalarField, scalar>("lambda_m");  
-
-    scalarField Krel(Tp.size(), 0.0);
-        Krel = patch().lookupPatchField<volScalarField, scalar>("Krel");       
-
-    scalarField K_v(Tp.size(), 0.0);
-        K_v = patch().lookupPatchField<volScalarField, scalar>("K_v");                                
+        lambda_m = patch().lookupPatchField<volScalarField, scalar>("lambda_m");                               
 
     scalarField deltaCoeff_ = nbrPatch.deltaCoeffs(); mpp.distribute(deltaCoeff_);
     
     scalar cp = 1005; //specific heat of air [J/(kg K)]
-    scalarField heatFlux = alphatNbr*cp*(TcNbr-Tc)*deltaCoeff_; 
-
+    scalar muair = 1.8e-5; scalar Pr = 0.7;
+    scalarField heatFlux = (muair/Pr + alphatNbr)*cp*(TcNbr-Tc)*deltaCoeff_; 
+//            Info << gSum(heatFlux*patch().magSf()) << endl;
+            
     scalar rhol=1.0e3; scalar Rv=8.31451*1000/(18.01534);
     scalarField pvsat_s = exp(6.58094e1-7.06627e3/Tc-5.976*log(Tc));
     scalarField pv_s = pvsat_s*exp((pcc)/(rhol*Rv*Tc));
     
-    scalarField vaporFlux = mutNbr * 0.621945 * ((pv_o - pv_s)/1e5) *deltaCoeff_;
-    //scalarField moistureFlux = (Krel+K_v)*fieldpc.snGrad(); //Info << "T) Effective moistureFlux[1]: " << moistureFlux[1] << endl; 
+	scalar Dm = 2.5e-5; scalar Sct = 0.7;
+//                scalarField vaporFlux = (rhoair*Dm + mutNbr/Sct) * 0.621945 * rhoair * ((pv_o - pv_s)/1e5) *deltaCoeff_; 
+
+                scalarField vaporFlux = (rhoair*Dm + mutNbr/Sct) * (wcNbr-(0.62198*pv_s/1e5)) *deltaCoeff_;         
     scalarField LE = (cap_v*(Tc-Tref)+L_v)*vaporFlux;//Latent and sensible heat transfer due to vapor exchange   */
+
+    scalarField smoothstep=1/(1+exp((pcc+1000)/30));
+    scalarField gl = smoothstep*((gcrNbr*rhol)/(3600*1000));
+    scalarField CR = gl*cap_l*(TcNbr-Tref);
 
     scalarField Qr(Tp.size(), 0.0);
     if (QrName_ != "none")
@@ -279,18 +299,8 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
         mpp.distribute(QsNbr);
     }   
 
-    /*scalarField test(Tp.size(), 0.0);
-    test = Tc+((heatFlux + LE + Qr + QrNbr + Qs + QsNbr)/(lambda_m+K_pt))/patch().deltaCoeffs();
-    scalarField test2(Tp.size(), 0.0);
-    scalarField test3(Tp.size(), 0.0);
-    forAll(test2,i)
-    {
-        if (test[i] < 273.15){test2[i] = 1; test3[i] = 273.15;}
-        else if (test[i] > 373.15){test2[i] = 1; test3[i] = 373.15;}
-    }*/
-
-    valueFraction() = 0;//test2;
-    refValue() = 0;//test3;
+    valueFraction() = 0;
+    refValue() = 0;
     refGrad() = (heatFlux + LE + Qr + QrNbr + Qs + QsNbr)/(lambda_m+K_pt);
 
     mixedFvPatchScalarField::updateCoeffs(); 

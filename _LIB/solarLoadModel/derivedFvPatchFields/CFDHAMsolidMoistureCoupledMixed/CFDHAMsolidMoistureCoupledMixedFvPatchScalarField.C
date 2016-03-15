@@ -176,7 +176,7 @@ void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
         refCast<const fvMesh>(nbrMesh).boundary()[samplePatchI];
 
     scalarField pcc(patchInternalField());
-    scalarField& Tp = *this;
+    scalarField& pcp = *this;
 
     const mixedFvPatchScalarField&
         nbrFieldw = refCast
@@ -186,30 +186,37 @@ void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
             );   
 
     const fixedValueFvPatchScalarField&
-        nbrFieldalphat = refCast
+        nbrFieldmut = refCast
             <const fixedValueFvPatchScalarField>
             (
-                nbrPatch.lookupPatchField<volScalarField, scalar>("alphat")
-            );                            
+                nbrPatch.lookupPatchField<volScalarField, scalar>("mut")
+            ); 
+
+    const fixedValueFvPatchScalarField&
+        nbrFieldgcr = refCast
+            <const fixedValueFvPatchScalarField>
+            (
+                nbrPatch.lookupPatchField<volScalarField, scalar>("gcr")
+            );
+    scalarField gcrNbr(nbrFieldgcr.snGrad()/nbrPatch.deltaCoeffs());
+    mpp.distribute(gcrNbr);                
 
     scalarField wcNbr(nbrFieldw.patchInternalField());
     scalar rhoair = 1.2;
     scalarField pv_o = wcNbr*1e5/(0.621945*rhoair);
+        mpp.distribute(wcNbr);
         mpp.distribute(pv_o);
 
-    scalarField alphatNbr(nbrFieldalphat.patchInternalField()); 
-        mpp.distribute(alphatNbr);  
-
-    scalarField mutNbr(nbrFieldalphat.patchInternalField()); 
+    scalarField mutNbr(nbrFieldmut.patchInternalField()); 
         mpp.distribute(mutNbr);       
 
-    scalarField Krel(Tp.size(), 0.0);
+    scalarField Krel(pcp.size(), 0.0);
         Krel = patch().lookupPatchField<volScalarField, scalar>("Krel"); 
 
-    scalarField Ts(Tp.size(), 0.0);
+    scalarField Ts(pcp.size(), 0.0);
         Ts = patch().lookupPatchField<volScalarField, scalar>("Ts");        
 
-    scalarField K_v(Tp.size(), 0.0);
+    scalarField K_v(pcp.size(), 0.0);
         K_v = patch().lookupPatchField<volScalarField, scalar>("K_v");             
 
     scalarField deltaCoeff_ = nbrPatch.deltaCoeffs(); mpp.distribute(deltaCoeff_);
@@ -218,29 +225,24 @@ void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
     scalarField pvsat_s = exp(6.58094e1-7.06627e3/Ts-5.976*log(Ts));
     scalarField pv_s = pvsat_s*exp((pcc)/(rhol*Rv*Ts));
 
-    scalar rh = 0.00;
-    ////scalarField moistureFlux = -1*(alphatNbr/rhol)*nbrFieldw.snGrad() ;
-    //scalarField moistureFlux = (alphatNbr/rhol)*(wcNbr-0.62198*(pv_s/1e5))*deltaCoeff_ + rh;
-    scalarField vaporFlux = mutNbr * 0.621945 * ((pv_o - pv_s)/1e5) *deltaCoeff_;
-//Info << "vaporFluxBASIC[1]: " << vaporFluxBASIC[1] << " vaporFlux[1]: " << vaporFlux[1] << endl;    
-    //Info << "Actual moistureFlux[1]: " << moistureFlux[1] << endl;
+    scalarField smoothstep=1/(1+exp((pcc+1000)/30));
+    scalarField gl = smoothstep*((gcrNbr*rhol)/(3600*1000));
     
-    /*scalarField test(Tp.size(), 0.0);
-    test = pcc+(moistureFlux/(Krel+K_v))/patch().deltaCoeffs();
-    scalarField test2(Tp.size(), 0.0);
-    forAll(test2,i)
-    {
-        if (test[i] > 0){test2[i] = 1;}
-    }*/
-    valueFraction() = 0;//test2;
-    refValue() = 0;//-1*VSMALL;
+	scalar Dm = 2.5e-5; scalar Sct = 0.7;
+//                scalarField vaporFlux = (rhoair*Dm + mutNbr/Sct) * 0.621945 * rhoair * ((pv_o - pv_s)/1e5) *deltaCoeff_; 
+
+                scalarField vaporFlux = (rhoair*Dm + mutNbr/Sct) * (wcNbr-(0.62198*pv_s/1e5)) *deltaCoeff_; 
+//    Info << gSum(vaporFlux*patch().magSf()) << endl;
+
+    valueFraction() = 0;
+    refValue() = 0;
     refGrad() = (vaporFlux)/(Krel+K_v);        
-    //scalarField moistureFlux2 = (Krel+K_v)*snGrad(); Info << "Effective moistureFlux[1]: " << moistureFlux2[1] << endl; 
+    
     mixedFvPatchScalarField::updateCoeffs(); 
 
     if (debug)
     {
-        scalar Q = gSum(kappa(Tp)*patch().magSf()*snGrad());
+        scalar Q = gSum(kappa(pcp)*patch().magSf()*snGrad());
 
         Info<< patch().boundaryMesh().mesh().name() << ':'
             << patch().name() << ':'
@@ -250,9 +252,9 @@ void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
             << this->dimensionedInternalField().name() << " :"
             << " heat transfer rate:" << Q
             << " walltemperature "
-            << " min:" << gMin(Tp)
-            << " max:" << gMax(Tp)
-            << " avg:" << gAverage(Tp)
+            << " min:" << gMin(pcp)
+            << " max:" << gMax(pcp)
+            << " avg:" << gAverage(pcp)
             << endl;
     } 
 

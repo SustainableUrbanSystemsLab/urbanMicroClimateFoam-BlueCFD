@@ -55,11 +55,11 @@
 
             //Heat transfer////////////////
             #include "TsEqn.H"
+
                 //Firstly, test if all Ts values are valid
                 if (gMin(Ts) <= 0 || gMin(Ts.boundaryField()) <= 0)
                 {           
                     Info << "This is going to crash (Ts)! Decreasing timestep and reverting fields..." << endl;
-                    Info << "gMin(Ts): " << gMin(Ts) << " gMin(Ts.boundaryField()): " << gMin(Ts.boundaryField()) << endl;
                     timeStepDecrease = true;
                     pc=pc.prevIter(); 
                     forAll(pc.boundaryField(), patchi)
