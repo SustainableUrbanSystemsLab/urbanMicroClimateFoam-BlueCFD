@@ -702,6 +702,14 @@ urbanMicroclimateFoam.dep: fluid/createFluidFields.H
 urbanMicroclimateFoam.dep: solid/createSolidFields.H
 urbanMicroclimateFoam.dep: $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/initContinuityErrs.H
 urbanMicroclimateFoam.dep: solid/readSolidTimeControls.H
+urbanMicroclimateFoam.dep: fluid/setRegionFluidFields.H
+urbanMicroclimateFoam.dep: fluid/readFluidMultiRegionSIMPLEControls.H
+urbanMicroclimateFoam.dep: fluid/solveFluid.H
+urbanMicroclimateFoam.dep: fluid/UEqn.H
+urbanMicroclimateFoam.dep: fluid/EEqn.H
+urbanMicroclimateFoam.dep: fluid/pEqn.H
+urbanMicroclimateFoam.dep: $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/continuityErrs.H
+urbanMicroclimateFoam.dep: fluid/wEqn.H
 urbanMicroclimateFoam.dep: solid/setRegionSolidFields.H
 urbanMicroclimateFoam.dep: solid/readSolidMultiRegionSIMPLEControls.H
 urbanMicroclimateFoam.dep: solid/solveSolid.H
