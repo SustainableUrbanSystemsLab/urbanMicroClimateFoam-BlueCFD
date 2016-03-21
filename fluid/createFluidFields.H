@@ -12,6 +12,8 @@
 	PtrList<solarLoad::solarLoadModel> solarLoad(fluidRegions.size());
     PtrList<volScalarField> wFluid(fluidRegions.size());
     PtrList<volScalarField> gcrFluid(fluidRegions.size());
+    PtrList<volScalarField> wallMoistureFluxFluid(fluidRegions.size());
+    PtrList<volScalarField> wallHeatFluxFluid(fluidRegions.size());
 
     List<scalar> initialMassFluid(fluidRegions.size());
     List<label> pRefCellFluid(fluidRegions.size(),0);
@@ -106,7 +108,43 @@
                 ),
                 fluidRegions[i]
             )
-        );              
+        );    
+
+        Info<< "    Adding to wallMoistureFluxFluid\n" << endl;
+        wallMoistureFluxFluid.set
+        (
+            i,
+            new volScalarField
+            (
+                IOobject
+                (
+                    "wallMoistureFlux",
+                    runTime.timeName(),
+                    fluidRegions[i],
+                    IOobject::NO_READ,
+                    IOobject::AUTO_WRITE
+                ),
+                thermoFluid[i].rho()
+            )
+        );    
+
+        Info<< "    Adding to wallHeatFluxFluid\n" << endl;
+        wallHeatFluxFluid.set
+        (
+            i,
+            new volScalarField
+            (
+                IOobject
+                (
+                    "wallHeatFlux",
+                    runTime.timeName(),
+                    fluidRegions[i],
+                    IOobject::NO_READ,
+                    IOobject::AUTO_WRITE
+                ),
+                thermoFluid[i].rho()
+            )
+        );        
 
         Info<< "    Adding to phiFluid\n" << endl;
         phiFluid.set

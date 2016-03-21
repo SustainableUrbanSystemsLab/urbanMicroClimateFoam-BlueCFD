@@ -8,6 +8,8 @@
     volScalarField& w = wFluid[i];    
     volScalarField& gcr = gcrFluid[i];  
     surfaceScalarField& phi = phiFluid[i];
+    volScalarField& wallMoistureFlux = wallMoistureFluxFluid[i];
+    volScalarField& wallHeatFlux = wallHeatFluxFluid[i];
 
     compressible::turbulenceModel& turb = turbulence[i];
 

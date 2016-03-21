@@ -1,3 +1,0 @@
-mappedWallHeatFlux.C
-
-EXE = $(FOAM_USER_APPBIN)/mappedWallHeatFlux
