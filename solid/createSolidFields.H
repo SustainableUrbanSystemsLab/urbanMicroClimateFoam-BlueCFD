@@ -42,10 +42,11 @@
                     "rho_m",
                     runTime.timeName(),
                     solidRegions[i],
-                    IOobject::MUST_READ,
-                    IOobject::AUTO_WRITE
+                    IOobject::NO_READ,
+                    IOobject::NO_WRITE
                 ),
-                solidRegions[i]
+                solidRegions[i],
+		dimensionedScalar("rho_m", dimensionSet(1,-3,0,0,0,0,0), scalar(1E-3))
             )
         );      
 
@@ -60,10 +61,11 @@
                     "cap_m",
                     runTime.timeName(),
                     solidRegions[i],
-                    IOobject::MUST_READ,
-                    IOobject::AUTO_WRITE
+                    IOobject::NO_READ,
+                    IOobject::NO_WRITE
                 ),
-                solidRegions[i]
+                solidRegions[i],
+		dimensionedScalar("cap_m", dimensionSet(0,2,-2,-1,0,0,0), scalar(1E-3))
             )
         );    
 

@@ -73,6 +73,10 @@ int main(int argc, char *argv[])
             #include "readFluidMultiRegionSIMPLEControls.H"
             #include "solveFluid.H"
         }
+
+        Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
+            << "  ClockTime = " << runTime.elapsedClockTime() << " s"
+            << nl << endl;
       
         scalar storeFluidDeltaT = runTime.deltaT().value();
 		

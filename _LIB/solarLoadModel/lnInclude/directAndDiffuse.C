@@ -697,8 +697,8 @@ void Foam::solarLoad::directAndDiffuse::calculate()
             //Info << "sunViewCoeffList_: " << sunViewCoeffList_() << endl;
             //Info << "skyViewCoeffList_: " << skyViewCoeffList_() << endl;
             Time& time = const_cast<Time&>(mesh_.time());
-            //Info << "time.value(): " << time.value() << endl;
-            label timestep = ceil(time.value()/3600); timestep = timestep%24;
+            Info << "time.value(): " << time.value() << endl; Info << "mesh_.time(): " << mesh_.time().value() << endl;
+            label timestep = ceil( (time.value()/3600)-0.5 ); timestep = timestep%24; Info << "timestep: " << timestep << endl;
             //Info << "timestep: " << timestep << endl;
             //Info << "sunViewCoeffList_()[timestep][3]: " << sunViewCoeffList_()[timestep][3] << endl;
 

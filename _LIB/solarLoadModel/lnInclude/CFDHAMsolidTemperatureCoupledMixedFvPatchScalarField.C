@@ -29,6 +29,7 @@ License
 #include "volFields.H"
 #include "mappedPatchBase.H"
 #include "fixedValueFvPatchFields.H"
+#include "interpolationTable.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -222,7 +223,17 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
                 nbrPatch.lookupPatchField<volScalarField, scalar>("gcr")
             );
     scalarField gcrNbr(nbrFieldgcr.snGrad()/nbrPatch.deltaCoeffs());
-    mpp.distribute(gcrNbr);             
+    mpp.distribute(gcrNbr);      
+
+////obtain Tambient - can find a better way to import this value?
+    Time& time = const_cast<Time&>(nbrMesh.time());
+    label timestep = ceil( (time.value()/3600)-0.5 ); timestep = timestep%24;
+
+    interpolationTable<scalar> Tambient
+    (
+	"$FOAM_CASE/0/air/Tambient"
+    ); 
+///////////
 
     scalar cap_v = 1880;
     scalar Tref = 273.15; 
@@ -256,21 +267,20 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
     scalar cp = 1005; //specific heat of air [J/(kg K)]
     scalar muair = 1.8e-5; scalar Pr = 0.7;
     scalarField heatFlux = (muair/Pr + alphatNbrPatch)*cp*(TcNbr-Tc)*deltaCoeff_; 
-//            Info << gSum(heatFlux*patch().magSf()) << endl;
+//    Info << "heatFlux: " << gSum(heatFlux*patch().magSf()) << endl;
             
     scalar rhol=1.0e3; scalar Rv=8.31451*1000/(18.01534);
     scalarField pvsat_s = exp(6.58094e1-7.06627e3/Tc-5.976*log(Tc));
     scalarField pv_s = pvsat_s*exp((pcc)/(rhol*Rv*Tc));
     
 	scalar Dm = 2.5e-5; scalar Sct = 0.7;
-//                scalarField vaporFlux = (rhoair*Dm + mutNbr/Sct) * 0.621945 * rhoair * ((pv_o - pv_s)/1e5) *deltaCoeff_; 
 
                 scalarField vaporFlux = (rhoair*Dm + mutNbrPatch/Sct) * (wcNbr-(0.62198*pv_s/1e5)) *deltaCoeff_;         
     scalarField LE = (cap_v*(Tc-Tref)+L_v)*vaporFlux;//Latent and sensible heat transfer due to vapor exchange   */
 
     scalarField smoothstep=1/(1+exp((pcc+1000)/30));
     scalarField gl = smoothstep*((gcrNbr*rhol)/(3600*1000));
-    scalarField CR = gl*cap_l*(TcNbr-Tref);
+    scalarField CR = gl*cap_l*(Tambient(3600*(timestep+1)) -Tref);
 
     scalarField Qr(Tp.size(), 0.0);
     if (QrName_ != "none")
@@ -298,11 +308,9 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
         mpp.distribute(QsNbr);
     }   
 
-    Info << "heatFlux: " << gSum(heatFlux*patch().magSf()) << endl;
-
     valueFraction() = 0;
     refValue() = 0;
-    refGrad() = (heatFlux + LE + Qr + QrNbr + Qs + QsNbr)/(lambda_m+K_pt);
+    refGrad() = (heatFlux + LE + Qr + QrNbr + Qs + QsNbr+CR)/(lambda_m+K_pt);
 
     mixedFvPatchScalarField::updateCoeffs(); 
 

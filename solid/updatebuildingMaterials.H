@@ -20,7 +20,7 @@ forAll(Materials, MaterialsI)
     	Foam::FatalError();
     }
     const labelList& cells = mesh.cellZones()[cellZoneID];
-    //const polyBoundaryMesh& patches = mesh.boundaryMesh();
+    const polyBoundaryMesh& patches = mesh.boundaryMesh();
     boolList zoneCell(mesh.nCells(), false); 
     
 
@@ -49,7 +49,7 @@ forAll(Materials, MaterialsI)
         }
     }
 
-    /*forAll(patches, patchi)
+/*    forAll(patches, patchi)
     {
         const polyPatch& pp = patches[patchi];
 
@@ -64,20 +64,20 @@ forAll(Materials, MaterialsI)
                     faceType[faceI] = MaterialsI;
                     if (update_sequence == 1)
                     {
-                        buildingMaterial->update_w_C_boundary(pc,w,Crel,patchi,patchFacei);
-                        buildingMaterial->update_Krel_boundary(pc,w,Krel,patchi,patchFacei);
-                        buildingMaterial->update_Kv_boundary(pc,w,T,K_v,patchi,patchFacei);
-                        buildingMaterial->update_Kpt_boundary(pc,w,T,K_pt,patchi,patchFacei);   
+                        buildingMaterial->update_w_C_boundary(pc,ws,Crel,patchi,patchFacei);
+                        buildingMaterial->update_Krel_boundary(pc,ws,Krel,patchi,patchFacei);
+                        buildingMaterial->update_Kv_boundary(pc,ws,Ts,K_v,patchi,patchFacei);
+                        buildingMaterial->update_Kpt_boundary(pc,ws,Ts,K_pt,patchi,patchFacei);   
                     }
                     else if (update_sequence == 2)
                     {
                         rho_m.boundaryField()[patchi][patchFacei] = buildingMaterial->rho().value();
                         cap_m.boundaryField()[patchi][patchFacei] = buildingMaterial->cap().value();
-                        buildingMaterial->update_lambda_boundary(w,lambda_m,patchi,patchFacei);
+                        buildingMaterial->update_lambda_boundary(ws,lambda_m,patchi,patchFacei);
                     }
                     else if (update_sequence == 3)
                     {
-                        buildingMaterial->update_w_C_boundary(pc,w,Crel,patchi,patchFacei);
+                        buildingMaterial->update_w_C_boundary(pc,ws,Crel,patchi,patchFacei);
                     }
                 }
             }

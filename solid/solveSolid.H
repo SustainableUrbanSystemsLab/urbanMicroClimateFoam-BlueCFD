@@ -25,9 +25,10 @@
 
             //Moisture transfer////////////
             #include "pcEqn.H"    
-            
+
                 //Firstly, test if all pc values are valid
-                if (gMax(pc) >= 0 || gMax(pc.boundaryField()) >= 0)
+                if (gMax(pc) >= 0)// || gMax(pc.boundaryField()) >= 0)
+//                if (gMax(pc) >= 0 || gMax(pc.boundaryField()) >= 0)
                 {
                     Info << "This is going to crash (pc)! Decreasing timestep and reverting fields..." << endl;
                     //pc.write();
