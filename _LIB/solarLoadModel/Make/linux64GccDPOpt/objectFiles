@@ -1,4 +1,5 @@
 OBJECTS = \
+$(OBJECTS_DIR)/viewFactorSky.o\
 $(OBJECTS_DIR)/solarLoadModel.o\
 $(OBJECTS_DIR)/solarLoadModelNew.o\
 $(OBJECTS_DIR)/directAndDiffuse.o\

@@ -1,4 +1,5 @@
 LOCAL_OBJECTS = \
+viewFactorSky.o\
 solarLoadModel.o\
 solarLoadModelNew.o\
 directAndDiffuse.o\

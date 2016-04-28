@@ -1,3 +1,4 @@
+include viewFactorSky/viewFactorSky.dep
 include solarLoadModel/solarLoadModel.dep
 include solarLoadModel/solarLoadModelNew.dep
 include directAndDiffuse/directAndDiffuse.dep

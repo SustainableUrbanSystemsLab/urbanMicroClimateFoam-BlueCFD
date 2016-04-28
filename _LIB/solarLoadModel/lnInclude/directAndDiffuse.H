@@ -117,6 +117,9 @@ class directAndDiffuse
         //- Constant emissivity
         bool constEmissivity_;
 
+        //- timestepsInADay
+        label timestepsInADay_;
+
         //- Iterations Counter
         label iterCounter_;
 

@@ -1,4 +1,5 @@
 DEPENDENCIES = \
+viewFactorSky/viewFactorSky.dep\
 solarLoadModel/solarLoadModel.dep\
 solarLoadModel/solarLoadModelNew.dep\
 directAndDiffuse/directAndDiffuse.dep\

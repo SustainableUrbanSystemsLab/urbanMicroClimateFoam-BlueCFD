@@ -1,6 +1,7 @@
 # 1 "files"
 # 1 "<command-line>"
 # 1 "files"
+viewFactorSky/viewFactorSky.C
 solarLoadModel/solarLoadModel.C
 solarLoadModel/solarLoadModelNew.C
 directAndDiffuse/directAndDiffuse.C

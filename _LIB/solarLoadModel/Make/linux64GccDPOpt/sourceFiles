@@ -1,4 +1,5 @@
 SOURCE = \
+viewFactorSky/viewFactorSky.C\
 solarLoadModel/solarLoadModel.C\
 solarLoadModel/solarLoadModelNew.C\
 directAndDiffuse/directAndDiffuse.C\

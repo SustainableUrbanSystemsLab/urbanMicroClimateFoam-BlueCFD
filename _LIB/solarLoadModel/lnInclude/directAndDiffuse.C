@@ -329,6 +329,8 @@ void Foam::solarLoad::directAndDiffuse::initialise()
 
             pivotIndices_.setSize(CLU_().n());
         }
+	
+        timestepsInADay_ = readLabel(coeffs_.lookup("timestepsInADay"));
     }
 }
 
@@ -386,6 +388,7 @@ Foam::solarLoad::directAndDiffuse::directAndDiffuse(const volScalarField& T)
     nLocalCoarseFaces_(0),
     nLocalWallCoarseFaces_(0),	
     constEmissivity_(false),
+    timestepsInADay_(24),
     iterCounter_(0),
     pivotIndices_(0)
 {
@@ -448,6 +451,7 @@ Foam::solarLoad::directAndDiffuse::directAndDiffuse
     nLocalCoarseFaces_(0),
     nLocalWallCoarseFaces_(0),	
     constEmissivity_(false),
+    timestepsInADay_(24),
     iterCounter_(0),
     pivotIndices_(0)
 {
@@ -698,7 +702,7 @@ void Foam::solarLoad::directAndDiffuse::calculate()
             //Info << "skyViewCoeffList_: " << skyViewCoeffList_() << endl;
             Time& time = const_cast<Time&>(mesh_.time());
             Info << "time.value(): " << time.value() << endl; Info << "mesh_.time(): " << mesh_.time().value() << endl;
-            label timestep = ceil( (time.value()/3600)-0.5 ); timestep = timestep%24; Info << "timestep: " << timestep << endl;
+            label timestep = ceil( (time.value()/(86400/timestepsInADay_))-0.5 ); Info << "1timestep: " << timestep; timestep = timestep%timestepsInADay_; Info << ", 2timestep: " << timestep << endl;
             //Info << "timestep: " << timestep << endl;
             //Info << "sunViewCoeffList_()[timestep][3]: " << sunViewCoeffList_()[timestep][3] << endl;
 
