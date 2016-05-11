@@ -227,7 +227,7 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
 
 ////obtain Tambient - can find a better way to import this value?
     Time& time = const_cast<Time&>(nbrMesh.time());
-    label timestep = ceil( (time.value()/3600)-0.5 ); timestep = timestep%24;
+//    label timestep = ceil( (time.value()/3600)-1E-6 ); timestep = timestep%24;
 
     interpolationTable<scalar> Tambient
     (
@@ -280,7 +280,8 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
 
     scalarField smoothstep=1/(1+exp((pcc+1000)/30));
     scalarField gl = smoothstep*((gcrNbr*rhol)/(3600*1000));
-    scalarField CR = gl*cap_l*(Tambient(3600*(timestep+1)) -Tref);
+//    scalarField CR = gl*cap_l*(Tambient(3600*(timestep+1)) -Tref);
+    scalarField CR = gl*cap_l*(Tambient(time.value()) -Tref);
 
     scalarField Qr(Tp.size(), 0.0);
     if (QrName_ != "none")
