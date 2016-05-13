@@ -694,6 +694,11 @@ int main(int argc, char *argv[])
             nVisibleFaceFaces[rayStartFace[i]]++;
         }
 
+        forAll(nVisibleFaceFaces, i)
+        {
+		if (nVisibleFaceFaces[i] > 1){nVisibleFaceFaces[i] = 1;} //in some parallel runs, the same rayStartFace is appended twice in shootRays.H - I should find a cleaner way to avoid this
+        }
+
         label nViewFactors = 0;
         forAll(nVisibleFaceFaces, faceI)
         {

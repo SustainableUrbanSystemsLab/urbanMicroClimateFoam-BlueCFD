@@ -44,140 +44,145 @@ const label maxDynListLength = 10000;
 			}
 		}        
 
-        cyclicTestStart:  
-
-        bool cyclicTest = false;      
-
         List<pointIndexHit> hitInfo(startIndex.size());
-        surfacesMesh.findLine(start, end, hitInfo);
-
         List<pointIndexHit> hitInfoCyclic(startIndex.size());
-        cyclicMesh.findLine(start, end, hitInfoCyclic); 
 
-        forAll (start, rayI)
-        {
-            Info << "rayI: " << rayI << start[rayI] << end[rayI] << endl;
+	bool cyclicTest = true;   
+
+        do
+        {	 
+		cyclicTest = false;
+      
+		surfacesMesh.findLine(start, end, hitInfo);
+		cyclicMesh.findLine(start, end, hitInfoCyclic); 
+
+		forAll (start, rayI)
+		{
+		    Pout << "rayI: " << rayI << start[rayI] << end[rayI] << endl;
 			
-            if (!hitInfo[rayI].hit()) // if the ray did not hit any surface between start and end positions...
-            {
-                scalar cosPhiTest = (startArea[rayI] & sunPos)/(mag(startArea[rayI])*mag(sunPos) + SMALL);
-                if (cosPhiTest < 0) // ... and if the surface is looking towards the sun
-                {
-                    if (hitInfoCyclic[rayI].hit()) // if the ray hit cyclic boundaries
-                    {
-                            Info << "Startpoint was here: " << start[rayI] << endl;
-                            Info << "Endpoint was here: " << end[rayI] << endl;
+		    if (!hitInfo[rayI].hit()) // if the ray did not hit any surface between start and end positions...
+		    {
+		        scalar cosPhiTest = (startArea[rayI] & sunPos)/(mag(startArea[rayI])*mag(sunPos) + SMALL);
+		        if (cosPhiTest < 0) // ... and if the surface is looking towards the sun
+		        {
+		            if (hitInfoCyclic[rayI].hit()) // if the ray hit cyclic boundaries
+		            {
+		                    Pout << "Startpoint was here: " << start[rayI] << endl;
+		                    Pout << "Endpoint was here: " << end[rayI] << endl;
 
-                        point newStart = end[rayI];
-                        scalar mindistancex = min(abs(end[rayI][0]-min_.x()),abs(end[rayI][0]-max_.x())); 
-                        scalar mindistancey = min(abs(end[rayI][1]-min_.y()),abs(end[rayI][1]-max_.y())); 
-                        scalar mindistancez = min(abs(end[rayI][2]-min_.z()),abs(end[rayI][2]-max_.z())); 
-                        if ((mindistancex < mindistancey) && (mindistancex < mindistancez))
-                        {
-                            if (abs(end[rayI][0]-min_.x()) < abs(end[rayI][0]-max_.x()))
-                            {
-                                newStart[0] = end[rayI][0]+(max_.x()-min_.x());
-                            }
-                            else
-                            {
-                                newStart[0] = end[rayI][0]-(max_.x()-min_.x());
-                            }
-//                            Info << "periodic plane: x" << endl;
-                        } 
-                        else if ((mindistancey < mindistancex) && (mindistancey < mindistancez))
-                        {
-                            if (abs(end[rayI][1]-min_.y()) < abs(end[rayI][1]-max_.y()))
-                            {
-                                newStart[1] = end[rayI][1]+(max_.y()-min_.y());
-                            }
-                            else
-                            {
-                                newStart[1] = end[rayI][1]-(max_.y()-min_.y());
-                            }  
-//                            Info << "periodic plane: y" << endl;                          
-                        }
-                        else
-                        {
-                            if (abs(end[rayI][2]-min_.z()) < abs(end[rayI][2]-max_.z()))
-                            {
-                                newStart[2] = end[rayI][2]+(max_.z()-min_.z());
-                            }
-                            else
-                            {
-                                newStart[2] = end[rayI][2]-(max_.z()-min_.z());
-                            }   
-//                            Info << "periodic plane: z" << endl;                         
-                        }
-                            Info << "New Startpoint is here: " << newStart << endl;
+		                point newStart = end[rayI];
+		                scalar mindistancex = min(abs(end[rayI][0]-min_.x()),abs(end[rayI][0]-max_.x())); 
+		                scalar mindistancey = min(abs(end[rayI][1]-min_.y()),abs(end[rayI][1]-max_.y())); 
+		                scalar mindistancez = min(abs(end[rayI][2]-min_.z()),abs(end[rayI][2]-max_.z())); 
+		                if ((mindistancex < mindistancey) && (mindistancex < mindistancez))
+		                {
+		                    if (abs(end[rayI][0]-min_.x()) < abs(end[rayI][0]-max_.x()))
+		                    {
+		                        newStart[0] = end[rayI][0]+(max_.x()-min_.x());
+		                    }
+		                    else
+		                    {
+		                        newStart[0] = end[rayI][0]-(max_.x()-min_.x());
+		                    }
+	//                            Info << "periodic plane: x" << endl;
+		                } 
+		                else if ((mindistancey < mindistancex) && (mindistancey < mindistancez))
+		                {
+		                    if (abs(end[rayI][1]-min_.y()) < abs(end[rayI][1]-max_.y()))
+		                    {
+		                        newStart[1] = end[rayI][1]+(max_.y()-min_.y());
+		                    }
+		                    else
+		                    {
+		                        newStart[1] = end[rayI][1]-(max_.y()-min_.y());
+		                    }  
+	//                            Info << "periodic plane: y" << endl;                          
+		                }
+		                else
+		                {
+		                    if (abs(end[rayI][2]-min_.z()) < abs(end[rayI][2]-max_.z()))
+		                    {
+		                        newStart[2] = end[rayI][2]+(max_.z()-min_.z());
+		                    }
+		                    else
+		                    {
+		                        newStart[2] = end[rayI][2]-(max_.z()-min_.z());
+		                    }   
+	//                            Info << "periodic plane: z" << endl;                         
+		                }
+		                    Pout << "New Startpoint is here: " << newStart << endl;
 
-                        scalar i1 = 0; scalar i2 = 0; scalar i3 = 0;
-                        if (sunPos.x() > 0.0)
-                        {
-                            i1 = (max_.x() - newStart.x())/sunPos.x();
-                        } 
-                        else if (sunPos.x() < 0.0)
-                        {
-                            i1 = (min_.x() - newStart.x())/sunPos.x();
-                        } 
-                        else {i1 = VGREAT;}
+		                scalar i1 = 0; scalar i2 = 0; scalar i3 = 0;
+		                if (sunPos.x() > 0.0)
+		                {
+		                    i1 = (max_.x() - newStart.x())/sunPos.x();
+		                } 
+		                else if (sunPos.x() < 0.0)
+		                {
+		                    i1 = (min_.x() - newStart.x())/sunPos.x();
+		                } 
+		                else {i1 = VGREAT;}
 
-                        if (sunPos.y() > 0.0)
-                        {
-                            i2 = (max_.y() - newStart.y())/sunPos.y();
-                        } 
-                        else if (sunPos.y() < 0.0)
-                        {
-                            i2 = (min_.y() - newStart.y())/sunPos.y();
-                        }
-                        else{i2 = VGREAT;}
+		                if (sunPos.y() > 0.0)
+		                {
+		                    i2 = (max_.y() - newStart.y())/sunPos.y();
+		                } 
+		                else if (sunPos.y() < 0.0)
+		                {
+		                    i2 = (min_.y() - newStart.y())/sunPos.y();
+		                }
+		                else{i2 = VGREAT;}
 
-                        if (sunPos.z() > 0.0)
-                        {
-                            i3 = (max_.z() - newStart.z())/sunPos.z();
-                        } 
-                        else if (sunPos.z() < 0.0)
-                        {
-                            i3 = (min_.z() - newStart.z())/sunPos.z();
-                        }
-                        else{i3 = VGREAT;}
+		                if (sunPos.z() > 0.0)
+		                {
+		                    i3 = (max_.z() - newStart.z())/sunPos.z();
+		                } 
+		                else if (sunPos.z() < 0.0)
+		                {
+		                    i3 = (min_.z() - newStart.z())/sunPos.z();
+		                }
+		                else{i3 = VGREAT;}
 
-                        scalar i = min(i1, min(i2, i3));
-                        point newEnd = 1.0001*i*point(sunPos.x(),sunPos.y(),sunPos.z())+newStart;
-                            Info << "New Endpoint is here: " << newEnd << endl;
-                        start[rayI] = newStart;
-                        end[rayI] = newEnd;
+		                scalar k = min(i1, min(i2, i3));
+		                point newEnd = 1.0001*k*point(sunPos.x(),sunPos.y(),sunPos.z())+newStart;
+		                    Pout << "New Endpoint is here: " << newEnd << endl;
+		                start[rayI] = newStart;
+		                end[rayI] = newEnd;
 
-                        cyclicTest = true;
-                    }
-                    else
-                    {
-                        rayStartFace.append(startIndex[rayI]);
-                        rayEndFace.append(endIndex[rayI]);                        
-                    }
-                }
-                else
-                {
-                    Info << "Not looking towards the sun" << endl;
-                }
-            }
-            else
-            {
-                Info << "Hit a wall" << endl;
-            }
+		                cyclicTest = true;
+		            }
+		            else
+		            {
+		                rayStartFace.append(startIndex[rayI]);
+		                rayEndFace.append(endIndex[rayI]);                        
+		            }
+		        }
+		        else
+		        {
+		            Pout << "Not looking towards the sun" << endl;
+		        }
+		    }
+		    else
+		    {
+		        Pout << "Hit a wall" << endl;
+		    }
 					
-        }
-        if(cyclicTest == true)
-        {
-            rayStartFace.clear();
-            rayEndFace.clear();   
-            goto cyclicTestStart;
-        }
-               
+		}
+		if(cyclicTest == true)
+		{
+		    rayStartFace.clear();
+		    rayEndFace.clear();                 
+		}
+
+	}while (returnReduce(cyclicTest, orOp<bool>()));               
+
         start.clear();
         startIndex.clear();
         end.clear();
         endIndex.clear();
 		startArea.clear();
+        hitInfo.clear();
+        hitInfoCyclic.clear();
         Pout << "BITTI" << endl;
     }while (returnReduce(i < myFc.size(), orOp<bool>()));
 
