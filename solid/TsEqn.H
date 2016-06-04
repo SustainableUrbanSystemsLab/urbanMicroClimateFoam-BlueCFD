@@ -11,7 +11,7 @@ dimensionedScalar cap_v("cap_v",dimensionSet(0,2,-2,-1,0,0,0),scalar(1880));
 dimensionedScalar Tref("Tref",dimensionSet(0,0,0,1,0,0,0),scalar(273.15));
 dimensionedScalar L_v("L_v",dimensionSet(0,2,-2,0,0,0,0), 2.5e6);//   +(cap_l.value()-cap_v.value())*Tref.value());
 
-volScalarField C_t = rho_m*cap_m;// + w*cap_l;
+volScalarField C_t = rho_m*cap_m + w*cap_l;
 
 fvScalarMatrix TsEqn
 (

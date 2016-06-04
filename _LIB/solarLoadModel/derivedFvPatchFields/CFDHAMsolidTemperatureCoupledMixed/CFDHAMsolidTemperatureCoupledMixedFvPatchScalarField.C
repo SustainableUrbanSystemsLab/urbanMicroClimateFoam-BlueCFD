@@ -233,6 +233,11 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
     (
 	"$FOAM_CASE/0/air/Tambient"
     ); 
+	
+    interpolationTable<scalar> wambient
+    (
+	"$FOAM_CASE/0/air/wambient"
+    ); 	
 ///////////
 
     scalar cap_v = 1880;
@@ -281,7 +286,15 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
     scalarField smoothstep=1/(1+exp((pcc+1000)/30));
     scalarField gl = smoothstep*((gcrNbr*rhol)/(3600*1000));
 //    scalarField CR = gl*cap_l*(Tambient(3600*(timestep+1)) -Tref);
-    scalarField CR = gl*cap_l*(Tambient(time.value()) -Tref);
+    
+	// Calculate rain temperature - approximation for wet-bulb temp///////////
+	scalar saturationPressure = 133.322*pow(10,(8.07131-(1730.63/(233.426+Tambient(time.value())))));
+	scalar airVaporPressure = wambient(time.value())*1e5/0.621945;
+	scalar relhum = airVaporPressure/saturationPressure*100;
+	scalar dewPointTemp = Tambient(time.value()) - (100-relhum)/5;
+	scalar rainTemp = Tambient(time.value()) - (Tambient(time.value())-dewPointTemp)/3;
+	//////////////////////////////////////////////////////////////////////////
+	scalarField CR = gl*cap_l*(rainTemp -Tref);
 
     scalarField Qr(Tp.size(), 0.0);
     if (QrName_ != "none")
