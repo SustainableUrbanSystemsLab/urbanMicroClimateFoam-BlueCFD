@@ -46,7 +46,7 @@ turbulentTemperatureRadSolarCoupledMixedFvPatchScalarField
 )
 :
     mixedFvPatchScalarField(p, iF),
-    temperatureCoupledBase(patch(), "undefined", "undefined-K"),
+    temperatureCoupledBase(patch(), "undefined", "undefined", "undefined-K"),
     TnbrName_("undefined-Tnbr"),
     QrNbrName_("undefined-QrNbr"),
     QrName_("undefined-Qr"),
@@ -69,7 +69,7 @@ turbulentTemperatureRadSolarCoupledMixedFvPatchScalarField
 )
 :
     mixedFvPatchScalarField(psf, p, iF, mapper),
-    temperatureCoupledBase(patch(), psf.KMethod(), psf.kappaName()),
+    temperatureCoupledBase(patch(), psf),
     TnbrName_(psf.TnbrName_),
     QrNbrName_(psf.QrNbrName_),
     QrName_(psf.QrName_),
@@ -140,7 +140,7 @@ turbulentTemperatureRadSolarCoupledMixedFvPatchScalarField
 )
 :
     mixedFvPatchScalarField(psf, iF),
-    temperatureCoupledBase(patch(), psf.KMethod(), psf.kappaName()),
+    temperatureCoupledBase(patch(), psf),
     TnbrName_(psf.TnbrName_),
     QrNbrName_(psf.QrNbrName_),
     QrName_(psf.QrName_),

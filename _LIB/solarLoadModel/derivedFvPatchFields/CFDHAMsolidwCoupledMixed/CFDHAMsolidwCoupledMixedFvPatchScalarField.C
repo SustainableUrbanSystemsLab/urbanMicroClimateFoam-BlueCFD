@@ -46,7 +46,7 @@ CFDHAMsolidwCoupledMixedFvPatchScalarField
 )
 :
     mixedFvPatchScalarField(p, iF),
-    temperatureCoupledBase(patch(), "undefined", "undefined-K"),
+    temperatureCoupledBase(patch(), "undefined", "undefined", "undefined-K"),
     wnbrName_("undefined-wnbr"),
     TnbrName_("undefined-Tnbr"),
     QrNbrName_("undefined-QrNbr"),
@@ -70,7 +70,7 @@ CFDHAMsolidwCoupledMixedFvPatchScalarField
 )
 :
     mixedFvPatchScalarField(psf, p, iF, mapper),
-    temperatureCoupledBase(patch(), psf.KMethod(), psf.kappaName()),  
+    temperatureCoupledBase(patch(), psf),  
     wnbrName_(psf.wnbrName_),
     TnbrName_(psf.TnbrName_),
     QrNbrName_(psf.QrNbrName_),
@@ -143,7 +143,7 @@ CFDHAMsolidwCoupledMixedFvPatchScalarField
 )
 :
     mixedFvPatchScalarField(psf, iF),
-    temperatureCoupledBase(patch(), psf.KMethod(), psf.kappaName()),
+    temperatureCoupledBase(patch(), psf),
     TnbrName_(psf.TnbrName_),
     QrNbrName_(psf.QrNbrName_),
     QrName_(psf.QrName_),
