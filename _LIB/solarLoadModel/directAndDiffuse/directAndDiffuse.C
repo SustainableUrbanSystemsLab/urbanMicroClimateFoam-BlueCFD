@@ -712,15 +712,17 @@ void Foam::solarLoad::directAndDiffuse::calculate()
                 for (label i=0; i<totalNCoarseFaces_; i++)
                 {
                     for (label j=0; j<totalNCoarseFaces_; j++)
-                    {
+                    { 
                         //scalar invEj = 1/E[j];
                         if (i==j)
                         {
-							CLU_()[i][j] = (1/(1-E[j]));//+(E[j]/(1-E[j]))*Fmatrix_()[i][j];
+							//CLU_()[i][j] = (1/(1-E[j]));//+(E[j]/(1-E[j]))*Fmatrix_()[i][j];
+                            CLU_()[i][j] = (1/(1-E[j]))-(E[j]/(1-E[j]))*Fmatrix_()[i][j];
                         }
                         else
                         {
-							CLU_()[i][j] = (E[j]/(1-E[j]))*Fmatrix_()[i][j];
+                            //CLU_()[i][j] = (E[j]/(1-E[j]))*Fmatrix_()[i][j];
+							CLU_()[i][j] = -(E[j]/(1-E[j]))*Fmatrix_()[i][j];
                         }
                     }
                 }
@@ -735,11 +737,13 @@ void Foam::solarLoad::directAndDiffuse::calculate()
 					scalar Id = (skyViewCoeffMatrix_()[timestep][j] + sunViewCoeffMatrix_()[timestep][j]);
                     if (i==j)
                     {
-						q[i] += (Fmatrix_()[i][j] + 1.0)*Id - QsExt[j];
+                        //q[i] += (Fmatrix_()[i][j] + 1.0)*Id - QsExt[j];
+                        q[i] += (Fmatrix_()[i][j] - 1.0)*(-Id) - QsExt[j];
                     }
                     else
                     {
-						q[i] += (Fmatrix_()[i][j])*Id - QsExt[j];
+                        //q[i] += (Fmatrix_()[i][j])*Id - QsExt[j];
+                        q[i] += (Fmatrix_()[i][j])*(0) - QsExt[j];
                     }
                 }
             }
