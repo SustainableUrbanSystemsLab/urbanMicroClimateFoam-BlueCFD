@@ -322,9 +322,21 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
         mpp.distribute(QsNbr);
     }   
 
+// term with capillary moisture gradient:
+    scalarField K_v(Tp.size(), 0.0);
+        K_v = patch().lookupPatchField<volScalarField, scalar>("K_v");  
+    scalarField Krel(Tp.size(), 0.0);
+        Krel = patch().lookupPatchField<volScalarField, scalar>("Krel");                             
+    scalarField X = ((cap_l*(Tc-Tref)*Krel)+(cap_v*(Tc-Tref)+L_v)*K_v)*fieldpc.snGrad();
+//////////////////////////////////      
+
     valueFraction() = 0;
     refValue() = 0;
-    refGrad() = (heatFlux + LE + Qr + QrNbr + Qs + QsNbr+CR)/(lambda_m+K_pt);
+    refGrad() = (heatFlux + LE + Qr + QrNbr + Qs + QsNbr+CR -X)/(lambda_m+K_pt);
+//        Info << "sum(heatFlux): " << sum(heatFlux) << endl;
+//        Info << "sum(LE): " << sum(LE) << endl;
+//        Info << "sum(CR): " << sum(CR) << endl;
+//        Info << "sum(refGrad()):" << sum(refGrad()) << endl;
 
     mixedFvPatchScalarField::updateCoeffs(); 
 
