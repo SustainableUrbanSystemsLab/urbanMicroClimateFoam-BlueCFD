@@ -146,99 +146,41 @@ void Foam::buildingMaterialModels::HamstadBrick::update_w_C_boundary(const volSc
 //- Correct the buildingMaterial liquid permeability (cell)
 void Foam::buildingMaterialModels::HamstadBrick::update_Krel_cell(const volScalarField& pc, const volScalarField& w, volScalarField& Krel, label& celli)
 {
-    scalar logpc = log10(-pc.internalField()[celli]);
-    scalar logKl = 0;
-    int i;
-    double logpc_M[]={1.0, 
-        3.28184696, 3.40184696, 3.52184696, 3.64184696, 3.76184696, 3.88184696,
-        4.00184696, 4.12184696, 4.24184696, 4.36184696, 4.48184696, 4.60184696, 4.72184696, 4.84184696, 4.96184696,
-        5.08184696, 5.20184696, 5.32184696, 5.44184696, 5.56184696, 5.68184696, 5.80184696, 5.92184696,
-        6.04184696, 6.16184696, 6.28184696, 6.40184696, 6.52184696, 6.64184696, 6.76184696, 6.88184696,
-        7.00184696, 7.12184696, 7.24184696, 7.36184696, 7.48184696, 7.60184696, 7.72184696, 7.84184696, 7.96184696,
-        8.08184696, 8.20184696, 8.32184696, 8.44184696, 8.56184696, 8.68184696, 8.80184696, 8.92184696,
-        9.04184696, 9.16184696, 
-        12.0};
-    double logKl_M[]={-8.71974955,
-        -8.71974955, -8.71974955, -8.71974955, -8.71974955, -8.71974955, -8.71974955,
-        -8.7214439, -8.7214439, -8.7214439, -8.78646748, -8.92297423, -9.37365288, -10.14654938, -11.13719525, -11.77298037,
-        -11.88446026, -11.95855648, -12.00081456, -12.09588942, -12.26136355, -12.39405661, -12.46363481, -12.55777242,
-        -12.70786679, -13.00242575, -13.21407102, -13.51572314, -13.83399581, -14.10417193, -14.41224594, -14.73604922,
-        -15.15797775, -15.34007327, -15.53780407, -15.80537097, -16.02314218, -31.48, -31.16, -30.84, -30.52,
-        -30.2, -29.88, -29.56, -29.24, -28.92, -28.6, -28.28, -27.96,
-        -27.64, -27.32,
-        -27.0};
-
-    if (logpc < scalar(1.0))
+	scalar Ks=1.907E-9; scalar tau=-1.631;
+    List<scalar> reta; reta.setSize(3); reta[0]=2.96E-5; reta[1]=4.17E-7; reta[2]=1.09E-6;
+    List<scalar> retn; retn.setSize(3); retn[0]=6.62; retn[1]=1.17; retn[2]=2.04;
+    List<scalar> retm; retm.setSize(3); retm[0]=0.84894; retm[1]=0.14530; retm[2]=0.50980;
+    List<scalar> retw; retw.setSize(3); retw[0]=0.891; retw[1]=0.500E-3; retw[2]=0.1085;
+    scalar dum2=0; scalar dum3=0; scalar dum4=0;  
+    for (int i=0; i<=2; i++)
     {
-        i = 0;
-        logKl = logKl_M[i] + (((logKl_M[i+1] - logKl_M[i])/(logpc_M[i+1] - logpc_M[i]))*(logpc - logpc_M[i])) ;
-    }
-    else if (logpc >= scalar(12.0))
-    {
-        i = 50;
-        logKl = logKl_M[i] + (((logKl_M[i+1] - logKl_M[i])/(logpc_M[i+1] - logpc_M[i]))*(logpc - logpc_M[i])) ;
-    }
-    else
-    {
-        for (i=0; i<=50; ++i)
-        {
-            if ( (logpc_M[i] <= logpc) && (logpc < logpc_M[i+1]) )
-            {
-                logKl = logKl_M[i] + (((logKl_M[i+1] - logKl_M[i])/(logpc_M[i+1] - logpc_M[i]))*(logpc - logpc_M[i])) ;
-                break;
-            }
-        }
-    }
-    Krel.internalField()[celli] = pow(10,logKl);
+		dum1=pow( (-reta[i]*pc.internalField()[celli]) , retn[i]);
+		dum2=dum2 + retw[i]*(pow( 1+dum1 , -retm[i]);
+		dum3=dum3 + retw[i]*reta[i]*(1-pow( (dum1/(1+dum1)) , retm[i]));
+		dum4=dum4 + retw[i]*reta[i];
+    }	
+	
+    Krel.internalField()[celli] = Ks*(pow( dum2 , tau))*(pow( (dum3./dum4) , 2);
 }
 
 //- Correct the buildingMaterial liquid permeability (boundary)
 void Foam::buildingMaterialModels::HamstadBrick::update_Krel_boundary(const volScalarField& pc, const volScalarField& w, volScalarField& Krel, label patchi, label patchFacei)
 {
-    scalar logpc = log10(-pc.boundaryField()[patchi][patchFacei]);
-    scalar logKl = 0;
-    int i;
-    double logpc_M[]={1.0, 
-        3.28184696, 3.40184696, 3.52184696, 3.64184696, 3.76184696, 3.88184696,
-        4.00184696, 4.12184696, 4.24184696, 4.36184696, 4.48184696, 4.60184696, 4.72184696, 4.84184696, 4.96184696,
-        5.08184696, 5.20184696, 5.32184696, 5.44184696, 5.56184696, 5.68184696, 5.80184696, 5.92184696,
-        6.04184696, 6.16184696, 6.28184696, 6.40184696, 6.52184696, 6.64184696, 6.76184696, 6.88184696,
-        7.00184696, 7.12184696, 7.24184696, 7.36184696, 7.48184696, 7.60184696, 7.72184696, 7.84184696, 7.96184696,
-        8.08184696, 8.20184696, 8.32184696, 8.44184696, 8.56184696, 8.68184696, 8.80184696, 8.92184696,
-        9.04184696, 9.16184696, 
-        12.0};
-    double logKl_M[]={-8.71974955,
-        -8.71974955, -8.71974955, -8.71974955, -8.71974955, -8.71974955, -8.71974955,
-        -8.7214439, -8.7214439, -8.7214439, -8.78646748, -8.92297423, -9.37365288, -10.14654938, -11.13719525, -11.77298037,
-        -11.88446026, -11.95855648, -12.00081456, -12.09588942, -12.26136355, -12.39405661, -12.46363481, -12.55777242,
-        -12.70786679, -13.00242575, -13.21407102, -13.51572314, -13.83399581, -14.10417193, -14.41224594, -14.73604922,
-        -15.15797775, -15.34007327, -15.53780407, -15.80537097, -16.02314218, -31.48, -31.16, -30.84, -30.52,
-        -30.2, -29.88, -29.56, -29.24, -28.92, -28.6, -28.28, -27.96,
-        -27.64, -27.32,
-        -27.0};
-
-    if (logpc < scalar(1.0))
+	scalar Ks=1.907E-9; scalar tau=-1.631;
+    List<scalar> reta; reta.setSize(3); reta[0]=2.96E-5; reta[1]=4.17E-7; reta[2]=1.09E-6;
+    List<scalar> retn; retn.setSize(3); retn[0]=6.62; retn[1]=1.17; retn[2]=2.04;
+    List<scalar> retm; retm.setSize(3); retm[0]=0.84894; retm[1]=0.14530; retm[2]=0.50980;
+    List<scalar> retw; retw.setSize(3); retw[0]=0.891; retw[1]=0.500E-3; retw[2]=0.1085;
+    scalar dum2=0; scalar dum3=0; scalar dum4=0;  
+    for (int i=0; i<=2; i++)
     {
-        i = 0;
-        logKl = logKl_M[i] + (((logKl_M[i+1] - logKl_M[i])/(logpc_M[i+1] - logpc_M[i]))*(logpc - logpc_M[i])) ;
-    }
-    else if (logpc >= scalar(12.0))
-    {
-        i = 50;
-        logKl = logKl_M[i] + (((logKl_M[i+1] - logKl_M[i])/(logpc_M[i+1] - logpc_M[i]))*(logpc - logpc_M[i])) ;
-    }
-    else
-    {
-        for (i=0; i<=50; ++i)
-        {
-            if ( (logpc_M[i] <= logpc) && (logpc < logpc_M[i+1]) )
-            {
-                logKl = logKl_M[i] + (((logKl_M[i+1] - logKl_M[i])/(logpc_M[i+1] - logpc_M[i]))*(logpc - logpc_M[i])) ;
-                break;
-            }
-        }
-    }
-    Krel.boundaryField()[patchi][patchFacei] = pow(10,logKl);
+		dum1=pow( (-reta[i]*pc.boundaryField()[patchi][patchFacei]) , retn[i]);
+		dum2=dum2 + retw[i]*(pow( 1+dum1 , -retm[i]);
+		dum3=dum3 + retw[i]*reta[i]*(1-pow( (dum1/(1+dum1)) , retm[i]));
+		dum4=dum4 + retw[i]*reta[i];
+    }	
+	
+    Krel.boundaryField()[patchi][patchFacei] = Ks*(pow( dum2 , tau))*(pow( (dum3./dum4) , 2);
 }
 
 //- Correct the buildingMaterial vapor permeability (cell)
