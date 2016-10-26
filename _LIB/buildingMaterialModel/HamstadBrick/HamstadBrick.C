@@ -151,16 +151,16 @@ void Foam::buildingMaterialModels::HamstadBrick::update_Krel_cell(const volScala
     List<scalar> retn; retn.setSize(3); retn[0]=6.62; retn[1]=1.17; retn[2]=2.04;
     List<scalar> retm; retm.setSize(3); retm[0]=0.84894; retm[1]=0.14530; retm[2]=0.50980;
     List<scalar> retw; retw.setSize(3); retw[0]=0.891; retw[1]=0.500E-3; retw[2]=0.1085;
-    scalar dum2=0; scalar dum3=0; scalar dum4=0;  
+    scalar dum1=0; scalar dum2=0; scalar dum3=0; scalar dum4=0;  
     for (int i=0; i<=2; i++)
     {
 		dum1=pow( (-reta[i]*pc.internalField()[celli]) , retn[i]);
-		dum2=dum2 + retw[i]*(pow( 1+dum1 , -retm[i]);
+		dum2=dum2 + retw[i]*(pow( 1+dum1 , -retm[i]));
 		dum3=dum3 + retw[i]*reta[i]*(1-pow( (dum1/(1+dum1)) , retm[i]));
 		dum4=dum4 + retw[i]*reta[i];
     }	
 	
-    Krel.internalField()[celli] = Ks*(pow( dum2 , tau))*(pow( (dum3./dum4) , 2);
+    Krel.internalField()[celli] = Ks*(pow( dum2 , tau))*(pow( (dum3/dum4) , 2));
 }
 
 //- Correct the buildingMaterial liquid permeability (boundary)
@@ -171,16 +171,16 @@ void Foam::buildingMaterialModels::HamstadBrick::update_Krel_boundary(const volS
     List<scalar> retn; retn.setSize(3); retn[0]=6.62; retn[1]=1.17; retn[2]=2.04;
     List<scalar> retm; retm.setSize(3); retm[0]=0.84894; retm[1]=0.14530; retm[2]=0.50980;
     List<scalar> retw; retw.setSize(3); retw[0]=0.891; retw[1]=0.500E-3; retw[2]=0.1085;
-    scalar dum2=0; scalar dum3=0; scalar dum4=0;  
+    scalar dum1=0; scalar dum2=0; scalar dum3=0; scalar dum4=0;  
     for (int i=0; i<=2; i++)
     {
 		dum1=pow( (-reta[i]*pc.boundaryField()[patchi][patchFacei]) , retn[i]);
-		dum2=dum2 + retw[i]*(pow( 1+dum1 , -retm[i]);
+		dum2=dum2 + retw[i]*(pow( 1+dum1 , -retm[i]));
 		dum3=dum3 + retw[i]*reta[i]*(1-pow( (dum1/(1+dum1)) , retm[i]));
 		dum4=dum4 + retw[i]*reta[i];
     }	
 	
-    Krel.boundaryField()[patchi][patchFacei] = Ks*(pow( dum2 , tau))*(pow( (dum3./dum4) , 2);
+    Krel.boundaryField()[patchi][patchFacei] = Ks*(pow( dum2 , tau))*(pow( (dum3/dum4) , 2));
 }
 
 //- Correct the buildingMaterial vapor permeability (cell)

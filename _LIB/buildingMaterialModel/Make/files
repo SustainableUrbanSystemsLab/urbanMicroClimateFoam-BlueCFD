@@ -9,5 +9,6 @@ Hamstad5Mortar/Hamstad5Mortar.C
 Soil/Soil.C
 HamstadConcrete/HamstadConcrete.C
 SabaBrick/SabaBrick.C
+CalciumSilicate/CalciumSilicate.C
 
 LIB = $(FOAM_USER_LIBBIN)/libbuildingMaterialModel

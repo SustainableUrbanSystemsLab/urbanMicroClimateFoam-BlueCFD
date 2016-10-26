@@ -109,7 +109,7 @@ bool Foam::buildingMaterialModels::CalciumSilicate::read
 void Foam::buildingMaterialModels::CalciumSilicate::update_w_C_cell(const volScalarField& pc, volScalarField& w, volScalarField& Crel, label& celli)
 {
 	scalar A = 0.004342; scalar n = 0.741839763;
-	scalar rhol = 1000; scalarRv = 8.31451*1000/(18.01534); scalar T = 293.15;
+	scalar rhol = 1000; scalar Rv = 8.31451*1000/(18.01534); scalar T = 293.15;
 	
 	scalar rh = Foam::exp(pc.internalField()[celli]/(rhol*Rv*T));
 	scalar wcap = 793;
@@ -125,7 +125,7 @@ void Foam::buildingMaterialModels::CalciumSilicate::update_w_C_cell(const volSca
 void Foam::buildingMaterialModels::CalciumSilicate::update_w_C_boundary(const volScalarField& pc, volScalarField& w, volScalarField& Crel, label patchi, label patchFacei)
 {
 	scalar A = 0.004342; scalar n = 0.741839763;
-	scalar rhol = 1000; scalarRv = 8.31451*1000/(18.01534); scalar T = 293.15;
+	scalar rhol = 1000; scalar Rv = 8.31451*1000/(18.01534); scalar T = 293.15;
 	
 	scalar rh = Foam::exp(pc.boundaryField()[patchi][patchFacei]/(rhol*Rv*T));
 	scalar wcap = 793;
@@ -169,12 +169,12 @@ void Foam::buildingMaterialModels::CalciumSilicate::update_Krel_cell(const volSc
     }
     else if (logpc >= scalar(10))
     {
-        i = 80;
+        i = 79;
         logKl = logKl_M[i] + (((logKl_M[i+1] - logKl_M[i])/(logpc_M[i+1] - logpc_M[i]))*(logpc - logpc_M[i])) ;
     }
     else
     {
-        for (i=0; i<=80; ++i)
+        for (i=0; i<=79; ++i)
         {
             if ( (logpc_M[i] <= logpc) && (logpc < logpc_M[i+1]) )
             {
@@ -218,12 +218,12 @@ void Foam::buildingMaterialModels::CalciumSilicate::update_Krel_boundary(const v
     }
     else if (logpc >= scalar(10))
     {
-        i = 80;
+        i = 79;
         logKl = logKl_M[i] + (((logKl_M[i+1] - logKl_M[i])/(logpc_M[i+1] - logpc_M[i]))*(logpc - logpc_M[i])) ;
     }
     else
     {
-        for (i=0; i<=80; ++i)
+        for (i=0; i<=79; ++i)
         {
             if ( (logpc_M[i] <= logpc) && (logpc < logpc_M[i+1]) )
             {
