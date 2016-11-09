@@ -25,62 +25,38 @@
 
             //Moisture transfer////////////
             #include "pcEqn.H"    
-
-                //Firstly, test if all pc values are valid
-                if (gMax(pc) >= 0)// || gMax(pc.boundaryField()) >= 0)
-//                if (gMax(pc) >= 0 || gMax(pc.boundaryField()) >= 0)
+                if (gMax(pc) >= 0 || gMax(pc.boundaryField()) >= 0)
                 {
                     Info << "This is going to crash (pc)! Decreasing timestep and reverting fields..." << endl;
                     //pc.write();
                     timeStepDecrease = true;
-                    pc=pc.prevIter(); 
-                    forAll(pc.boundaryField(), patchi)
-                    { 
-                        forAll(pc.boundaryField()[patchi], facei)
-                        {
-                            pc.boundaryField()[patchi][facei] = pc.prevIter().boundaryField()[patchi][facei];
-                        }
-                    }
-                    Ts=Ts.prevIter(); 
-                    forAll(Ts.boundaryField(), patchi)
-                    { 
-                        forAll(Ts.boundaryField()[patchi], facei)
-                        {
-                            Ts.boundaryField()[patchi][facei] = Ts.prevIter().boundaryField()[patchi][facei];
-                        }
-                    }
-                    break;
-                }
-                pc.correctBoundaryConditions(); 
+                    #include "revertValues.H"
+                } 
+
+                pc.correctBoundaryConditions();
+                //Firstly, test if all pc values are valid
+//                if (gMax(pc) >= 0)// || gMax(pc.boundaryField()) >= 0)
+                if (gMax(pc) >= 0 || gMax(pc.boundaryField()) >= 0)
+                {
+                    Info << "This is going to crash (pc)! Decreasing timestep and reverting fields..." << endl;
+                    //pc.write();
+                    timeStepDecrease = true;
+                    #include "revertValues.H"
+                } 
+
             ///////////////////////////////
 
             //Heat transfer////////////////
             #include "TsEqn.H"
-
+		Ts.correctBoundaryConditions();
                 //Firstly, test if all Ts values are valid
                 if (gMin(Ts) <= 0 || gMin(Ts.boundaryField()) <= 0)
                 {           
                     Info << "This is going to crash (Ts)! Decreasing timestep and reverting fields..." << endl;
                     timeStepDecrease = true;
-                    pc=pc.prevIter(); 
-                    forAll(pc.boundaryField(), patchi)
-                    { 
-                        forAll(pc.boundaryField()[patchi], facei)
-                        {
-                            pc.boundaryField()[patchi][facei] = pc.prevIter().boundaryField()[patchi][facei];
-                        }
-                    }
-                    Ts=Ts.prevIter(); 
-                    forAll(Ts.boundaryField(), patchi)
-                    { 
-                        forAll(Ts.boundaryField()[patchi], facei)
-                        {
-                            Ts.boundaryField()[patchi][facei] = Ts.prevIter().boundaryField()[patchi][facei];
-                        }
-                    }
-                    break;
+		    #include "revertValues.H"
                 }
-                Ts.correctBoundaryConditions();
+                
             ///////////////////////////////
             
 

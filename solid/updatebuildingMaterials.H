@@ -49,7 +49,7 @@ forAll(Materials, MaterialsI)
         }
     }
 
-/*    forAll(patches, patchi)
+    forAll(patches, patchi)
     {
         const polyPatch& pp = patches[patchi];
 
@@ -82,6 +82,6 @@ forAll(Materials, MaterialsI)
                 }
             }
         }
-    }*/
+    }
      
 }
