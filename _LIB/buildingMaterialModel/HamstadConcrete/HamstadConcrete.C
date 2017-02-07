@@ -131,7 +131,7 @@ void Foam::buildingMaterialModels::HamstadConcrete::update_w_C_boundary(const vo
     List<scalar> retn; retn.setSize(1); retn[0]=1.6e0;
     List<scalar> retm; retm.setSize(1); retm[0]=0.375e0;
     List<scalar> retw; retw.setSize(1); retw[0]=1e0;
-    scalar w_tmp = 0; scalar tmp = 0; scalar C_tmp = 0; scalar tmp2 = 0;   
+    scalar w_tmp = 0; scalar tmp = 0; scalar C_tmp = 0; scalar tmp2 = 0;    
     for (int i=0; i<=0; i++)
     {
         tmp = pow( (reta[i]*pc.boundaryField()[patchi][patchFacei]) , retn[i] );

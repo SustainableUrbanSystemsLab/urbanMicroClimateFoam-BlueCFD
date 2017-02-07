@@ -24,39 +24,64 @@
         {
 
             //Moisture transfer////////////
-            #include "pcEqn.H"    
-                if (gMax(pc) >= 0 || gMax(pc.boundaryField()) >= 0)
-                {
-                    Info << "This is going to crash (pc)! Decreasing timestep and reverting fields..." << endl;
-                    //pc.write();
-                    timeStepDecrease = true;
-                    #include "revertValues.H"
-                } 
+            	#include "pcEqn.H"    
 
-                pc.correctBoundaryConditions();
                 //Firstly, test if all pc values are valid
-//                if (gMax(pc) >= 0)// || gMax(pc.boundaryField()) >= 0)
-                if (gMax(pc) >= 0 || gMax(pc.boundaryField()) >= 0)
+                if (gMax(pc) >= 0)// || gMax(pc.boundaryField()) >= 0)
                 {
                     Info << "This is going to crash (pc)! Decreasing timestep and reverting fields..." << endl;
+                    Info << "Error: gMax(pc): " << gMax(pc) << ", gMax(pc.boundaryField()): " << gMax(pc.boundaryField()) << endl;
                     //pc.write();
                     timeStepDecrease = true;
-                    #include "revertValues.H"
-                } 
+                    pc=pc.prevIter(); 
+                    forAll(pc.boundaryField(), patchi)
+                    { 
+                        forAll(pc.boundaryField()[patchi], facei)
+                        {
+                            pc.boundaryField()[patchi][facei] = pc.prevIter().boundaryField()[patchi][facei];
+                        }
+                    }
+                    Ts=Ts.prevIter(); 
+                    forAll(Ts.boundaryField(), patchi)
+                    { 
+                        forAll(Ts.boundaryField()[patchi], facei)
+                        {
+                            Ts.boundaryField()[patchi][facei] = Ts.prevIter().boundaryField()[patchi][facei];
+                        }
+                    }
+                    break;
+                }
+                pc.correctBoundaryConditions();  
 
             ///////////////////////////////
 
             //Heat transfer////////////////
-            #include "TsEqn.H"
-		Ts.correctBoundaryConditions();
+            	#include "TsEqn.H"
+		
                 //Firstly, test if all Ts values are valid
                 if (gMin(Ts) <= 0 || gMin(Ts.boundaryField()) <= 0)
                 {           
                     Info << "This is going to crash (Ts)! Decreasing timestep and reverting fields..." << endl;
                     timeStepDecrease = true;
-		    #include "revertValues.H"
+                    pc=pc.prevIter(); 
+                    forAll(pc.boundaryField(), patchi)
+                    { 
+                        forAll(pc.boundaryField()[patchi], facei)
+                        {
+                            pc.boundaryField()[patchi][facei] = pc.prevIter().boundaryField()[patchi][facei];
+                        }
+                    }
+                    Ts=Ts.prevIter(); 
+                    forAll(Ts.boundaryField(), patchi)
+                    { 
+                        forAll(Ts.boundaryField()[patchi], facei)
+                        {
+                            Ts.boundaryField()[patchi][facei] = Ts.prevIter().boundaryField()[patchi][facei];
+                        }
+                    }
+                    break;		              
                 }
-                
+                Ts.correctBoundaryConditions();
             ///////////////////////////////
             
 
@@ -118,14 +143,7 @@
                 }               
             ///////////////////////////////
 
-            //update thermal radiation fluxes
-            forAll(fluidRegions, i)
-            {
-                Info << "Updating long-wave radiation heat transfer for region: " << fluidRegions[i].name() << endl;
-                radiation::radiationModel& rad = radiation[i];
-                rad.correct();
-            }
-        }
+        }                
 
         if (timeStepDecrease != true) 
         {
@@ -141,6 +159,14 @@
         {
             #include "readSolidTimeControls.H"
             #include "setSolidRegionDeltaT.H"
+
+            //update thermal radiation fluxes
+            forAll(fluidRegions, i)
+            {
+                Info << "Updating long-wave radiation heat transfer for region: " << fluidRegions[i].name() << endl;
+                radiation::radiationModel& rad = radiation[i];
+                rad.correct();
+            }
         } 
         
         Info << "timeToOutput: " << timeToOutput << endl;

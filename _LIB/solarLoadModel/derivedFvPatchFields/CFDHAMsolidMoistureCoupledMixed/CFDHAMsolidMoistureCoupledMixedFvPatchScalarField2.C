@@ -187,14 +187,14 @@ void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
                 nbrPatch.lookupPatchField<volScalarField, scalar>("w")
             );  
 
-    const mixedFvPatchScalarField&
+/*    const mixedFvPatchScalarField&
         nbrFieldT = refCast
             <const mixedFvPatchScalarField>
             (
                 nbrPatch.lookupPatchField<volScalarField, scalar>("T")
             ); 
     scalarField TNbr(nbrFieldT.patchInternalField());
-    mpp.distribute(TNbr);                         
+    mpp.distribute(TNbr);                         */
 
     const fixedValueFvPatchScalarField&
         nbrFieldmut = refCast
@@ -223,11 +223,11 @@ void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
 
     scalarField wcNbr(nbrFieldw.patchInternalField());
     scalar rhoair = 1.2;
-    scalarField pv_o = wcNbr*1e5/(0.621945*rhoair);
+//    scalarField pv_o = wcNbr*1e5/(0.621945*rhoair);
         mpp.distribute(wcNbr);
-        mpp.distribute(pv_o);  
-    scalarField pv_o_sat = exp(6.58094e1-7.06627e3/TNbr-5.976*log(TNbr));
-    scalarField pc_o=log(pv_o/pv_o_sat)*rhol*Rv*TNbr; 
+//        mpp.distribute(pv_o);  
+//    scalarField pv_o_sat = exp(6.58094e1-7.06627e3/TNbr-5.976*log(TNbr));
+//    scalarField pc_o=log(pv_o/pv_o_sat)*rhol*Rv*TNbr; 
 
     scalarField Krel(pcp.size(), 0.0);
         Krel = patch().lookupPatchField<volScalarField, scalar>("Krel"); 
@@ -260,18 +260,9 @@ void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
 	scalarField X = K_pt*fieldTs.snGrad();
 //////////////////////////////////                
 
-//    valueFraction() = pos(patchInternalField()+1E3);
-//    refValue() = -1E2;  
+    valueFraction() = pos(patchInternalField()+1E3);
+    refValue() = -1E2;  
     refGrad() = (vaporFlux+gl -X)/(Krel+K_v); 
-    forAll(refValue(),faceI)
-    {
-	if(gl[faceI]>0){refValue()[faceI]=-1001;}
-	else{refValue()[faceI]=pc_o[faceI];}
-    }
-    valueFraction() = pos(patchInternalField()+refGrad()/patch().deltaCoeffs()+1E3 );
-	
-//	Pout << "valueFraction:" << valueFraction() << endl;
-//	Pout << "pcp:" << pcp << endl;
 
     mixedFvPatchScalarField::updateCoeffs(); 
 

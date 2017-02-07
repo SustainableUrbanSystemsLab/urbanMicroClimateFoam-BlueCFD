@@ -280,11 +280,18 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
     
 	scalar Dm = 2.5e-5; scalar Sct = 0.7;
 
-                scalarField vaporFlux = (rhoair*Dm + mutNbrPatch/Sct) * (wcNbr-(0.62198*pv_s/1e5)) *deltaCoeff_;         
+    scalarField vaporFlux = (rhoair*Dm + mutNbrPatch/Sct) * (wcNbr-(0.62198*pv_s/1e5)) *deltaCoeff_;         
     scalarField LE = (cap_v*(Tc-Tref)+L_v)*vaporFlux;//Latent and sensible heat transfer due to vapor exchange   */
 
-    scalarField smoothstep=1/(1+exp((pcc+1000)/30));
-    scalarField gl = smoothstep*((gcrNbr*rhol)/(3600*1000));
+//    scalarField smoothstep=1/(1+exp((pcc+1000)/30));
+
+    scalarField K_v(Tp.size(), 0.0);
+        K_v = patch().lookupPatchField<volScalarField, scalar>("K_v");  
+    scalarField Krel(Tp.size(), 0.0);
+        Krel = patch().lookupPatchField<volScalarField, scalar>("Krel");   
+
+    scalarField gl = ((gcrNbr*rhol)/(3600*1000));
+
 //    scalarField CR = gl*cap_l*(Tambient(3600*(timestep+1)) -Tref);
     
 	// Calculate rain temperature - approximation for wet-bulb temp///////////
@@ -294,7 +301,6 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
 	scalar dewPointTemp = Tambient(time.value()) - (100-relhum)/5;
 	scalar rainTemp = Tambient(time.value()) - (Tambient(time.value())-dewPointTemp)/3;
 	//////////////////////////////////////////////////////////////////////////
-	scalarField CR = gl*cap_l*(rainTemp -Tref);
 
     scalarField Qr(Tp.size(), 0.0);
     if (QrName_ != "none")
@@ -322,16 +328,13 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
         mpp.distribute(QsNbr);
     }   
 
-// term with capillary moisture gradient:
-    scalarField K_v(Tp.size(), 0.0);
-        K_v = patch().lookupPatchField<volScalarField, scalar>("K_v");  
-    scalarField Krel(Tp.size(), 0.0);
-        Krel = patch().lookupPatchField<volScalarField, scalar>("Krel");                             
+// term with capillary moisture gradient:                          
     scalarField X = ((cap_l*(Tc-Tref)*Krel)+(cap_v*(Tc-Tref)+L_v)*K_v)*fieldpc.snGrad();
-//////////////////////////////////      
-
-    valueFraction() = 0;
-    refValue() = 0;
+//////////////////////////////////  
+		scalarField CR = ( pos(patchInternalField()+fieldpc.snGrad()/patch().deltaCoeffs()+1E3)*(Krel+K_v)*fieldpc.snGrad() +
+						   neg(patchInternalField()+fieldpc.snGrad()/patch().deltaCoeffs()+1E3)*gl ) * cap_l*(rainTemp -Tref) * pos(gl-VSMALL);
+    valueFraction() = 0;//pos(fieldpc.patchInternalField()+1E3); 
+    refValue() = 0;//rainTemp;		
     refGrad() = (heatFlux + LE + Qr + QrNbr + Qs + QsNbr+CR -X)/(lambda_m+K_pt);
 //        Info << "sum(heatFlux): " << sum(heatFlux) << endl;
 //        Info << "sum(LE): " << sum(LE) << endl;

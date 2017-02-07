@@ -76,7 +76,7 @@ forAll(patches, patchI)
 {
     const polyPatch& pp = patches[patchI];
 ////    if (!pp.coupled() && !isA<cyclicAMIPolyPatch>(pp))
-    if (isA<wallPolyPatch>(pp) || isA<cyclicPolyPatch>(pp) || isA<processorCyclicPolyPatch>(pp) ) //ayk
+    if (isA<wallPolyPatch>(pp) || isA<cyclicPolyPatch>(pp) || isA<processorCyclicPolyPatch>(pp) || isA<emptyPolyPatch>(pp) ) //ayk
 //    if (isA<cyclicPolyPatch>(pp)) //ayk    
     {
         includeCyclicPatches.insert(patchI); 
