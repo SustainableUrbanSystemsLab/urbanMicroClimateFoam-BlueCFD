@@ -23,13 +23,12 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField.H"
+#include "CFDHAMsolidMoisture1DCoupledMixedFvPatchScalarField.H"
 #include "addToRunTimeSelectionTable.H"
 #include "fvPatchFieldMapper.H"
 #include "volFields.H"
 #include "mappedPatchBase.H"
 #include "fixedValueFvPatchFields.H"
-#include "interpolationTable.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -40,8 +39,8 @@ namespace compressible
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::
-CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
+CFDHAMsolidMoisture1DCoupledMixedFvPatchScalarField::
+CFDHAMsolidMoisture1DCoupledMixedFvPatchScalarField
 (
     const fvPatch& p,
     const DimensionedField<scalar, volMesh>& iF
@@ -62,10 +61,10 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 }
 
 
-CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::
-CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
+CFDHAMsolidMoisture1DCoupledMixedFvPatchScalarField::
+CFDHAMsolidMoisture1DCoupledMixedFvPatchScalarField
 (
-    const CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField& psf,
+    const CFDHAMsolidMoisture1DCoupledMixedFvPatchScalarField& psf,
     const fvPatch& p,
     const DimensionedField<scalar, volMesh>& iF,
     const fvPatchFieldMapper& mapper
@@ -82,8 +81,8 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 {}
 
 
-CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::
-CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
+CFDHAMsolidMoisture1DCoupledMixedFvPatchScalarField::
+CFDHAMsolidMoisture1DCoupledMixedFvPatchScalarField
 (
     const fvPatch& p,
     const DimensionedField<scalar, volMesh>& iF,
@@ -103,8 +102,8 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
     {
         FatalErrorIn
         (
-            "CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::"
-            "CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField\n"
+            "CFDHAMsolidMoisture1DCoupledMixedFvPatchScalarField::"
+            "CFDHAMsolidMoisture1DCoupledMixedFvPatchScalarField\n"
             "(\n"
             "    const fvPatch& p,\n"
             "    const DimensionedField<scalar, volMesh>& iF,\n"
@@ -137,10 +136,10 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 }
 
 
-CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::
-CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
+CFDHAMsolidMoisture1DCoupledMixedFvPatchScalarField::
+CFDHAMsolidMoisture1DCoupledMixedFvPatchScalarField
 (
-    const CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField& psf,
+    const CFDHAMsolidMoisture1DCoupledMixedFvPatchScalarField& psf,
     const DimensionedField<scalar, volMesh>& iF
 )
 :
@@ -156,7 +155,7 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
+void CFDHAMsolidMoisture1DCoupledMixedFvPatchScalarField::updateCoeffs()
 {
     if (updated())
     {
@@ -176,45 +175,33 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
     const fvPatch& nbrPatch =
         refCast<const fvMesh>(nbrMesh).boundary()[samplePatchI];
 
-    scalarField Tc(patchInternalField());
-    scalarField& Tp = *this;
+    scalarField pcc(patchInternalField());
+    scalarField& pcp = *this;
 
-    const mixedFvPatchScalarField& //CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField&
-        nbrField = refCast
-            <const mixedFvPatchScalarField>
-            (
-                nbrPatch.lookupPatchField<volScalarField, scalar>(TnbrName_)
-            );
+    scalar rhol=1.0e3; scalar Rv=8.31451*1000/(18.01534);
 
     const mixedFvPatchScalarField&
         nbrFieldw = refCast
             <const mixedFvPatchScalarField>
             (
                 nbrPatch.lookupPatchField<volScalarField, scalar>("w")
-            );
+            );  
 
     const mixedFvPatchScalarField&
-        fieldpc = refCast
+        nbrFieldT = refCast
             <const mixedFvPatchScalarField>
             (
-                patch().lookupPatchField<volScalarField, scalar>("pc")
-            );     
-
-    scalarField pcc(fieldpc.patchInternalField()); 
-
-    const fixedValueFvPatchScalarField&
-        nbrFieldalphat = refCast
-            <const fixedValueFvPatchScalarField>
-            (
-                nbrPatch.lookupPatchField<volScalarField, scalar>("alphat")
-            );
+                nbrPatch.lookupPatchField<volScalarField, scalar>("T")
+            ); 
+    scalarField TNbr(nbrFieldT.patchInternalField());
+    //mpp.distribute(TNbr);                         
 
     const fixedValueFvPatchScalarField&
         nbrFieldmut = refCast
             <const fixedValueFvPatchScalarField>
             (
                 nbrPatch.lookupPatchField<volScalarField, scalar>("mut")
-            );            
+            ); 
 
     const fixedValueFvPatchScalarField&
         nbrFieldgcr = refCast
@@ -223,129 +210,78 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
                 nbrPatch.lookupPatchField<volScalarField, scalar>("gcr")
             );
     scalarField gcrNbr(nbrFieldgcr.snGrad()/nbrPatch.deltaCoeffs());
-    mpp.distribute(gcrNbr);      
+//    scalarField smoothstep=1/(1+exp((pcc+1000)/30));
+    scalarField gl = ((gcrNbr*rhol)/(3600*1000));
+	scalar glAvg = gSum(gl*nbrPatch.magSf())/gSum(nbrPatch.magSf());	
 
-////obtain Tambient - can find a better way to import this value?
-    Time& time = const_cast<Time&>(nbrMesh.time());
-//    label timestep = ceil( (time.value()/3600)-1E-6 ); timestep = timestep%24;
+    const mixedFvPatchScalarField&
+        fieldTs = refCast
+            <const mixedFvPatchScalarField>
+            (
+                patch().lookupPatchField<volScalarField, scalar>("Ts")
+            );     
 
-    interpolationTable<scalar> Tambient
-    (
-	"$FOAM_CASE/0/air/Tambient"
-    ); 
+    /*scalarField Ts(fieldTs.patchInternalField());   
+	scalarField pvsat_s = exp(6.58094e1-7.06627e3/Ts-5.976*log(Ts));
+    scalarField pv_s = pvsat_s*exp((pcc)/(rhol*Rv*Ts));	*/
 	
-    interpolationTable<scalar> wambient
-    (
-	"$FOAM_CASE/0/air/wambient"
-    ); 	
-///////////
-
-    scalar cap_v = 1880;
-    scalar Tref = 273.15; 
-    scalar L_v = 2.5e6;                 
-    scalar cap_l = 4182;
-
-    // Swap to obtain full local values of neighbour internal field
-    scalarField TcNbr(nbrField.patchInternalField()); 
-        mpp.distribute(TcNbr);   
-
     scalarField wcNbr(nbrFieldw.patchInternalField());
     scalar rhoair = 1.2;
-    scalarField pv_o = wcNbr*1e5/(0.621945*rhoair);
-        mpp.distribute(wcNbr);    
-        mpp.distribute(pv_o);               
-
-    scalarField K_pt(Tp.size(), 0.0);
-        K_pt = patch().lookupPatchField<volScalarField, scalar>("K_pt"); 
-        K_pt = (cap_v*(Tc-Tref)+L_v)*K_pt; 
-
-    scalarField lambda_m(Tp.size(), 0.0);
-        lambda_m = patch().lookupPatchField<volScalarField, scalar>("lambda_m");                               
-
+	
     scalarField deltaCoeff_ = nbrPatch.deltaCoeffs(); 
-	scalarField mutNbrPatch(nbrFieldmut.patchInternalField() + nbrFieldmut.snGrad()/deltaCoeff_ ); 	
-	scalarField alphatNbrPatch(nbrFieldalphat.patchInternalField() + nbrFieldalphat.snGrad()/deltaCoeff_ ); 
-	mpp.distribute(mutNbrPatch);  
-	mpp.distribute(alphatNbrPatch);  
-	mpp.distribute(deltaCoeff_);
-    
-    scalar cp = 1005; //specific heat of air [J/(kg K)]
-    scalar muair = 1.8e-5; scalar Pr = 0.7;
-    scalarField heatFlux = (muair/Pr + alphatNbrPatch)*cp*(TcNbr-Tc)*deltaCoeff_; 
-    //Info << "heatFlux: " << gSum(heatFlux*patch().magSf()) << endl;
-            
-    scalar rhol=1.0e3; scalar Rv=8.31451*1000/(18.01534);
-    scalarField pvsat_s = exp(6.58094e1-7.06627e3/Tc-5.976*log(Tc));
-    scalarField pv_s = pvsat_s*exp((pcc)/(rhol*Rv*Tc));
-    
+	scalarField mutNbrPatch(nbrFieldmut.patchInternalField() + nbrFieldmut.snGrad()/deltaCoeff_ ); 
+	//mpp.distribute(mutNbrPatch);  
+	//mpp.distribute(deltaCoeff_);
+
 	scalar Dm = 2.5e-5; scalar Sct = 0.7;
+   
 
-    scalarField vaporFlux = (rhoair*Dm + mutNbrPatch/Sct) * (wcNbr-(0.62198*pv_s/1e5)) *deltaCoeff_;         
-    scalarField LE = (cap_v*(Tc-Tref)+L_v)*vaporFlux;//Latent and sensible heat transfer due to vapor exchange   */
+    scalarField Ts(fieldTs.patchInternalField());     
+    scalar Ts_ = gSum(Ts*patch().magSf())/gSum(patch().magSf());
+    scalar pcc_ = gSum(pcc*patch().magSf())/gSum(patch().magSf());
+    scalar pvsat_s = exp(6.58094e1-7.06627e3/Ts_-5.976*log(Ts_));
+    scalar pv_s = pvsat_s*exp((pcc_)/(rhol*Rv*Ts_));
+    scalarField vaporFlux = (rhoair*Dm + mutNbrPatch/Sct) * (wcNbr-(0.62198*pv_s/1e5)) *deltaCoeff_;
+	scalar vaporFluxAvg = gSum(vaporFlux*nbrPatch.magSf())/gSum(nbrPatch.magSf());
+		//Info << "vaporFluxAvg: " << vaporFluxAvg << endl;
 
-//    scalarField smoothstep=1/(1+exp((pcc+1000)/30));
+    scalarField Krel(pcp.size(), 0.0);
+        Krel = patch().lookupPatchField<volScalarField, scalar>("Krel"); 
 
-    scalarField K_v(Tp.size(), 0.0);
-        K_v = patch().lookupPatchField<volScalarField, scalar>("K_v");  
-    scalarField Krel(Tp.size(), 0.0);
-        Krel = patch().lookupPatchField<volScalarField, scalar>("Krel");   
+    scalarField K_v(pcp.size(), 0.0);
+        K_v = patch().lookupPatchField<volScalarField, scalar>("K_v");             
 
-    scalarField gl = ((gcrNbr*rhol)/(3600*1000));
+	scalarField pv_o = wcNbr*1e5/(0.621945*rhoair);
+        //mpp.distribute(wcNbr);
+        //mpp.distribute(pv_o);  
+    scalarField pv_o_sat = exp(6.58094e1-7.06627e3/TNbr-5.976*log(TNbr));
+    scalarField pc_o=log(pv_o/pv_o_sat)*rhol*Rv*TNbr; 
+	mpp.distribute(pc_o);
 
-//    scalarField CR = gl*cap_l*(Tambient(3600*(timestep+1)) -Tref);
-    
-	// Calculate rain temperature - approximation for wet-bulb temp///////////
-	scalar saturationPressure = 133.322*pow(10,(8.07131-(1730.63/(233.426+Tambient(time.value())))));
-	scalar airVaporPressure = wambient(time.value())*1e5/0.621945;
-	scalar relhum = airVaporPressure/saturationPressure*100;
-	scalar dewPointTemp = Tambient(time.value()) - (100-relhum)/5;
-	scalar rainTemp = Tambient(time.value()) - (Tambient(time.value())-dewPointTemp)/3;
-	//////////////////////////////////////////////////////////////////////////
+// term with temperature gradient:
+    scalarField K_pt(pcp.size(), 0.0);
+    K_pt = patch().lookupPatchField<volScalarField, scalar>("K_pt");                 
+	scalarField X = K_pt*fieldTs.snGrad();
+//////////////////////////////////                
 
-    scalarField Qr(Tp.size(), 0.0);
-    if (QrName_ != "none")
+//    valueFraction() = pos(patchInternalField()+1E3);
+//    refValue() = -1E2;  
+    refGrad() = (vaporFluxAvg + glAvg - X)/(Krel+K_v); 
+    forAll(refValue(),faceI)
     {
-        Qr = patch().lookupPatchField<volScalarField, scalar>(QrName_);
-    }
+	if(glAvg>0){refValue()[faceI]=-1001;}
+	else{refValue()[faceI]=pc_o[faceI];}
+    } 
+    valueFraction() = pos(patchInternalField()+refGrad()/patch().deltaCoeffs()+1E3 ); 
 
-    scalarField QrNbr(Tp.size(), 0.0);
-    if (QrNbrName_ != "none")
-    {
-        QrNbr = nbrPatch.lookupPatchField<volScalarField, scalar>(QrNbrName_);
-        mpp.distribute(QrNbr);
-    }
-    
-    scalarField Qs(Tp.size(), 0.0);
-    if (QsName_ != "none")
-    {
-        Qs = patch().lookupPatchField<volScalarField, scalar>(QsName_);
-    }
-
-    scalarField QsNbr(Tp.size(), 0.0);
-    if (QsNbrName_ != "none")
-    {
-        QsNbr = nbrPatch.lookupPatchField<volScalarField, scalar>(QsNbrName_);
-        mpp.distribute(QsNbr);
-    }   
-
-// term with capillary moisture gradient:                          
-    scalarField X = ((cap_l*(Tc-Tref)*Krel)+(cap_v*(Tc-Tref)+L_v)*K_v)*fieldpc.snGrad();
-//////////////////////////////////  
-		scalarField CR = ( pos(patchInternalField()+fieldpc.snGrad()/patch().deltaCoeffs()+1E3)*(Krel+K_v)*fieldpc.snGrad() +
-						   neg(patchInternalField()+fieldpc.snGrad()/patch().deltaCoeffs()+1E3)*gl ) * cap_l*(rainTemp -Tref) * pos(gl-VSMALL);
-    valueFraction() = 0;//pos(fieldpc.patchInternalField()+1E3); 
-    refValue() = 0;//rainTemp;		
-    refGrad() = (heatFlux + LE + Qr + QrNbr + Qs + QsNbr+CR -X)/(lambda_m+K_pt);
-//        Info << "sum(heatFlux): " << sum(heatFlux) << endl;
-//        Info << "sum(LE): " << sum(LE) << endl;
-//        Info << "sum(CR): " << sum(CR) << endl;
-//        Info << "sum(refGrad()):" << sum(refGrad()) << endl;
+//	Pout << "valueFraction:" << valueFraction() << endl;
+//	Pout << "pcp:" << pcp << endl;
 
     mixedFvPatchScalarField::updateCoeffs(); 
 
     if (debug)
     {
-        scalar Q = gSum(kappa(Tp)*patch().magSf()*snGrad());
+        scalar Q = gSum(kappa(pcp)*patch().magSf()*snGrad());
 
         Info<< patch().boundaryMesh().mesh().name() << ':'
             << patch().name() << ':'
@@ -355,9 +291,9 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
             << this->dimensionedInternalField().name() << " :"
             << " heat transfer rate:" << Q
             << " walltemperature "
-            << " min:" << gMin(Tp)
-            << " max:" << gMax(Tp)
-            << " avg:" << gAverage(Tp)
+            << " min:" << gMin(pcp)
+            << " max:" << gMax(pcp)
+            << " avg:" << gAverage(pcp)
             << endl;
     } 
 
@@ -367,7 +303,7 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
 }
 
 
-void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::write
+void CFDHAMsolidMoisture1DCoupledMixedFvPatchScalarField::write
 (
     Ostream& os
 ) const
@@ -388,7 +324,7 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::write
 makePatchTypeField
 (
     fvPatchScalarField,
-    CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
+    CFDHAMsolidMoisture1DCoupledMixedFvPatchScalarField
 );
 
 

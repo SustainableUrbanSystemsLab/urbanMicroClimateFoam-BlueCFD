@@ -1,0 +1,22 @@
+LOCAL_OBJECTS = \
+viewFactorSky.o\
+solarLoadModel.o\
+solarLoadModelNew.o\
+directAndDiffuse.o\
+noSolarLoad.o\
+solarLoadViewFactorFixedValueFvPatchScalarField.o\
+solarRadiationCoupledBase.o\
+turbulentTemperatureRadSolarCoupledMixedFvPatchScalarField.o\
+CFDHAMfluidTemperatureCoupledMixedFvPatchScalarField.o\
+CFDHAMfluidMoistureCoupledMixedFvPatchScalarField.o\
+CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField.o\
+CFDHAMsolidTemperature1DCoupledMixedFvPatchScalarField.o\
+CFDHAMsolidMoistureCoupledMixedFvPatchScalarField.o\
+CFDHAMsolidMoisture1DCoupledMixedFvPatchScalarField.o\
+CFDHAMsolidwCoupledMixedFvPatchScalarField.o\
+solarLoadAbsorptionEmissionModel.o\
+solarLoadAbsorptionEmissionModelNew.o\
+noAbsorptionEmission.o\
+solarLoadScatterModel.o\
+solarLoadScatterModelNew.o\
+noScatter.o
