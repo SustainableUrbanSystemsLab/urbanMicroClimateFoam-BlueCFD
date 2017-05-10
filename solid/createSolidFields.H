@@ -46,7 +46,8 @@
                     IOobject::NO_WRITE
                 ),
                 solidRegions[i],
-		dimensionedScalar("rho_m", dimensionSet(1,-3,0,0,0,0,0), scalar(1E-3))
+				dimensionedScalar("rho_m", dimensionSet(1,-3,0,0,0,0,0), scalar(1E-3)),
+				("zeroGradient")
             )
         );      
 
@@ -65,7 +66,8 @@
                     IOobject::NO_WRITE
                 ),
                 solidRegions[i],
-		dimensionedScalar("cap_m", dimensionSet(0,2,-2,-1,0,0,0), scalar(1E-3))
+				dimensionedScalar("cap_m", dimensionSet(0,2,-2,-1,0,0,0), scalar(1E-3)),
+				("zeroGradient")
             )
         );    
 
@@ -80,12 +82,14 @@
                     "lambda_m",
                     runTime.timeName(),
                     solidRegions[i],
-                    IOobject::MUST_READ,
-                    IOobject::AUTO_WRITE
+                    IOobject::NO_READ,
+                    IOobject::NO_WRITE
                 ),
-                solidRegions[i]
+                solidRegions[i],
+				dimensionedScalar("lambda_m", dimensionSet(1,1,-3,-1,0,0,0), scalar(1E-3)),
+				("zeroGradient")
             )
-        );   
+        );
 
         Info<< "    Adding to TsSolid\n" << endl;
         TsSolid.set
@@ -152,10 +156,12 @@
                     "Krel",
                     runTime.timeName(),
                     solidRegions[i],
-                    IOobject::MUST_READ,
-                    IOobject::AUTO_WRITE
+                    IOobject::NO_READ,
+                    IOobject::NO_WRITE
                 ),
-                solidRegions[i]
+                solidRegions[i],
+				dimensionedScalar("Krel", dimensionSet(1,-3,0,0,0,0,0), scalar(1E-3)),
+				("zeroGradient")
             )
         );  
 
@@ -170,10 +176,12 @@
                     "K_v",
                     runTime.timeName(),
                     solidRegions[i],
-                    IOobject::MUST_READ,
-                    IOobject::AUTO_WRITE
+                    IOobject::NO_READ,
+                    IOobject::NO_WRITE
                 ),
-                solidRegions[i]
+                solidRegions[i],
+				dimensionedScalar("K_v", dimensionSet(1,-3,0,0,0,0,0), scalar(1E-3)),
+				("zeroGradient")
             )
         ); 
 
@@ -188,10 +196,12 @@
                     "K_pt",
                     runTime.timeName(),
                     solidRegions[i],
-                    IOobject::MUST_READ,
-                    IOobject::AUTO_WRITE
+                    IOobject::NO_READ,
+                    IOobject::NO_WRITE
                 ),
-                solidRegions[i]
+                solidRegions[i],
+				dimensionedScalar("K_pt", dimensionSet(1,-3,0,0,0,0,0), scalar(1E-3)),
+				("zeroGradient")
             )
         ); 
 
@@ -206,10 +216,12 @@
                     "Crel",
                     runTime.timeName(),
                     solidRegions[i],
-                    IOobject::MUST_READ,
-                    IOobject::AUTO_WRITE
+                    IOobject::NO_READ,
+                    IOobject::NO_WRITE
                 ),
-                solidRegions[i]
+                solidRegions[i],
+				dimensionedScalar("Crel", dimensionSet(1,-3,0,0,0,0,0), scalar(1E-3)),
+				("zeroGradient")
             )
         );                                
     }
