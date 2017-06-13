@@ -108,12 +108,12 @@ bool Foam::buildingMaterialModels::PorousAsphalt::read
 //- Correct the buildingMaterial moisture content (cell)
 void Foam::buildingMaterialModels::PorousAsphalt::update_w_C_cell(const volScalarField& pc, volScalarField& w, volScalarField& Crel, label& celli)
 {
-    List<scalar> reta; reta.setSize(1); reta[0]=-0.00283;
-    List<scalar> retn; retn.setSize(1); retn[0]=8.6;
-    List<scalar> retm; retm.setSize(1); retm[0]=0.8837;
-    List<scalar> retw; retw.setSize(1); retw[0]=1e0;
+    List<scalar> reta; reta.setSize(1); reta[0]=-0.00283; reta[1]=-2.041e-3; reta[2]=-2.041e-8;
+    List<scalar> retn; retn.setSize(1); retn[0]=8.2; retn[1]=1.4; retn[2]=1.4;
+    List<scalar> retm; retm.setSize(1); retm[0]=0.8780; retm[1]=0.2857; retm[2]=0.2857;
+    List<scalar> retw; retw.setSize(1); retw[0]=0.7; retw[1]=0.2; retw[2]=0.1;
     scalar w_tmp = 0; scalar tmp = 0; scalar C_tmp = 0; scalar tmp2 = 0;    
-    for (int i=0; i<=0; i++)
+    for (int i=0; i<=2; i++)
     {
         tmp = pow( (reta[i]*pc.internalField()[celli]) , retn[i] );
         w_tmp = w_tmp + retw[i] / ( pow( (1 + tmp) , retm[i] ));
@@ -127,12 +127,12 @@ void Foam::buildingMaterialModels::PorousAsphalt::update_w_C_cell(const volScala
 //- Correct the buildingMaterial moisture content (boundary)
 void Foam::buildingMaterialModels::PorousAsphalt::update_w_C_boundary(const volScalarField& pc, volScalarField& w, volScalarField& Crel, label patchi, label patchFacei)
 {
-    List<scalar> reta; reta.setSize(1); reta[0]=-0.00283;
-    List<scalar> retn; retn.setSize(1); retn[0]=8.6;
-    List<scalar> retm; retm.setSize(1); retm[0]=0.8837;
-    List<scalar> retw; retw.setSize(1); retw[0]=1e0;
-    scalar w_tmp = 0; scalar tmp = 0; scalar C_tmp = 0; scalar tmp2 = 0;    
-    for (int i=0; i<=0; i++)
+    List<scalar> reta; reta.setSize(1); reta[0]=-0.00283; reta[1]=-2.041e-3; reta[2]=-2.041e-8;
+    List<scalar> retn; retn.setSize(1); retn[0]=8.2; retn[1]=1.4; retn[2]=1.4;
+    List<scalar> retm; retm.setSize(1); retm[0]=0.8780; retm[1]=0.2857; retm[2]=0.2857;
+    List<scalar> retw; retw.setSize(1); retw[0]=0.7; retw[1]=0.2; retw[2]=0.1;
+    scalar w_tmp = 0; scalar tmp = 0; scalar C_tmp = 0; scalar tmp2 = 0;     
+    for (int i=0; i<=2; i++)
     {
         tmp = pow( (reta[i]*pc.boundaryField()[patchi][patchFacei]) , retn[i] );
         w_tmp = w_tmp + retw[i] / ( pow( (1 + tmp) , retm[i] ));

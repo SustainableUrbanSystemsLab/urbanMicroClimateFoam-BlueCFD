@@ -12,5 +12,7 @@ SabaBrick/SabaBrick.C
 CalciumSilicate/CalciumSilicate.C
 AsphaltConcrete/AsphaltConcrete.C
 PorousAsphalt/PorousAsphalt.C
+MartilliWall/MartilliWall.C
+MartilliGround/MartilliGround.C
 
 LIB = $(FOAM_USER_LIBBIN)/libbuildingMaterialModel
