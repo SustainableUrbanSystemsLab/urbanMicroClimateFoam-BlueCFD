@@ -62,8 +62,6 @@ Description
 #include "IOdictionary.H"
 #include "fixedValueFvPatchFields.H"
 #include "wallFvPatch.H"
-#include "wallPolyPatch.H"
-#include "processorCyclicPolyPatch.H"    
 
 #include "unitConversion.H"
 
@@ -76,7 +74,8 @@ triSurface triangulate
     const labelListIOList& finalAgglom,
     labelList& triSurfaceToAgglom,
     const globalIndex& globalNumbering,
-    const polyBoundaryMesh& coarsePatches
+    const polyBoundaryMesh& coarsePatches,
+    point moveSTL
 )
 {
     const polyMesh& mesh = bMesh.mesh();
@@ -139,7 +138,7 @@ triSurface triangulate
     triSurface surface
     (
         rawSurface.localFaces(),
-        rawSurface.localPoints()
+        rawSurface.localPoints() + moveSTL
     );
 
     // Add patch names to surface
@@ -564,11 +563,7 @@ int main(int argc, char *argv[])
     }
 
     globalIndex globalNumbering(nCoarseFaces);       
-
-    // Set up searching engine for obstacles
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    #include "searchingEngine.H"    
-
+    
     // Determine rays between coarse face centres
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     DynamicList<label> rayStartFace(nCoarseFaces + 0.01*nCoarseFaces);
@@ -594,6 +589,17 @@ int main(int argc, char *argv[])
         min_ = ::Foam::min(min_, minList[i]);
         max_ = ::Foam::max(max_, maxList[i]);
     }    
+	
+    // Set up searching engine for obstacles
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #include "searchingEngine.H"  
+
+    // update min_ and max_ because we enlarged the domain for cyclic solar tracing
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      	
+    min_.x() = min_.x() - (max_.x()-min_.x());
+    min_.z() = min_.z() - (max_.z()-min_.z());
+    max_.x() = max_.x() + (max_.x()-min_.x());
+    max_.z() = max_.z() + (max_.z()-min_.z());
 
     // Find the Solar Ray Start Points within domain
     // ######################################   
@@ -624,7 +630,7 @@ int main(int argc, char *argv[])
                 i1 = (min_.x() - solarStart[pointI].x())/sunPos.x();
             } 
             else {i1 = VGREAT;}
-                
+
             if (sunPos.y() > 0.0)
             {
                 i2 = (max_.y() - solarStart[pointI].y())/sunPos.y();
@@ -632,9 +638,9 @@ int main(int argc, char *argv[])
             else if (sunPos.y() < 0.0)
             {
                 i2 = (min_.y() - solarStart[pointI].y())/sunPos.y();
-            } 
+            }
             else{i2 = VGREAT;}
-                
+
             if (sunPos.z() > 0.0)
             {
                 i3 = (max_.z() - solarStart[pointI].z())/sunPos.z();
@@ -642,7 +648,7 @@ int main(int argc, char *argv[])
             else if (sunPos.z() < 0.0)
             {
                 i3 = (min_.z() - solarStart[pointI].z())/sunPos.z();
-            } 
+            }
             else{i3 = VGREAT;}
 
             scalar i = min(i1, min(i2, i3));
@@ -689,14 +695,10 @@ int main(int argc, char *argv[])
 
         #include "shootRays.H"
 
+
         forAll(rayStartFace, i)
         {
             nVisibleFaceFaces[rayStartFace[i]]++;
-        }
-
-        forAll(nVisibleFaceFaces, i)
-        {
-		if (nVisibleFaceFaces[i] > 1){nVisibleFaceFaces[i] = 1;} //in some parallel runs, the same rayStartFace is appended twice in shootRays.H - I should find a cleaner way to avoid this
         }
 
         label nViewFactors = 0;
@@ -795,10 +797,7 @@ int main(int argc, char *argv[])
     			j = 0;
     			i++;
     		} 
-    		/*if (vectorId == 1){
-                Info << "AA) i: " << i << endl;
-                Info << "BB) sunVisibleOrNot[1]: " << sunVisibleOrNot[1] << endl;                
-            }*/
+    		
     		while (j < howManyCoarseFacesPerPatch[i])
     		{
     			sunVisibleOrNot[vectorId][k] = nVisibleFaceFacesList[vectorId][faceNo];
