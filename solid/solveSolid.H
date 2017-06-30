@@ -1,7 +1,7 @@
 {
     instantList timeDirs = timeSelector::select0(runTime, args);
 //    runTime.setTime(timeDirs.last(),timeDirs.size()-1);
-    runTime.setTime(runTime.time().timeOutputValue(),runTime.time().timeIndex()-1);
+    runTime.setTime(storeFluidTimeStep-storeFluidDeltaT,storeFluidTimeIndex);
 
     runTime.setDeltaT(storeFluidDeltaT * initialSolidTimestepFactor); //this always resets to the small timestep for solid, could it be better?
  

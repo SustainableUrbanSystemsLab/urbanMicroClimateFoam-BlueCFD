@@ -79,6 +79,8 @@ int main(int argc, char *argv[])
             << nl << endl;
       
         scalar storeFluidDeltaT = runTime.deltaT().value();
+        scalar storeFluidTimeStep = runTime.value();
+        label storeFluidTimeIndex = runTime.timeIndex();
 		
 		forAll(solidRegions, i)
 		{
