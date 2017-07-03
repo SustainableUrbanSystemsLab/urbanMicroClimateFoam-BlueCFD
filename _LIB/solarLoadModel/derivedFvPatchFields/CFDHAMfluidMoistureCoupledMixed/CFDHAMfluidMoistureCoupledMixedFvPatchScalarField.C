@@ -216,11 +216,11 @@ void CFDHAMfluidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
 
     scalar rhol=1.0e3; scalar Rv=8.31451*1000/(18.01534);
     scalarField pvsat_s = exp(6.58094e1-7.06627e3/TNbr-5.976*log(TNbr));
-    
+
     scalarField pv_s = pvsat_s*exp((pcNbr)/(rhol*Rv*TNbr));
-    
+
     valueFraction() = 1.0;//KDeltaNbr/(KDeltaNbr + KDelta);
-    refValue() = 0.62198*pv_s/p;//pv_s/pvsat_s;
+    refValue() = 0.62198*pv_s/1e5;//p; //ayk: using 1e5 instead of the calculated p because groovyBCJump for velocity causes p values to decrease?
     refGrad() = 0.0;//(Qr + QrNbr + Qs + QsNbr)/(kappa(Tp));
 
     mixedFvPatchScalarField::updateCoeffs();
