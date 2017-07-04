@@ -59,6 +59,7 @@ int main(int argc, char *argv[])
     #include "createSolidFields.H"
 
     #include "initContinuityErrs.H"
+    #include "readFluidTimeControls.H"
     #include "readSolidTimeControls.H"
 
     while (runTime.loop())
@@ -82,14 +83,14 @@ int main(int argc, char *argv[])
         scalar storeFluidTimeStep = runTime.value();
         label storeFluidTimeIndex = runTime.timeIndex();
 		
-		forAll(solidRegions, i)
-		{
-			Info<< "\nSolving for solid region "
-				<< solidRegions[i].name() << endl;
-			#include "setRegionSolidFields.H"
-			#include "readSolidMultiRegionSIMPLEControls.H"
-			#include "solveSolid.H"
-		}
+	forAll(solidRegions, i)
+	{
+		Info<< "\nSolving for solid region "
+			<< solidRegions[i].name() << endl;
+		#include "setRegionSolidFields.H"
+		#include "readSolidMultiRegionSIMPLEControls.H"
+		#include "solveSolid.H"
+	}
 
         runTime.write();
 
