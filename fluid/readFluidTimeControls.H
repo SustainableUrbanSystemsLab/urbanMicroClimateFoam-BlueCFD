@@ -32,4 +32,7 @@ Description
 scalar maxFluidIteration =
     runTime.controlDict().lookupOrDefault<scalar>("maxFluidIteration", 10000);
 
+scalar minFluidIteration =
+    runTime.controlDict().lookupOrDefault<scalar>("minFluidIteration", 1);
+
 // ************************************************************************* //

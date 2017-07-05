@@ -2,7 +2,7 @@ simpleControlFluid simpleControlFluid(fluidRegions[i]);
 
 label fluidIteration = 0;
 
-while (simpleControlFluid.loop() && fluidIteration <= maxFluidIteration)
+while (simpleControlFluid.loop() && fluidIteration < maxFluidIteration && fluidIteration >= minFluidIteration)
 {
 //  Pressure-velocity SIMPLE corrector
     fluidIteration++;
