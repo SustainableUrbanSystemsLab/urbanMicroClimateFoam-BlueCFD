@@ -29,6 +29,3 @@ Info << "Updating long-wave radiation heat transfer for region: " << fluidRegion
 rad.correct();
 Info << "Updating short-wave radiation heat transfer for region: " << fluidRegions[i].name() << endl;
 sol.correct();
-
-//#include "wallMoistureFlux.H"
-//#include "wallHeatFlux.H"
