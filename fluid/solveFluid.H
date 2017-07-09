@@ -1,11 +1,10 @@
 simpleControlFluid simpleControlFluid(fluidRegions[i]);
 
-label fluidIteration = 0;
+label fluidIteration = 1;
 
-while (simpleControlFluid.loop() && fluidIteration < maxFluidIteration && fluidIteration >= minFluidIteration)
+while (simpleControlFluid.loop() && fluidIteration <= maxFluidIteration && fluidIteration >= minFluidIteration)
 {
 //  Pressure-velocity SIMPLE corrector
-    fluidIteration++;
     Info << "Internal iteration number: " << fluidIteration << endl;
 
     p_rgh.storePrevIter();
@@ -19,7 +18,8 @@ while (simpleControlFluid.loop() && fluidIteration < maxFluidIteration && fluidI
 
     turb.correct();
 
-    Info << nl;
+    Info << nl; 
+    fluidIteration++;
 }
 
 Info<< nl << fluidRegions[i].name() << " region solution converged in "
