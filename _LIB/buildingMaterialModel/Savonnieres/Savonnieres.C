@@ -120,8 +120,8 @@ void Foam::buildingMaterialModels::Savonnieres::update_w_C_cell(const volScalarF
         tmp2 = pow( (1 + tmp) , retm[i] );
         C_tmp = C_tmp - retw[i]/tmp2 * retm[i]*retn[i]*tmp/((1 + tmp)*pc.internalField()[celli]); 
     } 
-    w.internalField()[celli] = w_tmp*149.1;   
-    Crel.internalField()[celli] = mag( C_tmp*149.1);   
+    w.internalField()[celli] = w_tmp*133;   
+    Crel.internalField()[celli] = mag( C_tmp*133);   
 }
 
 //- Correct the buildingMaterial moisture content (boundary)
@@ -139,8 +139,8 @@ void Foam::buildingMaterialModels::Savonnieres::update_w_C_boundary(const volSca
         tmp2 = pow( (1 + tmp) , retm[i] );
         C_tmp = C_tmp - retw[i]/tmp2 * retm[i]*retn[i]*tmp/((1 + tmp)*pc.boundaryField()[patchi][patchFacei]); 
     } 
-    w.boundaryField()[patchi][patchFacei] = w_tmp*149.1; 
-    Crel.boundaryField()[patchi][patchFacei] = mag( C_tmp*149.1);  
+    w.boundaryField()[patchi][patchFacei] = w_tmp*133; 
+    Crel.boundaryField()[patchi][patchFacei] = mag( C_tmp*133);  
 }
 
 //- Correct the buildingMaterial liquid permeability (cell)
@@ -242,7 +242,7 @@ void Foam::buildingMaterialModels::Savonnieres::update_Kv_cell(const volScalarFi
     scalar p_vsat = Foam::exp(6.58094e1 - 7.06627e3/T.internalField()[celli] - 5.976*Foam::log(T.internalField()[celli])); // saturation vapour pressure [Pa]
     scalar relhum = Foam::exp(pc.internalField()[celli]/(rho_l*R_v*T.internalField()[celli])); // relative humidity [-]
     
-    scalar tmp = 1 - (w.internalField()[celli]/149.1); 
+    scalar tmp = 1 - (w.internalField()[celli]/133); 
     scalar delta = 2.61e-5 * tmp/(R_v*T.internalField()[celli]*90.7*(0.503*tmp*tmp + 0.497)); // Water vapour diffusion coefficient [s]
     
     K_v.internalField()[celli] = (delta*p_vsat*relhum)/(rho_l*R_v*T.internalField()[celli]);
@@ -257,7 +257,7 @@ void Foam::buildingMaterialModels::Savonnieres::update_Kv_boundary(const volScal
     scalar p_vsat = Foam::exp(6.58094e1 - 7.06627e3/T.boundaryField()[patchi][patchFacei] - 5.976*Foam::log(T.boundaryField()[patchi][patchFacei])); // saturation vapour pressure [Pa]
     scalar relhum = Foam::exp(pc.boundaryField()[patchi][patchFacei]/(rho_l*R_v*T.boundaryField()[patchi][patchFacei])); // relative humidity [-]
     
-    scalar tmp = 1 - (w.boundaryField()[patchi][patchFacei]/149.1); 
+    scalar tmp = 1 - (w.boundaryField()[patchi][patchFacei]/133); 
     scalar delta = 2.61e-5 * tmp/(R_v*T.boundaryField()[patchi][patchFacei]*90.7*(0.503*tmp*tmp + 0.497)); // Water vapour diffusion coefficient [s]
     
     K_v.boundaryField()[patchi][patchFacei] = (delta*p_vsat*relhum)/(rho_l*R_v*T.boundaryField()[patchi][patchFacei]);
@@ -275,7 +275,7 @@ void Foam::buildingMaterialModels::Savonnieres::update_Kpt_cell(const volScalarF
         
     scalar relhum = Foam::exp(pc.internalField()[celli]/(rho_l*R_v*T.internalField()[celli])); // relative humidity [-]
     
-    scalar tmp = 1 - (w.internalField()[celli]/149.1); 
+    scalar tmp = 1 - (w.internalField()[celli]/133); 
     scalar delta = 2.61e-5 * tmp/(R_v*T.internalField()[celli]*90.7*(0.503*tmp*tmp + 0.497)); // Water vapour diffusion coefficient [s]
 
     K_pt.internalField()[celli] = ( (delta*p_vsat*relhum)/(rho_l*R_v*pow(T.internalField()[celli],2)) ) * (rho_l*L_v - pc.internalField()[celli]);
@@ -293,7 +293,7 @@ void Foam::buildingMaterialModels::Savonnieres::update_Kpt_boundary(const volSca
         
     scalar relhum = Foam::exp(pc.boundaryField()[patchi][patchFacei]/(rho_l*R_v*T.boundaryField()[patchi][patchFacei])); // relative humidity [-]
     
-    scalar tmp = 1 - (w.boundaryField()[patchi][patchFacei]/149.1); 
+    scalar tmp = 1 - (w.boundaryField()[patchi][patchFacei]/133); 
     scalar delta = 2.61e-5 * tmp/(R_v*T.boundaryField()[patchi][patchFacei]*90.7*(0.503*tmp*tmp + 0.497)); // Water vapour diffusion coefficient [s]
 
     K_pt.boundaryField()[patchi][patchFacei] = ( (delta*p_vsat*relhum)/(rho_l*R_v*pow(T.boundaryField()[patchi][patchFacei],2)) ) * (rho_l*L_v - pc.boundaryField()[patchi][patchFacei]);
@@ -303,14 +303,14 @@ void Foam::buildingMaterialModels::Savonnieres::update_Kpt_boundary(const volSca
 void Foam::buildingMaterialModels::Savonnieres::update_lambda_cell(const volScalarField& w, volScalarField& lambda, label& celli)
 {
 
-    lambda.internalField()[celli] = 0.99+0.6*26.87*(w.internalField()[celli]/149.1); //26.87 = total open porosity, 0.6 = thermal conductivity of water at 20C
+    lambda.internalField()[celli] = 0.99+0.6*26.87*(w.internalField()[celli]/133); //26.87 = total open porosity, 0.6 = thermal conductivity of water at 20C
 }
 
 //- Correct the buildingMaterial lambda (boundary)
 void Foam::buildingMaterialModels::Savonnieres::update_lambda_boundary(const volScalarField& w, volScalarField& lambda, label patchi, label patchFacei)
 {
 
-    lambda.boundaryField()[patchi][patchFacei] = 0.99+0.6*26.87*(w.boundaryField()[patchi][patchFacei]/149.1); //26.87 = total open porosity, 0.6 = thermal conductivity of water at 20C
+    lambda.boundaryField()[patchi][patchFacei] = 0.99+0.6*26.87*(w.boundaryField()[patchi][patchFacei]/133); //26.87 = total open porosity, 0.6 = thermal conductivity of water at 20C
 }
 
 //*********************************************************** //
