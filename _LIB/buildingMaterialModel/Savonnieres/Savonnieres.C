@@ -146,7 +146,7 @@ void Foam::buildingMaterialModels::Savonnieres::update_w_C_boundary(const volSca
 //- Correct the buildingMaterial liquid permeability (cell)
 void Foam::buildingMaterialModels::Savonnieres::update_Krel_cell(const volScalarField& pc, const volScalarField& w, volScalarField& Krel, label& celli)
 {
-    scalar logpc = log10(pc.internalField()[celli]);
+    scalar logpc = log10(-pc.internalField()[celli]);
     scalar logKl = 0;
     int i;
     double logpc_M[]={2.0, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9,
@@ -191,7 +191,7 @@ void Foam::buildingMaterialModels::Savonnieres::update_Krel_cell(const volScalar
 //- Correct the buildingMaterial liquid permeability (boundary)
 void Foam::buildingMaterialModels::Savonnieres::update_Krel_boundary(const volScalarField& pc, const volScalarField& w, volScalarField& Krel, label patchi, label patchFacei)
 {
-    scalar logpc = log10(pc.boundaryField()[patchi][patchFacei]);
+    scalar logpc = log10(-pc.boundaryField()[patchi][patchFacei]);
     scalar logKl = 0;
     int i;
     double logpc_M[]={2.0, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9,
