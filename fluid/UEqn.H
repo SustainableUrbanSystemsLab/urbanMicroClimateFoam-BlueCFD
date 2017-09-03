@@ -5,6 +5,7 @@
       + turb.divDevRhoReff(U)
      ==
         fvOptions(rho, U)
+      + vegetation.Su(rho, U) // vegetation momentum source
     );
 
     UEqn().relax();

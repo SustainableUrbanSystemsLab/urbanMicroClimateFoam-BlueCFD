@@ -54,7 +54,8 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
     QrNbrName_("undefined-QrNbr"),
     QrName_("undefined-Qr"),
     QsNbrName_("undefined-QsNbr"),
-    QsName_("undefined-Qs")
+    QsName_("undefined-Qs"),
+    vegetationExists_("undefined")
 {
     this->refValue() = 0.0;
     this->refGrad() = 0.0;
@@ -78,7 +79,8 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
     QrNbrName_(psf.QrNbrName_),
     QrName_(psf.QrName_),
     QsNbrName_(psf.QsNbrName_),
-    QsName_(psf.QsName_)
+    QsName_(psf.QsName_),
+    vegetationExists_(psf.vegetationExists_)
 {}
 
 
@@ -97,7 +99,8 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
     QrNbrName_(dict.lookupOrDefault<word>("QrNbr", "none")),
     QrName_(dict.lookupOrDefault<word>("Qr", "none")),
     QsNbrName_(dict.lookupOrDefault<word>("QsNbr", "none")),
-    QsName_(dict.lookupOrDefault<word>("Qs", "none"))    
+    QsName_(dict.lookupOrDefault<word>("Qs", "none")),
+    vegetationExists_(dict.lookupOrDefault<bool>("vegetationExists", false)) 
 {
     if (!isA<mappedPatchBase>(this->patch().patch()))
     {
@@ -150,7 +153,8 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
     QrNbrName_(psf.QrNbrName_),
     QrName_(psf.QrName_),
     QsNbrName_(psf.QsNbrName_),
-    QsName_(psf.QsName_)	
+    QsName_(psf.QsName_),	
+    vegetationExists_(psf.vegetationExists_)
 {}
 
 
@@ -178,6 +182,41 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
 
     scalarField Tc(patchInternalField());
     scalarField& Tp = *this;
+
+    //Access vegetation region and populate QsVegiNbr if necessary
+    scalarField QsVegiNbr(Tp.size(), 0.0);
+    scalarField QrVegiNbr(Tp.size(), 0.0);
+
+// NEED TO ORGANIZE THIS PART - AYTAC
+//Info << "ha: " << vegetationExists_ << endl;
+
+    const word& vegiRegion = "vegetation";
+    const scalar mppVegDistance = 0;
+
+    //if (vegetationExists_ == true)
+    //{
+	    const polyMesh& vegiMesh =
+	    	patch().boundaryMesh().mesh().time().lookupObject<polyMesh>("vegetation");
+
+	    const word& nbrPatchName = nbrPatch.name();
+
+	    const label patchi = vegiMesh.boundaryMesh().findPatchID(nbrPatchName);
+	    
+	    const fvPatch& vegiNbrPatch =
+	        refCast<const fvMesh>(vegiMesh).boundary()[patchi];
+
+    const mappedPatchBase& mppVeg = mappedPatchBase(patch().patch(), vegiRegion, mpp.mode(), mpp.samplePatch(), mppVegDistance);
+    //const mappedPatchBase& mppVeg =
+    //    refCast<const mappedPatchBase>(patch().patch(), vegiRegion, mpp.mode(), mpp.samplePatch(), mppVegDistance);
+
+		QsVegiNbr = vegiNbrPatch.lookupPatchField<volScalarField, scalar>("Qs");  
+
+		QrVegiNbr = vegiNbrPatch.lookupPatchField<volScalarField, scalar>("Qr");
+    //}
+
+    mppVeg.distribute(QsVegiNbr); //Info << "QsVegiNbr: " << QsVegiNbr << endl;
+    mppVeg.distribute(QrVegiNbr); //Info << "QrVegiNbr: " << QrVegiNbr << endl;
+    //////////////////////////    
 
     const mixedFvPatchScalarField& //CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField&
         nbrField = refCast
@@ -272,7 +311,7 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
     scalar cp = 1005; //specific heat of air [J/(kg K)]
     scalar muair = 1.8e-5; scalar Pr = 0.7;
     scalarField heatFlux = (muair/Pr + alphatNbrPatch)*cp*(TcNbr-Tc)*deltaCoeff_; 
-    //Info << "heatFlux: " << gSum(heatFlux*patch().magSf()) << endl;
+//    Info << "heatFlux: " << gSum(heatFlux*patch().magSf()) << endl;
             
     scalar rhol=1.0e3; scalar Rv=8.31451*1000/(18.01534);
     scalarField pvsat_s = exp(6.58094e1-7.06627e3/Tc-5.976*log(Tc));
@@ -335,7 +374,7 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
 						   neg(patchInternalField()+fieldpc.snGrad()/patch().deltaCoeffs()+1E3)*gl ) * cap_l*(rainTemp -Tref) * pos(gl-VSMALL);
     valueFraction() = 0;//pos(fieldpc.patchInternalField()+1E3); 
     refValue() = 0;//rainTemp;		
-    refGrad() = (heatFlux + LE + Qr + QrNbr + Qs + QsNbr+CR -X)/(lambda_m+K_pt);
+    refGrad() = (heatFlux + LE + Qr + QrNbr + Qs + QsNbr + QsVegiNbr + QrVegiNbr +CR -X)/(lambda_m+K_pt);
 //        Info << "sum(heatFlux): " << sum(heatFlux) << endl;
 //        Info << "sum(LE): " << sum(LE) << endl;
 //        Info << "sum(CR): " << sum(CR) << endl;

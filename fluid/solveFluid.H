@@ -1,5 +1,7 @@
 simpleControlFluid simpleControlFluid(fluidRegions[i]);
 
+simplifiedVegetationModel vegetation(U, thermo.T(), w, Tl); // Vegetation model
+
 label fluidIteration = 1;
 
 while ((simpleControlFluid.loop() || fluidIteration <= minFluidIteration) && fluidIteration <= maxFluidIteration)
@@ -16,9 +18,12 @@ while ((simpleControlFluid.loop() || fluidIteration <= minFluidIteration) && flu
         #include "wEqn.H"
     }
 
+    // Solve vegetation energy balance
+    vegetation.solve(U, thermo.T(), w, Tl);
+
     turb.correct();
 
-    Info << nl; 
+    Info << nl;
     fluidIteration++;
 }
 

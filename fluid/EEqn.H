@@ -14,6 +14,7 @@
      ==
         rad.Sh(thermo)
 	    +	sol.Sh(thermo)
+      + vegetation.Sh() // vegetation energy source term
       + fvOptions(rho, he)
     );
 

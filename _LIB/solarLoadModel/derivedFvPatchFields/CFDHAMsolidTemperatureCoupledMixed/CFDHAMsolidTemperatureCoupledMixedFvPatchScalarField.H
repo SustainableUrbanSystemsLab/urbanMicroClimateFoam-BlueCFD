@@ -100,7 +100,10 @@ class CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
         const word QsNbrName_;
 
         //- Name of the solar radiative heat flux in local region
-        const word QsName_;		                    
+        const word QsName_;	
+
+        //- Is there a vegetation region? If so, this b.c. get use radiation fluxes Qs and Qr from that region
+        const bool vegetationExists_;             	                    
 
 public:
 
