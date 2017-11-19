@@ -48,13 +48,9 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 )
 :
     mixedFvPatchScalarField(p, iF),
-    temperatureCoupledBase(patch(), "undefined", "undefined", "undefined-K"),
-    wnbrName_("undefined-wnbr"),
-    TnbrName_("undefined-Tnbr"),
+    temperatureCoupledBase(patch(), "lookup", "lambda_m", "undefined-K"),
     QrNbrName_("undefined-QrNbr"),
-    QrName_("undefined-Qr"),
-    QsNbrName_("undefined-QsNbr"),
-    QsName_("undefined-Qs")
+    QsNbrName_("undefined-QsNbr")
 {
     this->refValue() = 0.0;
     this->refGrad() = 0.0;
@@ -72,13 +68,9 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 )
 :
     mixedFvPatchScalarField(psf, p, iF, mapper),
-    temperatureCoupledBase(patch(), psf),  
-    wnbrName_(psf.wnbrName_),
-    TnbrName_(psf.TnbrName_),
+    temperatureCoupledBase(patch(), psf),
     QrNbrName_(psf.QrNbrName_),
-    QrName_(psf.QrName_),
-    QsNbrName_(psf.QsNbrName_),
-    QsName_(psf.QsName_)
+    QsNbrName_(psf.QsNbrName_)
 {}
 
 
@@ -92,12 +84,8 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 :
     mixedFvPatchScalarField(p, iF),
     temperatureCoupledBase(patch(), dict),
-    wnbrName_(dict.lookupOrDefault<word>("wnbr", "none")),
-    TnbrName_(dict.lookupOrDefault<word>("Tnbr", "none")),
     QrNbrName_(dict.lookupOrDefault<word>("QrNbr", "none")),
-    QrName_(dict.lookupOrDefault<word>("Qr", "none")),
-    QsNbrName_(dict.lookupOrDefault<word>("QsNbr", "none")),
-    QsName_(dict.lookupOrDefault<word>("Qs", "none"))    
+    QsNbrName_(dict.lookupOrDefault<word>("QsNbr", "none")) 
 {
     if (!isA<mappedPatchBase>(this->patch().patch()))
     {
@@ -146,11 +134,8 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 :
     mixedFvPatchScalarField(psf, iF),
     temperatureCoupledBase(patch(), psf),
-    TnbrName_(psf.TnbrName_),
     QrNbrName_(psf.QrNbrName_),
-    QrName_(psf.QrName_),
-    QsNbrName_(psf.QsNbrName_),
-    QsName_(psf.QsName_)	
+    QsNbrName_(psf.QsNbrName_)
 {}
 
 
@@ -183,7 +168,7 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
         nbrField = refCast
             <const mixedFvPatchScalarField>
             (
-                nbrPatch.lookupPatchField<volScalarField, scalar>(TnbrName_)
+                nbrPatch.lookupPatchField<volScalarField, scalar>("T")
             );
 
     const mixedFvPatchScalarField&
@@ -302,23 +287,11 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
 	scalar rainTemp = Tambient(time.value()) - (Tambient(time.value())-dewPointTemp)/3;
 	//////////////////////////////////////////////////////////////////////////
 
-    scalarField Qr(Tp.size(), 0.0);
-    if (QrName_ != "none")
-    {
-        Qr = patch().lookupPatchField<volScalarField, scalar>(QrName_);
-    }
-
     scalarField QrNbr(Tp.size(), 0.0);
     if (QrNbrName_ != "none")
     {
         QrNbr = nbrPatch.lookupPatchField<volScalarField, scalar>(QrNbrName_);
         mpp.distribute(QrNbr);
-    }
-    
-    scalarField Qs(Tp.size(), 0.0);
-    if (QsName_ != "none")
-    {
-        Qs = patch().lookupPatchField<volScalarField, scalar>(QsName_);
     }
 
     scalarField QsNbr(Tp.size(), 0.0);
@@ -333,33 +306,38 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
 //////////////////////////////////  
 		scalarField CR = ( pos(patchInternalField()+fieldpc.snGrad()/patch().deltaCoeffs()+1E3)*(Krel+K_v)*fieldpc.snGrad() +
 						   neg(patchInternalField()+fieldpc.snGrad()/patch().deltaCoeffs()+1E3)*gl ) * cap_l*(rainTemp -Tref) * pos(gl-VSMALL);
+
     valueFraction() = 0;//pos(fieldpc.patchInternalField()+1E3); 
-    refValue() = 0;//rainTemp;		
-    refGrad() = (heatFlux + LE + Qr + QrNbr + Qs + QsNbr+CR -X)/(lambda_m+K_pt);
-//        Info << "sum(heatFlux): " << sum(heatFlux) << endl;
-//        Info << "sum(LE): " << sum(LE) << endl;
-//        Info << "sum(CR): " << sum(CR) << endl;
-//        Info << "sum(refGrad()):" << sum(refGrad()) << endl;
+    refValue() = 0;//rainTemp;
+    refGrad() = (heatFlux + LE + QrNbr + QsNbr + CR -X)/(lambda_m+K_pt);
+
+	//check if this patch is covered with grass
+    IOobject grassIO
+    (
+        "grassProperties",
+        db().time().constant(),
+        db(),
+        IOobject::READ_IF_PRESENT,
+        IOobject::NO_WRITE
+    );
+    if (grassIO.headerOk())
+    {
+		wordList grassPatches(IOdictionary(grassIO).lookup("grassPatches"));
+		forAll(grassPatches, patchI)
+		{
+			if(grassPatches[patchI] == patch().name())
+			{
+		    	scalarField leafTemp = patch().lookupPatchField<volScalarField, scalar>("Tg");
+				scalar LAI=2; 
+				scalarField QsNbr_trans = QsNbr*exp(-0.78*LAI);
+				scalarField Qr_grass = 6*(leafTemp-Tc);
+				refGrad() = (LE + Qr_grass + QsNbr_trans + CR -X)/(lambda_m+K_pt);
+			}
+		}
+    }
+	///////////////////////////////////////////
 
     mixedFvPatchScalarField::updateCoeffs(); 
-
-    if (debug)
-    {
-        scalar Q = gSum(kappa(Tp)*patch().magSf()*snGrad());
-
-        Info<< patch().boundaryMesh().mesh().name() << ':'
-            << patch().name() << ':'
-            << this->dimensionedInternalField().name() << " <- "
-            << nbrMesh.name() << ':'
-            << nbrPatch.name() << ':'
-            << this->dimensionedInternalField().name() << " :"
-            << " heat transfer rate:" << Q
-            << " walltemperature "
-            << " min:" << gMin(Tp)
-            << " max:" << gMax(Tp)
-            << " avg:" << gAverage(Tp)
-            << endl;
-    } 
 
     // Restore tag
     UPstream::msgType() = oldTag;
@@ -373,12 +351,8 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::write
 ) const
 {
     mixedFvPatchScalarField::write(os);
-    os.writeKeyword("Tnbr")<< TnbrName_ << token::END_STATEMENT << nl;
-    os.writeKeyword("wnbr")<< wnbrName_ << token::END_STATEMENT << nl;
     os.writeKeyword("QrNbr")<< QrNbrName_ << token::END_STATEMENT << nl;
-    os.writeKeyword("Qr")<< QrName_ << token::END_STATEMENT << nl;
     os.writeKeyword("QsNbr")<< QsNbrName_ << token::END_STATEMENT << nl;
-    os.writeKeyword("Qs")<< QsName_ << token::END_STATEMENT << nl;	
     temperatureCoupledBase::write(os);
 }
 

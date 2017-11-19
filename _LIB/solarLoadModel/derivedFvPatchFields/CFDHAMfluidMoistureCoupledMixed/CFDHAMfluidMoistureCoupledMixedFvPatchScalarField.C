@@ -46,13 +46,7 @@ CFDHAMfluidMoistureCoupledMixedFvPatchScalarField
 )
 :
     mixedFvPatchScalarField(p, iF),
-    temperatureCoupledBase(patch(), "undefined", "undefined", "undefined-K"),
-    wnbrName_("undefined-wnbr"),
-    TnbrName_("undefined-Tnbr"),
-    QrNbrName_("undefined-QrNbr"),
-    QrName_("undefined-Qr"),
-    QsNbrName_("undefined-QsNbr"),
-    QsName_("undefined-Qs")
+    temperatureCoupledBase(patch(), "undefined", "undefined", "undefined-K")
 {
     this->refValue() = 0.0;
     this->refGrad() = 0.0;
@@ -70,13 +64,7 @@ CFDHAMfluidMoistureCoupledMixedFvPatchScalarField
 )
 :
     mixedFvPatchScalarField(psf, p, iF, mapper),
-    temperatureCoupledBase(patch(), psf),   
-    wnbrName_(psf.wnbrName_),
-    TnbrName_(psf.TnbrName_),
-    QrNbrName_(psf.QrNbrName_),
-    QrName_(psf.QrName_),
-    QsNbrName_(psf.QsNbrName_),
-    QsName_(psf.QsName_)
+    temperatureCoupledBase(patch(), psf)
 {}
 
 
@@ -89,13 +77,7 @@ CFDHAMfluidMoistureCoupledMixedFvPatchScalarField
 )
 :
     mixedFvPatchScalarField(p, iF),
-    temperatureCoupledBase(patch(), dict),
-    wnbrName_(dict.lookupOrDefault<word>("wnbr", "none")),
-    TnbrName_(dict.lookupOrDefault<word>("Tnbr", "none")),
-    QrNbrName_(dict.lookupOrDefault<word>("QrNbr", "none")),
-    QrName_(dict.lookupOrDefault<word>("Qr", "none")),
-    QsNbrName_(dict.lookupOrDefault<word>("QsNbr", "none")),
-    QsName_(dict.lookupOrDefault<word>("Qs", "none"))  
+    temperatureCoupledBase(patch(), dict) 
 {
     if (!isA<mappedPatchBase>(this->patch().patch()))
     {
@@ -143,12 +125,7 @@ CFDHAMfluidMoistureCoupledMixedFvPatchScalarField
 )
 :
     mixedFvPatchScalarField(psf, iF),
-    temperatureCoupledBase(patch(), psf),
-    TnbrName_(psf.TnbrName_),
-    QrNbrName_(psf.QrNbrName_),
-    QrName_(psf.QrName_),
-    QsNbrName_(psf.QsNbrName_),
-    QsName_(psf.QsName_)	
+    temperatureCoupledBase(patch(), psf)	
 {}
 
 
@@ -188,7 +165,7 @@ void CFDHAMfluidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
         nbrTField = refCast
             <const mixedFvPatchScalarField>
             (
-                nbrPatch.lookupPatchField<volScalarField, scalar>(TnbrName_)
+                nbrPatch.lookupPatchField<volScalarField, scalar>("Ts")
             );   
 
     const mixedFvPatchScalarField& //CFDHAMfluidMoistureCoupledMixedFvPatchScalarField&
@@ -219,29 +196,11 @@ void CFDHAMfluidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
 
     scalarField pv_s = pvsat_s*exp((pcNbr)/(rhol*Rv*TNbr));
 
-    valueFraction() = 1.0;//KDeltaNbr/(KDeltaNbr + KDelta);
+    valueFraction() = 1.0;
     refValue() = 0.62198*pv_s/p;
-    refGrad() = 0.0;//(Qr + QrNbr + Qs + QsNbr)/(kappa(Tp));
+    refGrad() = 0.0;
 
     mixedFvPatchScalarField::updateCoeffs();
-
-/*    if (debug)
-    {
-        scalar Q = gSum(kappa(Tp)*patch().magSf()*snGrad());
-
-        Info<< patch().boundaryMesh().mesh().name() << ':'
-            << patch().name() << ':'
-            << this->dimensionedInternalField().name() << " <- "
-            << nbrMesh.name() << ':'
-            << nbrPatch.name() << ':'
-            << this->dimensionedInternalField().name() << " :"
-            << " heat transfer rate:" << Q
-            << " walltemperature "
-            << " min:" << gMin(Tp)
-            << " max:" << gMax(Tp)
-            << " avg:" << gAverage(Tp)
-            << endl;
-    } */
 
     // Restore tag
     UPstream::msgType() = oldTag;
@@ -255,12 +214,6 @@ void CFDHAMfluidMoistureCoupledMixedFvPatchScalarField::write
 ) const
 {
     mixedFvPatchScalarField::write(os);
-    os.writeKeyword("Tnbr")<< TnbrName_ << token::END_STATEMENT << nl;
-    os.writeKeyword("wnbr")<< wnbrName_ << token::END_STATEMENT << nl;
-    os.writeKeyword("QrNbr")<< QrNbrName_ << token::END_STATEMENT << nl;
-    os.writeKeyword("Qr")<< QrName_ << token::END_STATEMENT << nl;
-    os.writeKeyword("QsNbr")<< QsNbrName_ << token::END_STATEMENT << nl;
-    os.writeKeyword("Qs")<< QsName_ << token::END_STATEMENT << nl;	
     temperatureCoupledBase::write(os);
 }
 

@@ -84,23 +84,11 @@ class CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 {        
     // Private data
 
-        //- Name of field on the neighbour region
-        const word wnbrName_;        
-
-        //- Name of field on the neighbour region
-        const word TnbrName_;
-
          //- Name of the thermal radiative heat flux in the neighbour region
         const word QrNbrName_;
-
-        //- Name of the thermal radiative heat flux in local region
-        const word QrName_;
 		
          //- Name of the solar radiative heat flux in the neighbour region
-        const word QsNbrName_;
-
-        //- Name of the solar radiative heat flux in local region
-        const word QsName_;		                    
+        const word QsNbrName_;	                    
 
 public:
 
