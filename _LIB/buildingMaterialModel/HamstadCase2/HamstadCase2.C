@@ -117,18 +117,6 @@ void Foam::buildingMaterialModels::HamstadCase2::update_w_C_cell(const volScalar
     Crel.internalField()[celli] = mag( (854.271)/ pow((rho_l*R_v*T)-8.47458*pc.internalField()[celli],1.869) );
 }
 
-//- Correct the buildingMaterial moisture content (boundary)
-void Foam::buildingMaterialModels::HamstadCase2::update_w_C_boundary(const volScalarField& pc, volScalarField& w, volScalarField& Crel, label patchi, label patchFacei)
-{
-	scalar rho_l = 1.0e3; 
-	scalar R_v = 8.31451*1000/(18.01534); 
-	scalar T=293.15;
-	
-	scalar phi = Foam::exp(pc.boundaryField()[patchi][patchFacei]/(rho_l*R_v*T));
-    w.boundaryField()[patchi][patchFacei] = 116/(pow(1-(1/0.118*log(phi)),0.869));
-    Crel.boundaryField()[patchi][patchFacei] = mag( (854.271)/ pow((rho_l*R_v*T)-8.47458*pc.boundaryField()[patchi][patchFacei],1.869) );
-}
-
 //- Correct the buildingMaterial liquid permeability (cell)
 void Foam::buildingMaterialModels::HamstadCase2::update_Krel_cell(const volScalarField& pc, const volScalarField& w, volScalarField& Krel, label& celli)
 {
@@ -141,20 +129,6 @@ void Foam::buildingMaterialModels::HamstadCase2::update_Krel_cell(const volScala
     scalar Crel_tmp = mag( (854.271)/ pow((rho_l*R_v*T)-8.47458*pc.internalField()[celli],1.869) );
 	
     Krel.internalField()[celli]= diffusivity * Crel_tmp;
-}
-
-//- Correct the buildingMaterial liquid permeability (boundary)
-void Foam::buildingMaterialModels::HamstadCase2::update_Krel_boundary(const volScalarField& pc, const volScalarField& w, volScalarField& Krel, label patchi, label patchFacei)
-{
-	scalar rho_l = 1.0e3; 
-	scalar R_v = 8.31451*1000/(18.01534); 
-	scalar T=293.15;
-	
-    scalar diffusivity = 6e-10;
-	
-    scalar Crel_tmp = mag( (854.271)/ pow((rho_l*R_v*T)-8.47458*pc.boundaryField()[patchi][patchFacei],1.869) );
-	
-    Krel.boundaryField()[patchi][patchFacei]= diffusivity * Crel_tmp;
 }
 
 //- Correct the buildingMaterial vapor permeability (cell)
@@ -174,23 +148,6 @@ void Foam::buildingMaterialModels::HamstadCase2::update_Kv_cell(const volScalarF
     K_v.internalField()[celli] = 0;//(delta*p_vsat*relhum)/(rho_l*R_v*T);
 }
 
-//- Correct the buildingMaterial vapor permeability (boundary)
-void Foam::buildingMaterialModels::HamstadCase2::update_Kv_boundary(const volScalarField& pc, const volScalarField& w, const volScalarField& T, volScalarField& K_v, label patchi, label patchFacei)
-{
-    /*
-    scalar rho_l = 1.0e3; 
-    scalar R_v = 8.31451*1000/(18.01534); 
-    scalar T=293.15;
-
-    scalar p_vsat = Foam::exp(6.58094e1 - 7.06627e3/T - 5.976*Foam::log(T)); // saturation vapour pressure [Pa]
-    scalar relhum = Foam::exp(pc.boundaryField()[patchi][patchFacei]/(rho_l*R_v*T)); // relative humidity [-]
-    
-    scalar tmp = 1 - (w.boundaryField()[patchi][patchFacei]/1.57e2); 
-    scalar delta = 2.61e-5 * tmp/(R_v*T*30*(0.503*tmp*tmp + 0.497)); // Water vapour diffusion coefficient "for brick" [s]
-    */
-    K_v.boundaryField()[patchi][patchFacei] = 0;//(delta*p_vsat*relhum)/(rho_l*R_v*T);
-}
-
 //- Correct the buildingMaterial K_pt (cell)
 void Foam::buildingMaterialModels::HamstadCase2::update_Kpt_cell(const volScalarField& pc, const volScalarField& w, const volScalarField& T, volScalarField& K_pt, label& celli)
 {
@@ -207,34 +164,11 @@ void Foam::buildingMaterialModels::HamstadCase2::update_Kpt_cell(const volScalar
     K_pt.internalField()[celli] = delta*relhum*dpsatdt;
 }
 
-//- Correct the buildingMaterial K_pt (boundary)
-void Foam::buildingMaterialModels::HamstadCase2::update_Kpt_boundary(const volScalarField& pc, const volScalarField& w, const volScalarField& T, volScalarField& K_pt, label patchi, label patchFacei)
-{
-    scalar rho_l = 1.0e3; 
-    scalar R_v = 8.31451*1000/(18.01534); 
-
-    scalar p_vsat = Foam::exp(6.58094e1 - 7.06627e3/T.boundaryField()[patchi][patchFacei] - 5.976*Foam::log(T.boundaryField()[patchi][patchFacei])); // saturation vapour pressure [Pa]
-    scalar dpsatdt = (7.06627e3/(T.boundaryField()[patchi][patchFacei]*T.boundaryField()[patchi][patchFacei]) - 5.976/T.boundaryField()[patchi][patchFacei]) * p_vsat; // saturation vapour pressure [Pa]
-        
-    scalar relhum = Foam::exp(pc.boundaryField()[patchi][patchFacei]/(rho_l*R_v*T.boundaryField()[patchi][patchFacei])); // relative humidity [-]
-    
-    scalar delta = 1e-15;
-
-    K_pt.boundaryField()[patchi][patchFacei] = delta*relhum*dpsatdt;
-}
-
 //- Correct the buildingMaterial lambda (cell)
 void Foam::buildingMaterialModels::HamstadCase2::update_lambda_cell(const volScalarField& w, volScalarField& lambda, label& celli)
 {
 
     lambda.internalField()[celli] = 0.15;
-}
-
-//- Correct the buildingMaterial lambda (boundary)
-void Foam::buildingMaterialModels::HamstadCase2::update_lambda_boundary(const volScalarField& w, volScalarField& lambda, label patchi, label patchFacei)
-{
-
-    lambda.boundaryField()[patchi][patchFacei] = 0.15;
 }
 
 //*********************************************************** //

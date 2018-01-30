@@ -163,32 +163,17 @@ public:
         //- Correct the buildingMaterial moisture content (cell)
         virtual void update_w_C_cell(const volScalarField& pc, volScalarField& w, volScalarField& Crel, label& celli) = 0;
 
-        //- Correct the buildingMaterial moisture content (boundary)
-        virtual void update_w_C_boundary(const volScalarField& pc, volScalarField& w, volScalarField& Crel, label patchi, label patchFacei) = 0;
-
         //- Correct the buildingMaterial liquid permeability (cell)
         virtual void update_Krel_cell(const volScalarField& pc, const volScalarField& w, volScalarField& Krel, label& celli) = 0;
-
-        //- Correct the buildingMaterial liquid permeability (boundary)
-        virtual void update_Krel_boundary(const volScalarField& pc, const volScalarField& w, volScalarField& Krel, label patchi, label patchFacei) = 0;    
 
         //- Correct the buildingMaterial vapor permeability (cell)
         virtual void update_Kv_cell(const volScalarField& pc, const volScalarField& w, const volScalarField& T, volScalarField& K_v, label& celli) = 0;
 
-        //- Correct the buildingMaterial vapor permeability (boundary)
-        virtual void update_Kv_boundary(const volScalarField& pc, const volScalarField& w, const volScalarField& T, volScalarField& K_v, label patchi, label patchFacei) = 0; 
-
         //- Correct the buildingMaterial vapor permeability (cell)
         virtual void update_Kpt_cell(const volScalarField& pc, const volScalarField& w, const volScalarField& T, volScalarField& K_pt, label& celli) = 0;
 
-        //- Correct the buildingMaterial vapor permeability (boundary)
-        virtual void update_Kpt_boundary(const volScalarField& pc, const volScalarField& w, const volScalarField& T, volScalarField& K_pt, label patchi, label patchFacei) = 0;               
-
         //- Correct the buildingMaterial lambda  (cell)
         virtual void update_lambda_cell(const volScalarField& w, volScalarField& lambda, label& celli) = 0;
-
-        //- Correct the buildingMaterial lambda  (boundary)
-        virtual void update_lambda_boundary(const volScalarField& w, volScalarField& lambda, label patchi, label patchFacei) = 0; 
 
         //- Read transportProperties dictionary
         virtual bool read(const dictionary& buildingMaterialProperties) = 0;
