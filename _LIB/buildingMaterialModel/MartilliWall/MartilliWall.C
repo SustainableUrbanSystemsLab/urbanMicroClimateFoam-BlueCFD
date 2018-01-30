@@ -55,55 +55,17 @@ Foam::buildingMaterialModels::MartilliWall::MartilliWall
 (
     const word& name,
     const dictionary& buildingMaterialProperties,
-    const word& cellZoneModel
-    //volScalarField& h,
-    //volScalarField& theta,
-    //volScalarField& kr,
-    //volScalarField& Ch
+    const word& cellZoneModel,
+	const label& MaterialsI
 )
 :
-    buildingMaterialModel(name, buildingMaterialProperties, cellZoneModel),// h, theta, kr, Ch),
-    MartilliWallCoeffs_(buildingMaterialProperties.subDict(typeName + "Coeffs")),
-    rho_("rho", dimensionSet(1, -3, 0, 0, 0), MartilliWallCoeffs_.lookup("rho")),
-    cap_("cap", dimensionSet(0, 2, -2, -1, 0), MartilliWallCoeffs_.lookup("cap"))
-    /*Ks_(MartilliWallCoeffs_.lookup("Ks")),
-    theta_s_(MartilliWallCoeffs_.lookup("theta_s")),
-    theta_r_(MartilliWallCoeffs_.lookup("theta_r")),
-    alpha_(MartilliWallCoeffs_.lookup("alpha")),
-    beta_(MartilliWallCoeffs_.lookup("beta")),
-    gamma_(MartilliWallCoeffs_.lookup("gamma")),
-    A_(MartilliWallCoeffs_.lookup("A")),
-    Ss_(MartilliWallCoeffs_.lookup("Ss"))*/
+    buildingMaterialModel(name, buildingMaterialProperties, cellZoneModel, MaterialsI)
 {
     
 }
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-
-bool Foam::buildingMaterialModels::MartilliWall::read
-(
-    const dictionary& buildingMaterialProperties
-)
-{
-    buildingMaterialModel::read(buildingMaterialProperties);
-
-    MartilliWallCoeffs_ = buildingMaterialProperties.subDict(typeName + "Coeffs");
-
-    MartilliWallCoeffs_.lookup("rho") >> rho_.value();
-    MartilliWallCoeffs_.lookup("cap") >> cap_.value();
-
-    /*MartilliWallCoeffs_.lookup("Ks") >> Ks_;
-    MartilliWallCoeffs_.lookup("theta_s") >> theta_s_;
-    MartilliWallCoeffs_.lookup("theta_r") >> theta_r_;
-    MartilliWallCoeffs_.lookup("alpha") >> alpha_;
-    MartilliWallCoeffs_.lookup("beta") >> beta_;
-    MartilliWallCoeffs_.lookup("gamma") >> gamma_;
-    MartilliWallCoeffs_.lookup("A") >> A_;
-    MartilliWallCoeffs_.lookup("Ss") >> Ss_;*/
-
-    return true;
-}
 
 //- Correct the buildingMaterial moisture content (cell)
 void Foam::buildingMaterialModels::MartilliWall::update_w_C_cell(const volScalarField& pc, volScalarField& w, volScalarField& Crel, label& celli)
@@ -165,11 +127,5 @@ void Foam::buildingMaterialModels::MartilliWall::update_Kpt_cell(const volScalar
     K_pt.internalField()[celli] = ( (delta*p_vsat*relhum)/(rho_l*R_v*pow(T.internalField()[celli],2)) ) * (rho_l*L_v - pc.internalField()[celli]);
 }
 
-//- Correct the buildingMaterial lambda (cell)
-void Foam::buildingMaterialModels::MartilliWall::update_lambda_cell(const volScalarField& w, volScalarField& lambda, label& celli)
-{
-
-    lambda.internalField()[celli] = 1.541+0*w.internalField()[celli]/1000;
-}
 
 //*********************************************************** //

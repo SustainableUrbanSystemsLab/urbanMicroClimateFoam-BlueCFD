@@ -43,30 +43,24 @@ Foam::buildingMaterialModel::buildingMaterialModel
 (
     const word& name,
     const dictionary& buildingMaterialProperties,
-    const word& cellZoneModel
-    //volScalarField& h,
-    //volScalarField& theta,
-    //volScalarField& kr,
-    //volScalarField& Ch
+    const word& cellZoneModel,
+	const label& MaterialsI
 )
 :
     name_(name),
     buildingMaterialProperties_(buildingMaterialProperties),
-    cellZoneModel_(cellZoneModel)
-    //h_(h),
-    //theta_(theta),
-    //kr_(kr),
-    //Ch_(Ch)
+    cellZoneModel_(cellZoneModel),
+	MaterialsI_(MaterialsI)
 {}
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-bool Foam::buildingMaterialModel::read(const dictionary& buildingMaterialProperties)
+/*bool Foam::buildingMaterialModel::read(const dictionary& buildingMaterialProperties)
 {
     buildingMaterialProperties_ = buildingMaterialProperties;
 
     return true;
-}
+}*/
 
 
 // ************************************************************************* //

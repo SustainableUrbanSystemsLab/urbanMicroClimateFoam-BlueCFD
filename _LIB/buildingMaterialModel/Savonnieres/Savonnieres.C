@@ -55,55 +55,17 @@ Foam::buildingMaterialModels::Savonnieres::Savonnieres
 (
     const word& name,
     const dictionary& buildingMaterialProperties,
-    const word& cellZoneModel
-    //volScalarField& h,
-    //volScalarField& theta,
-    //volScalarField& kr,
-    //volScalarField& Ch
+    const word& cellZoneModel,
+	const label& MaterialsI
 )
 :
-    buildingMaterialModel(name, buildingMaterialProperties, cellZoneModel),// h, theta, kr, Ch),
-    SavonnieresCoeffs_(buildingMaterialProperties.subDict(typeName + "Coeffs")),
-    rho_("rho", dimensionSet(1, -3, 0, 0, 0), SavonnieresCoeffs_.lookup("rho")),
-    cap_("cap", dimensionSet(0, 2, -2, -1, 0), SavonnieresCoeffs_.lookup("cap"))  
-    /*Ks_(SavonnieresCoeffs_.lookup("Ks")),
-    theta_s_(SavonnieresCoeffs_.lookup("theta_s")),
-    theta_r_(SavonnieresCoeffs_.lookup("theta_r")),
-    alpha_(SavonnieresCoeffs_.lookup("alpha")),
-    beta_(SavonnieresCoeffs_.lookup("beta")),
-    gamma_(SavonnieresCoeffs_.lookup("gamma")),
-    A_(SavonnieresCoeffs_.lookup("A")),
-    Ss_(SavonnieresCoeffs_.lookup("Ss"))*/
+    buildingMaterialModel(name, buildingMaterialProperties, cellZoneModel, MaterialsI)
 {
     
 }
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-
-bool Foam::buildingMaterialModels::Savonnieres::read
-(
-    const dictionary& buildingMaterialProperties
-)
-{
-    buildingMaterialModel::read(buildingMaterialProperties);
-
-    SavonnieresCoeffs_ = buildingMaterialProperties.subDict(typeName + "Coeffs");
-
-    SavonnieresCoeffs_.lookup("rho") >> rho_.value();
-    SavonnieresCoeffs_.lookup("cap") >> cap_.value();    
-
-    /*SavonnieresCoeffs_.lookup("Ks") >> Ks_;
-    SavonnieresCoeffs_.lookup("theta_s") >> theta_s_;
-    SavonnieresCoeffs_.lookup("theta_r") >> theta_r_;
-    SavonnieresCoeffs_.lookup("alpha") >> alpha_;
-    SavonnieresCoeffs_.lookup("beta") >> beta_;
-    SavonnieresCoeffs_.lookup("gamma") >> gamma_;
-    SavonnieresCoeffs_.lookup("A") >> A_;
-    SavonnieresCoeffs_.lookup("Ss") >> Ss_;*/
-
-    return true;
-}
 
 //- Correct the buildingMaterial moisture content (cell)
 void Foam::buildingMaterialModels::Savonnieres::update_w_C_cell(const volScalarField& pc, volScalarField& w, volScalarField& Crel, label& celli)
@@ -200,13 +162,6 @@ void Foam::buildingMaterialModels::Savonnieres::update_Kpt_cell(const volScalarF
     scalar delta = 2.61e-5 * tmp/(R_v*T.internalField()[celli]*90.7*(0.503*tmp*tmp + 0.497)); // Water vapour diffusion coefficient [s]
 
     K_pt.internalField()[celli] = ( (delta*p_vsat*relhum)/(rho_l*R_v*pow(T.internalField()[celli],2)) ) * (rho_l*L_v - pc.internalField()[celli]);
-}
-
-//- Correct the buildingMaterial lambda (cell)
-void Foam::buildingMaterialModels::Savonnieres::update_lambda_cell(const volScalarField& w, volScalarField& lambda, label& celli)
-{
-
-    lambda.internalField()[celli] = 0.99+0.6*26.87*(w.internalField()[celli]/133); //26.87 = total open porosity, 0.6 = thermal conductivity of water at 20C
 }
 
 //*********************************************************** //

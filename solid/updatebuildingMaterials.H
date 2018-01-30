@@ -6,11 +6,15 @@ forAll(Materials, MaterialsI)
 
     const word cellZoneName(dict.lookup("name"));
     const word cellZoneModel(dict.lookup("buildingMaterialModel"));
+	const scalar rho_(readScalar(dict.lookup("rho")));
+	const scalar cap_(readScalar(dict.lookup("cap")));
+	const scalar lambda1_(readScalar(dict.lookup("lambda1")));
+	const scalar lambda2_(readScalar(dict.lookup("lambda2")));
 
     //create the buildingMaterial model
     autoPtr<buildingMaterialModel> buildingMaterial
     (
-       buildingMaterialModel::New("buildingMaterial", solidTransportProperties[i], cellZoneModel)
+       buildingMaterialModel::New("buildingMaterial", solidTransportProperties[i], cellZoneModel, MaterialsI)
     );
     
     label cellZoneID = mesh.cellZones().findZoneID(cellZoneName);
@@ -39,9 +43,9 @@ forAll(Materials, MaterialsI)
         }
         else if (update_sequence == 2)
         {
-            rho_m.internalField()[celli] = buildingMaterial->rho().value();
-            cap_m.internalField()[celli] = buildingMaterial->cap().value();
-            buildingMaterial->update_lambda_cell(ws,lambda_m,celli);
+            rho_m.internalField()[celli] = rho_;
+            cap_m.internalField()[celli] = cap_;
+            lambda_m.internalField()[celli] = lambda1_ + lambda2_*ws[celli];
         }
         else if (update_sequence == 3)
         {   

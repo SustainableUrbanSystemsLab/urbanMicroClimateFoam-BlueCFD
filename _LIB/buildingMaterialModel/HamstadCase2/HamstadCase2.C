@@ -55,55 +55,17 @@ Foam::buildingMaterialModels::HamstadCase2::HamstadCase2
 (
     const word& name,
     const dictionary& buildingMaterialProperties,
-    const word& cellZoneModel
-    //volScalarField& h,
-    //volScalarField& theta,
-    //volScalarField& kr,
-    //volScalarField& Ch
+    const word& cellZoneModel,
+	const label& MaterialsI
 )
 :
-    buildingMaterialModel(name, buildingMaterialProperties, cellZoneModel),// h, theta, kr, Ch),
-    HamstadCase2Coeffs_(buildingMaterialProperties.subDict(typeName + "Coeffs")),
-    rho_("rho", dimensionSet(1, -3, 0, 0, 0), HamstadCase2Coeffs_.lookup("rho")),
-    cap_("cap", dimensionSet(0, 2, -2, -1, 0), HamstadCase2Coeffs_.lookup("cap"))
-    /*Ks_(HamstadCase2Coeffs_.lookup("Ks")),
-    theta_s_(HamstadCase2Coeffs_.lookup("theta_s")),
-    theta_r_(HamstadCase2Coeffs_.lookup("theta_r")),
-    alpha_(HamstadCase2Coeffs_.lookup("alpha")),
-    beta_(HamstadCase2Coeffs_.lookup("beta")),
-    gamma_(HamstadCase2Coeffs_.lookup("gamma")),
-    A_(HamstadCase2Coeffs_.lookup("A")),
-    Ss_(HamstadCase2Coeffs_.lookup("Ss"))*/
+    buildingMaterialModel(name, buildingMaterialProperties, cellZoneModel, MaterialsI)
 {
     
 }
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-
-bool Foam::buildingMaterialModels::HamstadCase2::read
-(
-    const dictionary& buildingMaterialProperties
-)
-{
-    buildingMaterialModel::read(buildingMaterialProperties);
-
-    HamstadCase2Coeffs_ = buildingMaterialProperties.subDict(typeName + "Coeffs");
-
-    HamstadCase2Coeffs_.lookup("rho") >> rho_.value();
-    HamstadCase2Coeffs_.lookup("cap") >> cap_.value();     
-
-    /*HamstadCase2Coeffs_.lookup("Ks") >> Ks_;
-    HamstadCase2Coeffs_.lookup("theta_s") >> theta_s_;
-    HamstadCase2Coeffs_.lookup("theta_r") >> theta_r_;
-    HamstadCase2Coeffs_.lookup("alpha") >> alpha_;
-    HamstadCase2Coeffs_.lookup("beta") >> beta_;
-    HamstadCase2Coeffs_.lookup("gamma") >> gamma_;
-    HamstadCase2Coeffs_.lookup("A") >> A_;
-    HamstadCase2Coeffs_.lookup("Ss") >> Ss_;*/
-
-    return true;
-}
 
 //- Correct the buildingMaterial moisture content (cell)
 void Foam::buildingMaterialModels::HamstadCase2::update_w_C_cell(const volScalarField& pc, volScalarField& w, volScalarField& Crel, label& celli)
@@ -162,13 +124,6 @@ void Foam::buildingMaterialModels::HamstadCase2::update_Kpt_cell(const volScalar
     scalar delta = 1e-15;
 
     K_pt.internalField()[celli] = delta*relhum*dpsatdt;
-}
-
-//- Correct the buildingMaterial lambda (cell)
-void Foam::buildingMaterialModels::HamstadCase2::update_lambda_cell(const volScalarField& w, volScalarField& lambda, label& celli)
-{
-
-    lambda.internalField()[celli] = 0.15;
 }
 
 //*********************************************************** //

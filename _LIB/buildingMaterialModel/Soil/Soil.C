@@ -55,55 +55,17 @@ Foam::buildingMaterialModels::Soil::Soil
 (
     const word& name,
     const dictionary& buildingMaterialProperties,
-    const word& cellZoneModel
-    //volScalarField& h,
-    //volScalarField& theta,
-    //volScalarField& kr,
-    //volScalarField& Ch
+    const word& cellZoneModel,
+	const label& MaterialsI
 )
 :
-    buildingMaterialModel(name, buildingMaterialProperties, cellZoneModel),// h, theta, kr, Ch),
-    SoilCoeffs_(buildingMaterialProperties.subDict(typeName + "Coeffs")),
-    rho_("rho", dimensionSet(1, -3, 0, 0, 0), SoilCoeffs_.lookup("rho")),
-    cap_("cap", dimensionSet(0, 2, -2, -1, 0), SoilCoeffs_.lookup("cap"))
-    /*Ks_(SoilCoeffs_.lookup("Ks")),
-    theta_s_(SoilCoeffs_.lookup("theta_s")),
-    theta_r_(SoilCoeffs_.lookup("theta_r")),
-    alpha_(SoilCoeffs_.lookup("alpha")),
-    beta_(SoilCoeffs_.lookup("beta")),
-    gamma_(SoilCoeffs_.lookup("gamma")),
-    A_(SoilCoeffs_.lookup("A")),
-    Ss_(SoilCoeffs_.lookup("Ss"))*/
+    buildingMaterialModel(name, buildingMaterialProperties, cellZoneModel, MaterialsI)
 {
     
 }
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-
-bool Foam::buildingMaterialModels::Soil::read
-(
-    const dictionary& buildingMaterialProperties
-)
-{
-    buildingMaterialModel::read(buildingMaterialProperties);
-
-    SoilCoeffs_ = buildingMaterialProperties.subDict(typeName + "Coeffs");
-
-    SoilCoeffs_.lookup("rho") >> rho_.value();
-    SoilCoeffs_.lookup("cap") >> cap_.value();
-
-    /*SoilCoeffs_.lookup("Ks") >> Ks_;
-    SoilCoeffs_.lookup("theta_s") >> theta_s_;
-    SoilCoeffs_.lookup("theta_r") >> theta_r_;
-    SoilCoeffs_.lookup("alpha") >> alpha_;
-    SoilCoeffs_.lookup("beta") >> beta_;
-    SoilCoeffs_.lookup("gamma") >> gamma_;
-    SoilCoeffs_.lookup("A") >> A_;
-    SoilCoeffs_.lookup("Ss") >> Ss_;*/
-
-    return true;
-}
 
 //- Correct the buildingMaterial moisture content (cell)
 void Foam::buildingMaterialModels::Soil::update_w_C_cell(const volScalarField& pc, volScalarField& w, volScalarField& Crel, label& celli)
@@ -165,13 +127,6 @@ void Foam::buildingMaterialModels::Soil::update_Kpt_cell(const volScalarField& p
     scalar delta = 2.61e-5 * tmp/(R_v*T.internalField()[celli]*50*(0.503*tmp*tmp + 0.497)); //50 is Mu, water vapor diffusion resistance factor?
 
     K_pt.internalField()[celli] = ( (delta*p_vsat*relhum)/(rho_l*R_v*pow(T.internalField()[celli],2)) ) * (rho_l*L_v - pc.internalField()[celli]);
-}
-
-//- Correct the buildingMaterial lambda (cell)
-void Foam::buildingMaterialModels::Soil::update_lambda_cell(const volScalarField& w, volScalarField& lambda, label& celli)
-{
-
-    lambda.internalField()[celli] = 1.5; //from Toparlar et al 2015.
 }
 
 //*********************************************************** //

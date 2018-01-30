@@ -61,20 +61,6 @@ class CalciumSilicate
 {
     // Private data
 
-        dictionary CalciumSilicateCoeffs_;
-
-        dimensionedScalar rho_;
-        dimensionedScalar cap_;    
-
-        //dimensionedTensor Ks_;
-        //dimensionedScalar theta_s_;
-        //dimensionedScalar theta_r_;
-        //dimensionedScalar alpha_;
-        //dimensionedScalar beta_;
-        //dimensionedScalar gamma_;
-        //dimensionedScalar A_;
-        //dimensionedScalar Ss_; 
-
     // Private Member Functions
 
 public:
@@ -90,11 +76,8 @@ public:
         (
             const word& name, 
             const dictionary& buildingMaterialProperties,
-            const word& cellZoneModel
-            //volScalarField& h,
-            //volScalarField& theta,
-            //volScalarField& kr,
-            //volScalarField& Ch
+            const word& cellZoneModel,
+			const label& MaterialsI
         );
 
 
@@ -117,37 +100,6 @@ public:
 
         //- Correct the buildingMaterial K_pt (cell)
         void update_Kpt_cell(const volScalarField& pc, const volScalarField& w, const volScalarField& T, volScalarField& K_pt, label& celli);
-
-        //- Correct the buildingMaterial lambda (cell)
-        void update_lambda_cell(const volScalarField& w, volScalarField& lambda, label& celli);                   
-
-        //- Read transportProperties dictionary
-        bool read(const dictionary& buildingMaterialProperties);
-
-        dimensionedScalar rho()
-        {
-            return rho_;
-        }
-
-        dimensionedScalar cap()
-        {
-            return cap_;
-        }    
-
-        /*dimensionedTensor Ks()
-        {
-            return Ks_;
-        }
-
-        dimensionedScalar theta_s()
-        {
-            return theta_s_;
-        }
-
-        dimensionedScalar Ss()
-        {
-            return Ss_;
-        }*/
 
 };
 

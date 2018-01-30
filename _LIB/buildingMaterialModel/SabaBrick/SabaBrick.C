@@ -55,55 +55,17 @@ Foam::buildingMaterialModels::SabaBrick::SabaBrick
 (
     const word& name,
     const dictionary& buildingMaterialProperties,
-    const word& cellZoneModel
-    //volScalarField& h,
-    //volScalarField& theta,
-    //volScalarField& kr,
-    //volScalarField& Ch
+    const word& cellZoneModel,
+	const label& MaterialsI
 )
 :
-    buildingMaterialModel(name, buildingMaterialProperties, cellZoneModel),// h, theta, kr, Ch),
-    SabaBrickCoeffs_(buildingMaterialProperties.subDict(typeName + "Coeffs")),
-    rho_("rho", dimensionSet(1, -3, 0, 0, 0), SabaBrickCoeffs_.lookup("rho")),
-    cap_("cap", dimensionSet(0, 2, -2, -1, 0), SabaBrickCoeffs_.lookup("cap"))
-    /*Ks_(SabaBrickCoeffs_.lookup("Ks")),
-    theta_s_(SabaBrickCoeffs_.lookup("theta_s")),
-    theta_r_(SabaBrickCoeffs_.lookup("theta_r")),
-    alpha_(SabaBrickCoeffs_.lookup("alpha")),
-    beta_(SabaBrickCoeffs_.lookup("beta")),
-    gamma_(SabaBrickCoeffs_.lookup("gamma")),
-    A_(SabaBrickCoeffs_.lookup("A")),
-    Ss_(SabaBrickCoeffs_.lookup("Ss"))*/
+    buildingMaterialModel(name, buildingMaterialProperties, cellZoneModel, MaterialsI)
 {
     
 }
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-
-bool Foam::buildingMaterialModels::SabaBrick::read
-(
-    const dictionary& buildingMaterialProperties
-)
-{
-    buildingMaterialModel::read(buildingMaterialProperties);
-
-    SabaBrickCoeffs_ = buildingMaterialProperties.subDict(typeName + "Coeffs");
-
-    SabaBrickCoeffs_.lookup("rho") >> rho_.value();
-    SabaBrickCoeffs_.lookup("cap") >> cap_.value();
-
-    /*SabaBrickCoeffs_.lookup("Ks") >> Ks_;
-    SabaBrickCoeffs_.lookup("theta_s") >> theta_s_;
-    SabaBrickCoeffs_.lookup("theta_r") >> theta_r_;
-    SabaBrickCoeffs_.lookup("alpha") >> alpha_;
-    SabaBrickCoeffs_.lookup("beta") >> beta_;
-    SabaBrickCoeffs_.lookup("gamma") >> gamma_;
-    SabaBrickCoeffs_.lookup("A") >> A_;
-    SabaBrickCoeffs_.lookup("Ss") >> Ss_;*/
-
-    return true;
-}
 
 //- Correct the buildingMaterial moisture content (cell)
 void Foam::buildingMaterialModels::SabaBrick::update_w_C_cell(const volScalarField& pc, volScalarField& w, volScalarField& Crel, label& celli)
@@ -202,13 +164,6 @@ void Foam::buildingMaterialModels::SabaBrick::update_Kpt_cell(const volScalarFie
     scalar delta = 2.61e-5 * tmp/(R_v*T.internalField()[celli]*24.79*(0.503*tmp*tmp + 0.497)); // Water vapour diffusion coefficient "for brick" [s]
 
     K_pt.internalField()[celli] = ( (delta*p_vsat*relhum)/(rho_l*R_v*pow(T.internalField()[celli],2)) ) * (rho_l*L_v - pc.internalField()[celli]);
-}
-
-//- Correct the buildingMaterial lambda (cell)
-void Foam::buildingMaterialModels::SabaBrick::update_lambda_cell(const volScalarField& w, volScalarField& lambda, label& celli)
-{
-
-    lambda.internalField()[celli] = 1+0.0047*w.internalField()[celli];
 }
 
 //*********************************************************** //

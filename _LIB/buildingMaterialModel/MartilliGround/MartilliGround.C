@@ -55,55 +55,17 @@ Foam::buildingMaterialModels::MartilliGround::MartilliGround
 (
     const word& name,
     const dictionary& buildingMaterialProperties,
-    const word& cellZoneModel
-    //volScalarField& h,
-    //volScalarField& theta,
-    //volScalarField& kr,
-    //volScalarField& Ch
+    const word& cellZoneModel,
+	const label& MaterialsI
 )
 :
-    buildingMaterialModel(name, buildingMaterialProperties, cellZoneModel),// h, theta, kr, Ch),
-    MartilliGroundCoeffs_(buildingMaterialProperties.subDict(typeName + "Coeffs")),
-    rho_("rho", dimensionSet(1, -3, 0, 0, 0), MartilliGroundCoeffs_.lookup("rho")),
-    cap_("cap", dimensionSet(0, 2, -2, -1, 0), MartilliGroundCoeffs_.lookup("cap"))
-    /*Ks_(MartilliGroundCoeffs_.lookup("Ks")),
-    theta_s_(MartilliGroundCoeffs_.lookup("theta_s")),
-    theta_r_(MartilliGroundCoeffs_.lookup("theta_r")),
-    alpha_(MartilliGroundCoeffs_.lookup("alpha")),
-    beta_(MartilliGroundCoeffs_.lookup("beta")),
-    gamma_(MartilliGroundCoeffs_.lookup("gamma")),
-    A_(MartilliGroundCoeffs_.lookup("A")),
-    Ss_(MartilliGroundCoeffs_.lookup("Ss"))*/
+    buildingMaterialModel(name, buildingMaterialProperties, cellZoneModel, MaterialsI)
 {
     
 }
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-
-bool Foam::buildingMaterialModels::MartilliGround::read
-(
-    const dictionary& buildingMaterialProperties
-)
-{
-    buildingMaterialModel::read(buildingMaterialProperties);
-
-    MartilliGroundCoeffs_ = buildingMaterialProperties.subDict(typeName + "Coeffs");
-
-    MartilliGroundCoeffs_.lookup("rho") >> rho_.value();
-    MartilliGroundCoeffs_.lookup("cap") >> cap_.value();
-
-    /*MartilliGroundCoeffs_.lookup("Ks") >> Ks_;
-    MartilliGroundCoeffs_.lookup("theta_s") >> theta_s_;
-    MartilliGroundCoeffs_.lookup("theta_r") >> theta_r_;
-    MartilliGroundCoeffs_.lookup("alpha") >> alpha_;
-    MartilliGroundCoeffs_.lookup("beta") >> beta_;
-    MartilliGroundCoeffs_.lookup("gamma") >> gamma_;
-    MartilliGroundCoeffs_.lookup("A") >> A_;
-    MartilliGroundCoeffs_.lookup("Ss") >> Ss_;*/
-
-    return true;
-}
 
 //- Correct the buildingMaterial moisture content (cell)
 void Foam::buildingMaterialModels::MartilliGround::update_w_C_cell(const volScalarField& pc, volScalarField& w, volScalarField& Crel, label& celli)
@@ -163,13 +125,6 @@ void Foam::buildingMaterialModels::MartilliGround::update_Kpt_cell(const volScal
     scalar delta = 2.61e-5 * tmp/(R_v*T.internalField()[celli]*7.5*(0.8*tmp*tmp + 0.2)); // Water vapour diffusion coefficient "for brick" [s]
 
     K_pt.internalField()[celli] = ( (delta*p_vsat*relhum)/(rho_l*R_v*pow(T.internalField()[celli],2)) ) * (rho_l*L_v - pc.internalField()[celli]);
-}
-
-//- Correct the buildingMaterial lambda (cell)
-void Foam::buildingMaterialModels::MartilliGround::update_lambda_cell(const volScalarField& w, volScalarField& lambda, label& celli)
-{
-
-    lambda.internalField()[celli] = 0.667+0*w.internalField()[celli]/1000;
 }
 
 //*********************************************************** //

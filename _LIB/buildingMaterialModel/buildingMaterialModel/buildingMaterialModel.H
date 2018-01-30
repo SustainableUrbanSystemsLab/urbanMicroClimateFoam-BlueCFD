@@ -74,12 +74,7 @@ protected:
         word name_;
         dictionary buildingMaterialProperties_;
         word cellZoneModel_;
-
-        //volScalarField& h_;           //head
-        //volScalarField& theta_;       //moisture content
-        //volScalarField& kr_;          //relative permeability
-        //volScalarField& Ch_;          //specific moisture capacity
-
+		label MaterialsI_;
 
     // Private Member Functions
 
@@ -106,13 +101,10 @@ public:
             (
                 const word& name,
                 const dictionary& buildingMaterialProperties,
-                const word& cellZoneModel
-                //volScalarField& h,
-                //volScalarField& theta,
-                //volScalarField& kr,
-                //volScalarField& Ch
+                const word& cellZoneModel,
+				const label& MaterialsI
             ),
-            (name, buildingMaterialProperties, cellZoneModel)//, h, theta, kr, Ch)
+            (name, buildingMaterialProperties, cellZoneModel, MaterialsI)
         );
 
 
@@ -123,11 +115,8 @@ public:
         (
             const word& name,
             const dictionary& buildingMaterialProperties,
-            const word& cellZoneModel
-            //volScalarField& h,
-            //volScalarField& theta,
-            //volScalarField& kr,
-            //volScalarField& Ch
+            const word& cellZoneModel,
+			const label& MaterialsI
         );
 
 
@@ -138,11 +127,8 @@ public:
         (
             const word& name,
             const dictionary& buildingMaterialProperties,
-            const word& cellZoneModel
-            //volScalarField& h,
-            //volScalarField& theta,
-            //volScalarField& kr,
-            //volScalarField& Ch
+            const word& cellZoneModel,
+			const label& MaterialsI
         );
 
 
@@ -172,18 +158,6 @@ public:
         //- Correct the buildingMaterial vapor permeability (cell)
         virtual void update_Kpt_cell(const volScalarField& pc, const volScalarField& w, const volScalarField& T, volScalarField& K_pt, label& celli) = 0;
 
-        //- Correct the buildingMaterial lambda  (cell)
-        virtual void update_lambda_cell(const volScalarField& w, volScalarField& lambda, label& celli) = 0;
-
-        //- Read transportProperties dictionary
-        virtual bool read(const dictionary& buildingMaterialProperties) = 0;
-
-        virtual dimensionedScalar rho() = 0;
-        virtual dimensionedScalar cap() = 0;
-
-        /*virtual dimensionedTensor Ks() = 0;
-        virtual dimensionedScalar theta_s() = 0;
-        virtual dimensionedScalar Ss() = 0;*/
 };
 
 
