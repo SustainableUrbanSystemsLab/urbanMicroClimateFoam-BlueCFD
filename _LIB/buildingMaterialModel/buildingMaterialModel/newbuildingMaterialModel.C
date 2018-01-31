@@ -39,8 +39,7 @@ autoPtr<buildingMaterialModel> buildingMaterialModel::New
 (
     const word& name,
     const dictionary& buildingMaterialProperties,
-    const word& cellZoneModel,
-	const label& MaterialsI
+    const word& cellZoneModel
 )
 {
     //word buildingMaterialModelTypeName(buildingMaterialProperties.lookup("buildingMaterialModel"));
@@ -68,7 +67,7 @@ autoPtr<buildingMaterialModel> buildingMaterialModel::New
     }
 
     return autoPtr<buildingMaterialModel>
-        (cstrIter()(name, buildingMaterialProperties, cellZoneModel, MaterialsI));
+        (cstrIter()(name, buildingMaterialProperties, cellZoneModel));
 }
 
 

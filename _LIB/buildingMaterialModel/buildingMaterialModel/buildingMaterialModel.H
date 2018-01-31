@@ -74,7 +74,6 @@ protected:
         word name_;
         dictionary buildingMaterialProperties_;
         word cellZoneModel_;
-		label MaterialsI_;
 
     // Private Member Functions
 
@@ -101,10 +100,9 @@ public:
             (
                 const word& name,
                 const dictionary& buildingMaterialProperties,
-                const word& cellZoneModel,
-				const label& MaterialsI
+                const word& cellZoneModel
             ),
-            (name, buildingMaterialProperties, cellZoneModel, MaterialsI)
+            (name, buildingMaterialProperties, cellZoneModel)
         );
 
 
@@ -115,8 +113,7 @@ public:
         (
             const word& name,
             const dictionary& buildingMaterialProperties,
-            const word& cellZoneModel,
-			const label& MaterialsI
+            const word& cellZoneModel
         );
 
 
@@ -127,8 +124,7 @@ public:
         (
             const word& name,
             const dictionary& buildingMaterialProperties,
-            const word& cellZoneModel,
-			const label& MaterialsI
+            const word& cellZoneModel
         );
 
 

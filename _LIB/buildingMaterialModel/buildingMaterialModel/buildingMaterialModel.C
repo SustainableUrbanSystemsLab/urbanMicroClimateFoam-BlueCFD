@@ -43,14 +43,12 @@ Foam::buildingMaterialModel::buildingMaterialModel
 (
     const word& name,
     const dictionary& buildingMaterialProperties,
-    const word& cellZoneModel,
-	const label& MaterialsI
+    const word& cellZoneModel
 )
 :
     name_(name),
     buildingMaterialProperties_(buildingMaterialProperties),
-    cellZoneModel_(cellZoneModel),
-	MaterialsI_(MaterialsI)
+    cellZoneModel_(cellZoneModel)
 {}
 
 

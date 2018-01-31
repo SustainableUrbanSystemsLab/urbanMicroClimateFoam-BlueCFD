@@ -76,8 +76,7 @@ public:
         (
             const word& name, 
             const dictionary& buildingMaterialProperties,
-            const word& cellZoneModel,
-			const label& MaterialsI
+            const word& cellZoneModel
         );
 
 
