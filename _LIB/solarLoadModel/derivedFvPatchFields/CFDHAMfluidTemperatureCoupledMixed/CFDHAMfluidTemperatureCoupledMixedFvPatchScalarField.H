@@ -85,7 +85,7 @@ class CFDHAMfluidTemperatureCoupledMixedFvPatchScalarField
     // Private data       
 
         //- Name of field on the neighbour region
-//        const word TnbrName_;	                    
+//        const word TnbrName_;                        
 
 public:
 

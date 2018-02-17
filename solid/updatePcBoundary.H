@@ -1,4 +1,4 @@
 forAll(pc.boundaryField(), patchi)
 { 
-	pc.boundaryField()[patchi] = pc.boundaryField()[patchi].patchInternalField();
+    pc.boundaryField()[patchi] = pc.boundaryField()[patchi].patchInternalField();
 }

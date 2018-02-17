@@ -62,30 +62,30 @@ void Foam::solarLoad::directAndDiffuse::initialise()
         {
             selectedPatches_[count] = QsPatchI.patch().index();
             nLocalCoarseFaces_ += coarsePatches[patchI].size();
-			
-			if ((isA<wallFvPatch>(mesh_.boundary()[patchI])))
-			{
-				wallPatchOrNot_[count] = 1;
-				nLocalWallCoarseFaces_ += coarsePatches[patchI].size();
-			}	
-			
-			count++;
+            
+            if ((isA<wallFvPatch>(mesh_.boundary()[patchI])))
+            {
+                wallPatchOrNot_[count] = 1;
+                nLocalWallCoarseFaces_ += coarsePatches[patchI].size();
+            }    
+            
+            count++;
         }
     }
-	Info<< "Selected patches:" << selectedPatches_ << endl;
-	Info<< "Number of coarse faces:" << nLocalCoarseFaces_ << endl;
-	Info << "wallPatchOrNot_: " << wallPatchOrNot_ << endl;
-	Info << "nLocalWallCoarseFaces_: " << nLocalWallCoarseFaces_ << endl;
-	
+    Info<< "Selected patches:" << selectedPatches_ << endl;
+    Info<< "Number of coarse faces:" << nLocalCoarseFaces_ << endl;
+    Info << "wallPatchOrNot_: " << wallPatchOrNot_ << endl;
+    Info << "nLocalWallCoarseFaces_: " << nLocalWallCoarseFaces_ << endl;
+    
     selectedPatches_.resize(count--);
-	wallPatchOrNot_.resize(count--);
+    wallPatchOrNot_.resize(count--);
 
-	Info<< "Selected patches:" << selectedPatches_ << endl;
-	Info<< "Number of coarse faces:" << nLocalCoarseFaces_ << endl;
-	Info << "wallPatchOrNot_: " << wallPatchOrNot_ << endl;
-	Info << "nLocalWallCoarseFaces_: " << nLocalWallCoarseFaces_ << endl;
+    Info<< "Selected patches:" << selectedPatches_ << endl;
+    Info<< "Number of coarse faces:" << nLocalCoarseFaces_ << endl;
+    Info << "wallPatchOrNot_: " << wallPatchOrNot_ << endl;
+    Info << "nLocalWallCoarseFaces_: " << nLocalWallCoarseFaces_ << endl;
 
-	if (debug)
+    if (debug)
     {
         Pout<< "Selected patches:" << selectedPatches_ << endl;
         Pout<< "Number of coarse faces:" << nLocalCoarseFaces_ << endl;
@@ -160,7 +160,7 @@ void Foam::solarLoad::directAndDiffuse::initialise()
             false
         )
     );
-	
+    
     scalarListIOList skyViewCoeffmyProc
     (
         IOobject
@@ -173,8 +173,8 @@ void Foam::solarLoad::directAndDiffuse::initialise()
             false
         )
     );
-    skyViewCoeffSize = skyViewCoeffmyProc.size();	
-	
+    skyViewCoeffSize = skyViewCoeffmyProc.size();    
+    
     scalarListIOList sunViewCoeffmyProc
     (
         IOobject
@@ -225,15 +225,15 @@ void Foam::solarLoad::directAndDiffuse::initialise()
 
     List<scalarListList> F(Pstream::nProcs());
     F[Pstream::myProcNo()] = FmyProc;
-    Pstream::gatherList(F);	
-	
+    Pstream::gatherList(F);    
+    
     List<scalarListList> skyViewCoeff(Pstream::nProcs());
     skyViewCoeff[Pstream::myProcNo()] = skyViewCoeffmyProc;
-    Pstream::gatherList(skyViewCoeff);	
-	
+    Pstream::gatherList(skyViewCoeff);    
+    
     List<scalarListList> sunViewCoeff(Pstream::nProcs());
     sunViewCoeff[Pstream::myProcNo()] = sunViewCoeffmyProc;
-    Pstream::gatherList(sunViewCoeff);		
+    Pstream::gatherList(sunViewCoeff);        
 
     globalIndex globalNumbering(nLocalCoarseFaces_);
 
@@ -242,12 +242,12 @@ void Foam::solarLoad::directAndDiffuse::initialise()
         Fmatrix_.reset
         (
             new scalarSquareMatrix(totalNCoarseFaces_, totalNCoarseFaces_, 0.0)
-        );	
-		
+        );    
+        
         skyViewCoeffMatrix_.reset
         (
             new scalarRectangularMatrix(skyViewCoeffSize, totalNCoarseFaces_, 0.0)
-        );	
+        );    
 
         sunViewCoeffMatrix_.reset
         (
@@ -267,7 +267,7 @@ void Foam::solarLoad::directAndDiffuse::initialise()
                 Fmatrix_()
             );
         }
-		
+        
         for (label procI = 0; procI < Pstream::nProcs(); procI++)
         {
             insertRectangularMatrixElements
@@ -292,7 +292,7 @@ void Foam::solarLoad::directAndDiffuse::initialise()
                 sunViewCoeff[procI],
                 sunViewCoeffMatrix_()
             );
-        }			
+        }            
 
         bool smoothing = readBool(coeffs_.lookup("smoothing"));
         if (smoothing)
@@ -329,7 +329,7 @@ void Foam::solarLoad::directAndDiffuse::initialise()
 
             pivotIndices_.setSize(CLU_().n());
         }
-	
+    
         timestepsInADay_ = readLabel(coeffs_.lookup("timestepsInADay"));
     }
 }
@@ -380,13 +380,13 @@ Foam::solarLoad::directAndDiffuse::directAndDiffuse(const volScalarField& T)
     ),
     Fmatrix_(),
     CLU_(),
-	skyViewCoeffMatrix_(),
-	sunViewCoeffMatrix_(),	
+    skyViewCoeffMatrix_(),
+    sunViewCoeffMatrix_(),    
     selectedPatches_(mesh_.boundary().size(), -1),
-    wallPatchOrNot_(mesh_.boundary().size(), 0),	
+    wallPatchOrNot_(mesh_.boundary().size(), 0),    
     totalNCoarseFaces_(0),
     nLocalCoarseFaces_(0),
-    nLocalWallCoarseFaces_(0),	
+    nLocalWallCoarseFaces_(0),    
     constEmissivity_(false),
     timestepsInADay_(24),
     iterCounter_(0),
@@ -443,13 +443,13 @@ Foam::solarLoad::directAndDiffuse::directAndDiffuse
     ),
     Fmatrix_(),
     CLU_(),
-	skyViewCoeffMatrix_(),
-	sunViewCoeffMatrix_(),	
+    skyViewCoeffMatrix_(),
+    sunViewCoeffMatrix_(),    
     selectedPatches_(mesh_.boundary().size(), -1),
-    wallPatchOrNot_(mesh_.boundary().size(), 0),	
+    wallPatchOrNot_(mesh_.boundary().size(), 0),    
     totalNCoarseFaces_(0),
     nLocalCoarseFaces_(0),
-    nLocalWallCoarseFaces_(0),	
+    nLocalWallCoarseFaces_(0),    
     constEmissivity_(false),
     timestepsInADay_(24),
     iterCounter_(0),
@@ -716,25 +716,25 @@ void Foam::solarLoad::directAndDiffuse::calculate()
                         //scalar invEj = 1/E[j];
                         if (i==j)
                         {
-							//CLU_()[i][j] = (1/(1-E[j]));//+(E[j]/(1-E[j]))*Fmatrix_()[i][j];
+                            //CLU_()[i][j] = (1/(1-E[j]));//+(E[j]/(1-E[j]))*Fmatrix_()[i][j];
                             CLU_()[i][j] = (1/(1-E[j]))-(E[j]/(1-E[j]))*Fmatrix_()[i][j];
                         }
                         else
                         {
                             //CLU_()[i][j] = (E[j]/(1-E[j]))*Fmatrix_()[i][j];
-							CLU_()[i][j] = -(E[j]/(1-E[j]))*Fmatrix_()[i][j];
+                            CLU_()[i][j] = -(E[j]/(1-E[j]))*Fmatrix_()[i][j];
                         }
                     }
                 }
                 Info<< "\nDecomposing C matrix..." << endl;
                 LUDecompose(CLU_(), pivotIndices_);
             }
-			
+            
             for (label i=0; i<totalNCoarseFaces_; i++)
             {
                 for (label j=0; j<totalNCoarseFaces_; j++)
                 {
-					scalar Id = (skyViewCoeffMatrix_()[timestep][j] + sunViewCoeffMatrix_()[timestep][j]);
+                    scalar Id = (skyViewCoeffMatrix_()[timestep][j] + sunViewCoeffMatrix_()[timestep][j]);
                     if (i==j)
                     {
                         //q[i] += (Fmatrix_()[i][j] + 1.0)*Id - QsExt[j];

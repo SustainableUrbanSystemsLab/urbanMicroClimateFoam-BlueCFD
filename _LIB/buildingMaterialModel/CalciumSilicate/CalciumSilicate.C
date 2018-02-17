@@ -69,16 +69,16 @@ Foam::buildingMaterialModels::CalciumSilicate::CalciumSilicate
 //- Correct the buildingMaterial moisture content (cell)
 void Foam::buildingMaterialModels::CalciumSilicate::update_w_C_cell(const volScalarField& pc, volScalarField& w, volScalarField& Crel, label& celli)
 {
-	scalar A = 0.004342; scalar n = 0.741839763;
-	scalar rhol = 1000; scalar Rv = 8.31451*1000/(18.01534); scalar T = 293.15;
-	
-	scalar rh = Foam::exp(pc.internalField()[celli]/(rhol*Rv*T));
-	scalar wcap = 793;
-	
+    scalar A = 0.004342; scalar n = 0.741839763;
+    scalar rhol = 1000; scalar Rv = 8.31451*1000/(18.01534); scalar T = 293.15;
+    
+    scalar rh = Foam::exp(pc.internalField()[celli]/(rhol*Rv*T));
+    scalar wcap = 793;
+    
     w.internalField()[celli] = wcap*pow( 1-log(rh)/A , (-1/n));
-	
-	scalar rh2 = Foam::exp((pc.internalField()[celli]+100)/(rhol*Rv*T));
-	scalar w2 = wcap*pow( 1-log(rh2)/A , (-1/n));
+    
+    scalar rh2 = Foam::exp((pc.internalField()[celli]+100)/(rhol*Rv*T));
+    scalar w2 = wcap*pow( 1-log(rh2)/A , (-1/n));
     Crel.internalField()[celli] = (w2-w.internalField()[celli])/100;   
 }
 

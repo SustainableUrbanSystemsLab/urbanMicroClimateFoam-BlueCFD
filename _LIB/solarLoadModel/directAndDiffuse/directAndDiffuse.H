@@ -84,35 +84,35 @@ class directAndDiffuse
         volScalarField Qs_;
 
         //- View factor matrix
-        autoPtr<scalarSquareMatrix> Fmatrix_;		
+        autoPtr<scalarSquareMatrix> Fmatrix_;        
 
         //- Inverse of C matrix
         autoPtr<scalarSquareMatrix> CLU_;
-		
-		//- skyViewCoeffMatrix_
-		autoPtr<scalarRectangularMatrix> skyViewCoeffMatrix_;
+        
+        //- skyViewCoeffMatrix_
+        autoPtr<scalarRectangularMatrix> skyViewCoeffMatrix_;
 
         label skyViewCoeffSize; 
-		
-		//- sunViewCoeffMatrix_
-		autoPtr<scalarRectangularMatrix> sunViewCoeffMatrix_;	
+        
+        //- sunViewCoeffMatrix_
+        autoPtr<scalarRectangularMatrix> sunViewCoeffMatrix_;    
 
-        label sunViewCoeffSize;	
+        label sunViewCoeffSize;    
 
         //- Selected patches
         labelList selectedPatches_;
 
         //- Selected patches
-        labelList wallPatchOrNot_;		
+        labelList wallPatchOrNot_;        
 
         //- Total global coarse faces
         label totalNCoarseFaces_;
 
         //- Total local coarse faces
         label nLocalCoarseFaces_;
-		
+        
         //- Total local wall coarse faces
-        label nLocalWallCoarseFaces_;		
+        label nLocalWallCoarseFaces_;        
 
         //- Constant emissivity
         bool constEmissivity_;
@@ -137,7 +137,7 @@ class directAndDiffuse
             const globalIndex& index,
             const label fromProcI,
             const labelListList& globalFaceFaces,
-			const scalarListList& viewFactors,
+            const scalarListList& viewFactors,
             scalarSquareMatrix& matrix
         );
 
@@ -149,7 +149,7 @@ class directAndDiffuse
             const labelListList& globalFaceFaces,
             const scalarListList& skysunViewCoeffs,
             scalarRectangularMatrix& skysunViewCoeffMatrix
-        );          	
+        );              
 
         //- Disallow default bitwise copy construct
         directAndDiffuse(const directAndDiffuse&);

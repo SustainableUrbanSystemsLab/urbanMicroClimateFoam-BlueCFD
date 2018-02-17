@@ -25,7 +25,7 @@
         {
 
             //Moisture transfer////////////
-            	#include "pcEqn.H"    
+                #include "pcEqn.H"    
 
                 //Firstly, test if all pc values are valid
                 if (gMax(pc) >= 0)// || gMax(pc.boundaryField()) >= 0)
@@ -57,8 +57,8 @@
             ///////////////////////////////
 
             //Heat transfer////////////////
-            	#include "TsEqn.H"
-		
+                #include "TsEqn.H"
+        
                 //Firstly, test if all Ts values are valid
                 if (gMin(Ts) <= 0 || gMin(Ts.boundaryField()) <= 0)
                 {           
@@ -80,7 +80,7 @@
                             Ts.boundaryField()[patchi][facei] = Ts.prevIter().boundaryField()[patchi][facei];
                         }
                     }
-                    break;		              
+                    break;                      
                 }
                 Ts.correctBoundaryConditions();
             ///////////////////////////////

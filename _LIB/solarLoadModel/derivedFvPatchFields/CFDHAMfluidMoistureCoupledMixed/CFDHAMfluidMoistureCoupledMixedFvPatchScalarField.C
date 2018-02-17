@@ -125,7 +125,7 @@ CFDHAMfluidMoistureCoupledMixedFvPatchScalarField
 )
 :
     mixedFvPatchScalarField(psf, iF),
-    temperatureCoupledBase(patch(), psf)	
+    temperatureCoupledBase(patch(), psf)    
 {}
 
 

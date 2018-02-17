@@ -2,14 +2,14 @@
 
 forAll(Materials, MaterialsI)
 {
-	const dictionary& dict = Materials[MaterialsI];
+    const dictionary& dict = Materials[MaterialsI];
 
     const word cellZoneName(dict.lookup("name"));
     const word cellZoneModel(dict.lookup("buildingMaterialModel"));
-	const scalar rho_(readScalar(dict.lookup("rho")));
-	const scalar cap_(readScalar(dict.lookup("cap")));
-	const scalar lambda1_(readScalar(dict.lookup("lambda1")));
-	const scalar lambda2_(readScalar(dict.lookup("lambda2")));
+    const scalar rho_(readScalar(dict.lookup("rho")));
+    const scalar cap_(readScalar(dict.lookup("cap")));
+    const scalar lambda1_(readScalar(dict.lookup("lambda1")));
+    const scalar lambda2_(readScalar(dict.lookup("lambda2")));
 
     //create the buildingMaterial model
     autoPtr<buildingMaterialModel> buildingMaterial
@@ -20,8 +20,8 @@ forAll(Materials, MaterialsI)
     label cellZoneID = mesh.cellZones().findZoneID(cellZoneName);
     if (cellZoneID == -1)
     {
-		Info << "Something is wrong, cannot find at least one of the necessary cellZones! Exiting!" << endl;
-    	Foam::FatalError();
+        Info << "Something is wrong, cannot find at least one of the necessary cellZones! Exiting!" << endl;
+        Foam::FatalError();
     }
     const labelList& cells = mesh.cellZones()[cellZoneID];
     const polyBoundaryMesh& patches = mesh.boundaryMesh();

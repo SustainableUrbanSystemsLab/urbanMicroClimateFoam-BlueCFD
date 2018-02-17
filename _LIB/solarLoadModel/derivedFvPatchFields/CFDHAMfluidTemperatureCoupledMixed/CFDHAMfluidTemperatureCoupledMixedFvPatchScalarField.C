@@ -151,9 +151,9 @@ void CFDHAMfluidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
     const fvPatch& nbrPatch =
         refCast<const fvMesh>(nbrMesh).boundary()[samplePatchI];  
 
-	scalarField TcNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("Ts");
+    scalarField TcNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("Ts");
 
-	//check if this patch is covered with grass
+    //check if this patch is covered with grass
     IOobject grassIO
     (
         "grassProperties",
@@ -164,16 +164,16 @@ void CFDHAMfluidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
     );
     if (grassIO.headerOk())
     {
-		wordList grassPatches(IOdictionary(grassIO).lookup("grassPatches"));
-		forAll(grassPatches, patchI)
-		{
-			if(grassPatches[patchI] == mpp.samplePatch())
-			{
-				TcNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("Tg");
-			}
-		}
+        wordList grassPatches(IOdictionary(grassIO).lookup("grassPatches"));
+        forAll(grassPatches, patchI)
+        {
+            if(grassPatches[patchI] == mpp.samplePatch())
+            {
+                TcNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("Tg");
+            }
+        }
     }
-	///////////////////////////////////////////
+    ///////////////////////////////////////////
 
     mpp.distribute(TcNbr);
 

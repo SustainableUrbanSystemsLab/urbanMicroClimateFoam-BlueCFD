@@ -34,10 +34,10 @@ Description
     The patches involved in the view factor calculation are taken from the Qr
     volScalarField (radiative flux) when is greyDiffusiveRadiationViewFactor
     otherwise they are not included.
-	
-	- Based on viewFactorsGenUpdated but considers sky view factor as 1-(other surfaces)
-	- sky boundary name is hardcoded as "top"
-	ayk
+    
+    - Based on viewFactorsGenUpdated but considers sky view factor as 1-(other surfaces)
+    - sky boundary name is hardcoded as "top"
+    ayk
 
 \*---------------------------------------------------------------------------*/
 
@@ -696,12 +696,12 @@ int main(int argc, char *argv[])
     );
 
     scalarList patchArea(totalPatches, 0.0);
-	
+    
     scalarList rowSumViewFactorPatch //ayk
     (
         totalPatches,
         0.0
-    ); 	
+    );     
 
     if (Pstream::master())
     {
@@ -719,7 +719,7 @@ int main(int argc, char *argv[])
             patchArea[fromPatchId] += mag(Ai);
 
             const labelList& visCoarseFaces = visibleFaceFaces[coarseFaceI];
-			
+            
             forAll(visCoarseFaces, visCoarseFaceI)
             {
                 F[coarseFaceI].setSize(visCoarseFaces.size());
@@ -753,7 +753,7 @@ int main(int argc, char *argv[])
                 }
                 F[coarseFaceI][visCoarseFaceI] = Fij/mag(Ai);
                 sumViewFactorPatch[fromPatchId][toPatchId] += Fij;
-				rowSumViewFactorPatch[fromPatchId] += Fij; //ayk
+                rowSumViewFactorPatch[fromPatchId] += Fij; //ayk
             }
         }
     }
@@ -790,7 +790,7 @@ int main(int argc, char *argv[])
                 label compactJ = visCoarseFaces[visCoarseFaceI];
                 const vector& Aj = compactCoarseSf[compactJ];
                 const vector& Cj = compactCoarseCf[compactJ];
-				
+                
                 const label toPatchId = compactPatchId[compactJ];
 
                 vector Ajn = Aj/mag(Aj);
@@ -806,11 +806,11 @@ int main(int argc, char *argv[])
 
                 F[coarseFaceI][visCoarseFaceI] = Fij;
                 sumViewFactorPatch[fromPatchId][toPatchId] += Fij*mag(Ai);
-				rowSumViewFactorPatch[fromPatchId] += Fij*mag(Ai); //ayk
+                rowSumViewFactorPatch[fromPatchId] += Fij*mag(Ai); //ayk
             }
         }
     }
-	
+    
     reduce(sumViewFactorPatch, sumOp<scalarSquareMatrix>());
     reduce(patchArea, sumOp<scalarList>()); 
     reduce(rowSumViewFactorPatch, sumOp<scalarList>()); //ayk    
@@ -852,18 +852,18 @@ int main(int argc, char *argv[])
             }
         }
     }
-    ////////////////////////////////////////////////////////////////////		
+    ////////////////////////////////////////////////////////////////////        
 
     if (Pstream::master())
     {
         Info << "Writing view factor matrix..." << endl;
     }
-	
+    
     // Write view factors matrix in listlist form
     F.write();
 
     if (Pstream::master() && debug)
-    {		
+    {        
         forAll(viewFactorsPatches, i)
         {
             label patchI =  viewFactorsPatches[i];

@@ -26,7 +26,7 @@ Class
     Foam::buildingMaterialModels::HamstadCase2
 
 Description
-	Hamstad benchmark case 2
+    Hamstad benchmark case 2
 
 SourceFiles
     HamstadCase2.C

@@ -88,7 +88,7 @@ void Foam::buildingMaterialModels::HamstadBrick::update_w_C_cell(const volScalar
 //- Correct the buildingMaterial liquid permeability (cell)
 void Foam::buildingMaterialModels::HamstadBrick::update_Krel_cell(const volScalarField& pc, const volScalarField& w, volScalarField& Krel, label& celli)
 {
-	scalar Ks=1.907E-9; scalar tau=-1.631;
+    scalar Ks=1.907E-9; scalar tau=-1.631;
     List<scalar> reta; reta.setSize(3); reta[0]=2.96E-5; reta[1]=4.17E-7; reta[2]=1.09E-6;
     List<scalar> retn; retn.setSize(3); retn[0]=6.62; retn[1]=1.17; retn[2]=2.04;
     List<scalar> retm; retm.setSize(3); retm[0]=0.84894; retm[1]=0.14530; retm[2]=0.50980;
@@ -96,12 +96,12 @@ void Foam::buildingMaterialModels::HamstadBrick::update_Krel_cell(const volScala
     scalar dum1=0; scalar dum2=0; scalar dum3=0; scalar dum4=0;  
     for (int i=0; i<=2; i++)
     {
-		dum1=pow( (-reta[i]*pc.internalField()[celli]) , retn[i]);
-		dum2=dum2 + retw[i]*(pow( 1+dum1 , -retm[i]));
-		dum3=dum3 + retw[i]*reta[i]*(1-pow( (dum1/(1+dum1)) , retm[i]));
-		dum4=dum4 + retw[i]*reta[i];
-    }	
-	
+        dum1=pow( (-reta[i]*pc.internalField()[celli]) , retn[i]);
+        dum2=dum2 + retw[i]*(pow( 1+dum1 , -retm[i]));
+        dum3=dum3 + retw[i]*reta[i]*(1-pow( (dum1/(1+dum1)) , retm[i]));
+        dum4=dum4 + retw[i]*reta[i];
+    }    
+    
     Krel.internalField()[celli] = Ks*(pow( dum2 , tau))*(pow( (dum3/dum4) , 2));
 }
 

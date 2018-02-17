@@ -69,26 +69,26 @@ Foam::buildingMaterialModels::HamstadCase2::HamstadCase2
 //- Correct the buildingMaterial moisture content (cell)
 void Foam::buildingMaterialModels::HamstadCase2::update_w_C_cell(const volScalarField& pc, volScalarField& w, volScalarField& Crel, label& celli)
 {
-	scalar rho_l = 1.0e3; 
-	scalar R_v = 8.31451*1000/(18.01534); 
-	scalar T=293.15;
-	
-	scalar phi = Foam::exp(pc.internalField()[celli]/(rho_l*R_v*T));
-	w.internalField()[celli] = 116/(pow(1-(1/0.118*log(phi)),0.869));
+    scalar rho_l = 1.0e3; 
+    scalar R_v = 8.31451*1000/(18.01534); 
+    scalar T=293.15;
+    
+    scalar phi = Foam::exp(pc.internalField()[celli]/(rho_l*R_v*T));
+    w.internalField()[celli] = 116/(pow(1-(1/0.118*log(phi)),0.869));
     Crel.internalField()[celli] = mag( (854.271)/ pow((rho_l*R_v*T)-8.47458*pc.internalField()[celli],1.869) );
 }
 
 //- Correct the buildingMaterial liquid permeability (cell)
 void Foam::buildingMaterialModels::HamstadCase2::update_Krel_cell(const volScalarField& pc, const volScalarField& w, volScalarField& Krel, label& celli)
 {
-	scalar rho_l = 1.0e3; 
-	scalar R_v = 8.31451*1000/(18.01534); 
-	scalar T=293.15;
-	
-	scalar diffusivity = 6e-10;
-	
+    scalar rho_l = 1.0e3; 
+    scalar R_v = 8.31451*1000/(18.01534); 
+    scalar T=293.15;
+    
+    scalar diffusivity = 6e-10;
+    
     scalar Crel_tmp = mag( (854.271)/ pow((rho_l*R_v*T)-8.47458*pc.internalField()[celli],1.869) );
-	
+    
     Krel.internalField()[celli]= diffusivity * Crel_tmp;
 }
 

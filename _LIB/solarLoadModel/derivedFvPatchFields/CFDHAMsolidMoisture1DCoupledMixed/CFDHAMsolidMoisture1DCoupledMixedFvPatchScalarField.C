@@ -149,7 +149,7 @@ CFDHAMsolidMoisture1DCoupledMixedFvPatchScalarField
     QrNbrName_(psf.QrNbrName_),
     QrName_(psf.QrName_),
     QsNbrName_(psf.QsNbrName_),
-    QsName_(psf.QsName_)	
+    QsName_(psf.QsName_)    
 {}
 
 
@@ -212,7 +212,7 @@ void CFDHAMsolidMoisture1DCoupledMixedFvPatchScalarField::updateCoeffs()
     scalarField gcrNbr(nbrFieldgcr.snGrad()/nbrPatch.deltaCoeffs());
 //    scalarField smoothstep=1/(1+exp((pcc+1000)/30));
     scalarField gl = ((gcrNbr*rhol)/(3600*1000));
-	scalar glAvg = gSum(gl*nbrPatch.magSf())/gSum(nbrPatch.magSf());	
+    scalar glAvg = gSum(gl*nbrPatch.magSf())/gSum(nbrPatch.magSf());    
 
     const mixedFvPatchScalarField&
         fieldTs = refCast
@@ -222,18 +222,18 @@ void CFDHAMsolidMoisture1DCoupledMixedFvPatchScalarField::updateCoeffs()
             );     
 
     /*scalarField Ts(fieldTs.patchInternalField());   
-	scalarField pvsat_s = exp(6.58094e1-7.06627e3/Ts-5.976*log(Ts));
-    scalarField pv_s = pvsat_s*exp((pcc)/(rhol*Rv*Ts));	*/
-	
+    scalarField pvsat_s = exp(6.58094e1-7.06627e3/Ts-5.976*log(Ts));
+    scalarField pv_s = pvsat_s*exp((pcc)/(rhol*Rv*Ts));    */
+    
     scalarField wcNbr(nbrFieldw.patchInternalField());
     scalar rhoair = 1.2;
-	
+    
     scalarField deltaCoeff_ = nbrPatch.deltaCoeffs(); 
-	scalarField mutNbrPatch(nbrFieldmut.patchInternalField() + nbrFieldmut.snGrad()/deltaCoeff_ ); 
-	//mpp.distribute(mutNbrPatch);  
-	//mpp.distribute(deltaCoeff_);
+    scalarField mutNbrPatch(nbrFieldmut.patchInternalField() + nbrFieldmut.snGrad()/deltaCoeff_ ); 
+    //mpp.distribute(mutNbrPatch);  
+    //mpp.distribute(deltaCoeff_);
 
-	scalar Dm = 2.5e-5; scalar Sct = 0.7;
+    scalar Dm = 2.5e-5; scalar Sct = 0.7;
    
 
     scalarField Ts(fieldTs.patchInternalField());     
@@ -242,8 +242,8 @@ void CFDHAMsolidMoisture1DCoupledMixedFvPatchScalarField::updateCoeffs()
     scalar pvsat_s = exp(6.58094e1-7.06627e3/Ts_-5.976*log(Ts_));
     scalar pv_s = pvsat_s*exp((pcc_)/(rhol*Rv*Ts_));
     scalarField vaporFlux = (rhoair*Dm + mutNbrPatch/Sct) * (wcNbr-(0.62198*pv_s/1e5)) *deltaCoeff_;
-	scalar vaporFluxAvg = gSum(vaporFlux*nbrPatch.magSf())/gSum(nbrPatch.magSf());
-		//Info << "vaporFluxAvg: " << vaporFluxAvg << endl;
+    scalar vaporFluxAvg = gSum(vaporFlux*nbrPatch.magSf())/gSum(nbrPatch.magSf());
+        //Info << "vaporFluxAvg: " << vaporFluxAvg << endl;
 
     scalarField Krel(pcp.size(), 0.0);
         Krel = patch().lookupPatchField<volScalarField, scalar>("Krel"); 
@@ -251,17 +251,17 @@ void CFDHAMsolidMoisture1DCoupledMixedFvPatchScalarField::updateCoeffs()
     scalarField K_v(pcp.size(), 0.0);
         K_v = patch().lookupPatchField<volScalarField, scalar>("K_v");             
 
-	scalarField pv_o = wcNbr*1e5/(0.621945*rhoair);
+    scalarField pv_o = wcNbr*1e5/(0.621945*rhoair);
         //mpp.distribute(wcNbr);
         //mpp.distribute(pv_o);  
     scalarField pv_o_sat = exp(6.58094e1-7.06627e3/TNbr-5.976*log(TNbr));
     scalarField pc_o=log(pv_o/pv_o_sat)*rhol*Rv*TNbr; 
-	mpp.distribute(pc_o);
+    mpp.distribute(pc_o);
 
 // term with temperature gradient:
     scalarField K_pt(pcp.size(), 0.0);
     K_pt = patch().lookupPatchField<volScalarField, scalar>("K_pt");                 
-	scalarField X = K_pt*fieldTs.snGrad();
+    scalarField X = K_pt*fieldTs.snGrad();
 //////////////////////////////////                
 
 //    valueFraction() = pos(patchInternalField()+1E3);
@@ -269,13 +269,13 @@ void CFDHAMsolidMoisture1DCoupledMixedFvPatchScalarField::updateCoeffs()
     refGrad() = (vaporFluxAvg + glAvg - X)/(Krel+K_v); 
     forAll(refValue(),faceI)
     {
-	if(glAvg>0){refValue()[faceI]=-1001;}
-	else{refValue()[faceI]=pc_o[faceI];}
+    if(glAvg>0){refValue()[faceI]=-1001;}
+    else{refValue()[faceI]=pc_o[faceI];}
     } 
     valueFraction() = pos(patchInternalField()+refGrad()/patch().deltaCoeffs()+1E3 ); 
 
-//	Pout << "valueFraction:" << valueFraction() << endl;
-//	Pout << "pcp:" << pcp << endl;
+//    Pout << "valueFraction:" << valueFraction() << endl;
+//    Pout << "pcp:" << pcp << endl;
 
     mixedFvPatchScalarField::updateCoeffs(); 
 
@@ -314,7 +314,7 @@ void CFDHAMsolidMoisture1DCoupledMixedFvPatchScalarField::write
     os.writeKeyword("QrNbr")<< QrNbrName_ << token::END_STATEMENT << nl;
     os.writeKeyword("Qr")<< QrName_ << token::END_STATEMENT << nl;
     os.writeKeyword("QsNbr")<< QsNbrName_ << token::END_STATEMENT << nl;
-    os.writeKeyword("Qs")<< QsName_ << token::END_STATEMENT << nl;	
+    os.writeKeyword("Qs")<< QsName_ << token::END_STATEMENT << nl;    
     temperatureCoupledBase::write(os);
 }
 

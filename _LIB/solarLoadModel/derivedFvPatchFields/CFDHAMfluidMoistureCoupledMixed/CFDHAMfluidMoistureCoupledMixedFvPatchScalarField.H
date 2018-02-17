@@ -82,7 +82,7 @@ class CFDHAMfluidMoistureCoupledMixedFvPatchScalarField
     public mixedFvPatchScalarField,
     public temperatureCoupledBase
 {        
-    // Private data		                    
+    // Private data                            
 
 public:
 

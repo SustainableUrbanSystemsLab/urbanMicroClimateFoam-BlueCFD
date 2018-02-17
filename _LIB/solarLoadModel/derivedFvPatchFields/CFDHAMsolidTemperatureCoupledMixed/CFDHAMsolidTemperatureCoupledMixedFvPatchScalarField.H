@@ -86,9 +86,9 @@ class CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 
          //- Name of the thermal radiative heat flux in the neighbour region
         const word QrNbrName_;
-		
+        
          //- Name of the solar radiative heat flux in the neighbour region
-        const word QsNbrName_;	                    
+        const word QsNbrName_;                        
 
 public:
 
