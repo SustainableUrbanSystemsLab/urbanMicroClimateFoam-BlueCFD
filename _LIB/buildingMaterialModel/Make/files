@@ -15,6 +15,6 @@ PorousAsphalt/PorousAsphalt.C
 MartilliWall/MartilliWall.C
 MartilliGround/MartilliGround.C
 Savonnieres/Savonnieres.C
-Plywood/Plywood.C
+Impermeable/Impermeable.C
 
 LIB = $(FOAM_USER_LIBBIN)/libbuildingMaterialModel

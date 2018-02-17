@@ -23,23 +23,23 @@ License
     Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 Class
-    Foam::buildingMaterialModels::Plywood
+    Foam::buildingMaterialModels::Impermeable
 
 Description
-    buildingMaterial constitutive relationship as in Plywood et al. (1977).
+    buildingMaterial constitutive relationship as in Impermeable et al. (1977).
    
     Reference:
-    Plywood R, Vauclin M, Touma J, Wierenga P, Vachaud G. Comparision of numerical
+    Impermeable R, Vauclin M, Touma J, Wierenga P, Vachaud G. Comparision of numerical
     simulation models for one dimensional infiltration. buildingMaterial Sci. Soc. Am J. 1977,
     41:285-294
 
 SourceFiles
-    Plywood.C
+    Impermeable.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef Plywood_H
-#define Plywood_H
+#ifndef Impermeable_H
+#define Impermeable_H
 
 #include "buildingMaterialModel.H"
 #include "volFields.H"
@@ -52,10 +52,10 @@ namespace buildingMaterialModels
 {
 
 /*---------------------------------------------------------------------------*\
-                           Class Plywood Declaration
+                           Class Impermeable Declaration
 \*---------------------------------------------------------------------------*/
 
-class Plywood
+class Impermeable
 :
     public buildingMaterialModel
 {
@@ -66,13 +66,13 @@ class Plywood
 public:
 
     //- Runtime type information
-    TypeName("Plywood");
+    TypeName("Impermeable");
 
 
     // Constructors
 
         //- Construct from components
-        Plywood
+        Impermeable
         (
             const word& name, 
             const dictionary& buildingMaterialProperties,
@@ -82,7 +82,7 @@ public:
 
     // Destructor
 
-        ~Plywood()
+        ~Impermeable()
         {}
 
 
