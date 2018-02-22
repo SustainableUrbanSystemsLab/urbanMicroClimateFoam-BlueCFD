@@ -654,8 +654,8 @@ void Foam::solarLoad::directAndDiffuse::calculate()
         Time& time = const_cast<Time&>(mesh_.time());
         //Info << "time.value(): " << time.value() << endl;
         label timestep = ceil( (time.value()/(86400/timestepsInADay_))-0.5 ); 
-		timestep = timestep%timestepsInADay_; 
-		//Info << ", timestep: " << timestep << endl;
+        timestep = timestep%timestepsInADay_; 
+        //Info << ", timestep: " << timestep << endl;
 
         // Variable Albedo
         if (!constAlbedo_) //this is not tested - aytac
@@ -667,7 +667,7 @@ void Foam::solarLoad::directAndDiffuse::calculate()
                 for (label j=0; j<totalNCoarseFaces_; j++)
                 {
                     //scalar invEj = 1.0/E[j];
-					scalar Isol = (skyViewCoeffMatrix_()[timestep][j] + sunViewCoeffMatrix_()[timestep][j]);
+                    scalar Isol = (skyViewCoeffMatrix_()[timestep][j] + sunViewCoeffMatrix_()[timestep][j]);
                     if (i==j)
                     {
                         C[i][j] = (1/(1-A[j]))-(A[j]/(1-A[j]))*Fmatrix_()[i][j];
