@@ -314,8 +314,8 @@ void Foam::solarLoad::directAndDiffuse::initialise()
             }
         }
 
-        constEmissivity_ = readBool(coeffs_.lookup("constantEmissivity"));
-        if (constEmissivity_)
+        constAlbedo_ = readBool(coeffs_.lookup("constantAlbedo"));
+        if (constAlbedo_)
         {
             CLU_.reset
             (
@@ -387,7 +387,7 @@ Foam::solarLoad::directAndDiffuse::directAndDiffuse(const volScalarField& T)
     totalNCoarseFaces_(0),
     nLocalCoarseFaces_(0),
     nLocalWallCoarseFaces_(0),    
-    constEmissivity_(false),
+    constAlbedo_(false),
     timestepsInADay_(24),
     iterCounter_(0),
     pivotIndices_(0)
@@ -450,7 +450,7 @@ Foam::solarLoad::directAndDiffuse::directAndDiffuse
     totalNCoarseFaces_(0),
     nLocalCoarseFaces_(0),
     nLocalWallCoarseFaces_(0),    
-    constEmissivity_(false),
+    constAlbedo_(false),
     timestepsInADay_(24),
     iterCounter_(0),
     pivotIndices_(0)
@@ -537,22 +537,19 @@ void Foam::solarLoad::directAndDiffuse::calculate()
     // Store previous iteration
     Qs_.storePrevIter();
 
-    scalarField compactCoarseT(map_->constructSize(), 0.0);
-    scalarField compactCoarseE(map_->constructSize(), 0.0);
+    scalarField compactCoarseA(map_->constructSize(), 0.0);
     scalarField compactCoarseHo(map_->constructSize(), 0.0);
 
     globalIndex globalNumbering(nLocalCoarseFaces_);
 
-    // Fill local averaged(T), emissivity(E) and external heatFlux(Ho)
-    DynamicList<scalar> localCoarseTave(nLocalCoarseFaces_);
-    DynamicList<scalar> localCoarseEave(nLocalCoarseFaces_);
+    // Fill local averaged Albedo(A) and external heatFlux(Ho)
+    DynamicList<scalar> localCoarseAave(nLocalCoarseFaces_);
     DynamicList<scalar> localCoarseHoave(nLocalCoarseFaces_);
 
     forAll(selectedPatches_, i)
     {
         label patchID = selectedPatches_[i];
 
-        const scalarField& Tp = T_.boundaryField()[patchID];
         const scalarField& sf = mesh_.magSf().boundaryField()[patchID];
 
         fvPatchScalarField& QsPatch = Qs_.boundaryField()[patchID];
@@ -563,16 +560,15 @@ void Foam::solarLoad::directAndDiffuse::calculate()
                 solarLoadViewFactorFixedValueFvPatchScalarField
             >(QsPatch);
 
-        const scalarList eb = Qsp.albedo();
+        const scalarList ab = Qsp.albedo();
 
         const scalarList& Hoi = Qsp.Qso();
 
         const polyPatch& pp = coarseMesh_.boundaryMesh()[patchID]; 
         const labelList& coarsePatchFace = coarseMesh_.patchFaceMap()[patchID]; 
 
-        scalarList Tave(pp.size(), 0.0);
-        scalarList Eave(Tave.size(), 0.0);
-        scalarList Hoiave(Tave.size(), 0.0);
+        scalarList Aave(pp.size(), 0.0);
+        scalarList Hoiave(Aave.size(), 0.0);
 
         if (pp.size() > 0)
         {
@@ -591,31 +587,28 @@ void Foam::solarLoad::directAndDiffuse::calculate()
                     fineFaces
                 );
                 scalar area = sum(fineSf());
-                // Temperature, emissivity and external flux area weighting
+                // albedo and external flux area weighting
                 forAll(fineFaces, j)
                 {
                     label faceI = fineFaces[j];
-                    Tave[coarseI] += (Tp[faceI]*sf[faceI])/area;
-                    Eave[coarseI] += (eb[faceI]*sf[faceI])/area;
+                    Aave[coarseI] += (ab[faceI]*sf[faceI])/area;
                     Hoiave[coarseI] += (Hoi[faceI]*sf[faceI])/area;
                 }
             }
         }
 
-        localCoarseTave.append(Tave);
-        localCoarseEave.append(Eave);
+        //localCoarseTave.append(Tave);
+        localCoarseAave.append(Aave);
         localCoarseHoave.append(Hoiave);
     }
 
     // Fill the local values to distribute
-    SubList<scalar>(compactCoarseT,nLocalCoarseFaces_).assign(localCoarseTave);
-    SubList<scalar>(compactCoarseE,nLocalCoarseFaces_).assign(localCoarseEave);
+    SubList<scalar>(compactCoarseA,nLocalCoarseFaces_).assign(localCoarseAave);
     SubList<scalar>
         (compactCoarseHo,nLocalCoarseFaces_).assign(localCoarseHoave);
 
     // Distribute data
-    map_->distribute(compactCoarseT);
-    map_->distribute(compactCoarseE);
+    map_->distribute(compactCoarseA);
     map_->distribute(compactCoarseHo);
 
     // Distribute local global ID
@@ -637,24 +630,20 @@ void Foam::solarLoad::directAndDiffuse::calculate()
     map_->distribute(compactGlobalIds);
 
     // Create global size vectors
-    scalarField T(totalNCoarseFaces_, 0.0);
-    scalarField E(totalNCoarseFaces_, 0.0);
+    scalarField A(totalNCoarseFaces_, 0.0);
     scalarField QsExt(totalNCoarseFaces_, 0.0);
 
     // Fill lists from compact to global indexes.
-    forAll(compactCoarseT, i)
+    forAll(compactCoarseA, i)
     {
-        T[compactGlobalIds[i]] = compactCoarseT[i];
-        E[compactGlobalIds[i]] = compactCoarseE[i];
+        A[compactGlobalIds[i]] = compactCoarseA[i];
         QsExt[compactGlobalIds[i]] = compactCoarseHo[i];
     }
 
-    Pstream::listCombineGather(T, maxEqOp<scalar>());
-    Pstream::listCombineGather(E, maxEqOp<scalar>());
+    Pstream::listCombineGather(A, maxEqOp<scalar>());
     Pstream::listCombineGather(QsExt, maxEqOp<scalar>());
 
-    Pstream::listCombineScatter(T);
-    Pstream::listCombineScatter(E);
+    Pstream::listCombineScatter(A);
     Pstream::listCombineScatter(QsExt);
 
     // Net solarLoad
@@ -662,8 +651,14 @@ void Foam::solarLoad::directAndDiffuse::calculate()
 
     if (Pstream::master())
     {
-        // Variable emissivity
-        if (!constEmissivity_)
+        Time& time = const_cast<Time&>(mesh_.time());
+        //Info << "time.value(): " << time.value() << endl;
+        label timestep = ceil( (time.value()/(86400/timestepsInADay_))-0.5 ); 
+		timestep = timestep%timestepsInADay_; 
+		//Info << ", timestep: " << timestep << endl;
+
+        // Variable Albedo
+        if (!constAlbedo_) //this is not tested - aytac
         {
             scalarSquareMatrix C(totalNCoarseFaces_, totalNCoarseFaces_, 0.0);
 
@@ -671,19 +666,17 @@ void Foam::solarLoad::directAndDiffuse::calculate()
             {
                 for (label j=0; j<totalNCoarseFaces_; j++)
                 {
-                    scalar invEj = 1.0/E[j];
-                    scalar sigmaT4 =
-                        physicoChemical::sigma.value()*pow(T[j], 4.0);
-
+                    //scalar invEj = 1.0/E[j];
+					scalar Isol = (skyViewCoeffMatrix_()[timestep][j] + sunViewCoeffMatrix_()[timestep][j]);
                     if (i==j)
                     {
-                        C[i][j] = invEj - (invEj - 1.0)*Fmatrix_()[i][j];
-                        q[i] += (Fmatrix_()[i][j] - 1.0)*sigmaT4 - QsExt[j];
+                        C[i][j] = (1/(1-A[j]))-(A[j]/(1-A[j]))*Fmatrix_()[i][j];
+                        q[i] += (- 1.0)*(-Isol) - QsExt[j];
                     }
                     else
                     {
-                        C[i][j] = (1.0 - invEj)*Fmatrix_()[i][j];
-                        q[i] += Fmatrix_()[i][j]*sigmaT4 - QsExt[j];
+                        C[i][j] = -(A[j]/(1-A[j]))*Fmatrix_()[i][j];
+                        q[i] += 0 - QsExt[j];
                     }
 
                 }
@@ -693,19 +686,8 @@ void Foam::solarLoad::directAndDiffuse::calculate()
             // Negative coming into the fluid
             LUsolve(C, q);
         }
-        else //Constant emissivity
+        else //Constant albedo
         {
-            //dimensionedScalar S(coeffs_.lookup("S"));           
-            //dimensionedScalar D(coeffs_.lookup("D"));   
-            
-            //Info << "sunViewCoeffList_: " << sunViewCoeffList_() << endl;
-            //Info << "skyViewCoeffList_: " << skyViewCoeffList_() << endl;
-            Time& time = const_cast<Time&>(mesh_.time());
-            Info << "time.value(): " << time.value() << endl; Info << "mesh_.time(): " << mesh_.time().value() << endl;
-            label timestep = ceil( (time.value()/(86400/timestepsInADay_))-0.5 ); Info << "1timestep: " << timestep; timestep = timestep%timestepsInADay_; Info << ", 2timestep: " << timestep << endl;
-            //Info << "timestep: " << timestep << endl;
-            //Info << "sunViewCoeffList_()[timestep][3]: " << sunViewCoeffList_()[timestep][3] << endl;
-
             // Initial iter calculates CLU and chaches it
             if (iterCounter_ == 0)
             {
@@ -716,13 +698,11 @@ void Foam::solarLoad::directAndDiffuse::calculate()
                         //scalar invEj = 1/E[j];
                         if (i==j)
                         {
-                            //CLU_()[i][j] = (1/(1-E[j]));//+(E[j]/(1-E[j]))*Fmatrix_()[i][j];
-                            CLU_()[i][j] = (1/(1-E[j]))-(E[j]/(1-E[j]))*Fmatrix_()[i][j];
+                            CLU_()[i][j] = (1/(1-A[j]))-(A[j]/(1-A[j]))*Fmatrix_()[i][j];
                         }
                         else
                         {
-                            //CLU_()[i][j] = (E[j]/(1-E[j]))*Fmatrix_()[i][j];
-                            CLU_()[i][j] = -(E[j]/(1-E[j]))*Fmatrix_()[i][j];
+                            CLU_()[i][j] = -(A[j]/(1-A[j]))*Fmatrix_()[i][j];
                         }
                     }
                 }
@@ -734,16 +714,14 @@ void Foam::solarLoad::directAndDiffuse::calculate()
             {
                 for (label j=0; j<totalNCoarseFaces_; j++)
                 {
-                    scalar Id = (skyViewCoeffMatrix_()[timestep][j] + sunViewCoeffMatrix_()[timestep][j]);
+                    scalar Isol = (skyViewCoeffMatrix_()[timestep][j] + sunViewCoeffMatrix_()[timestep][j]);
                     if (i==j)
                     {
-                        //q[i] += (Fmatrix_()[i][j] + 1.0)*Id - QsExt[j];
-                        q[i] += (Fmatrix_()[i][j] - 1.0)*(-Id) - QsExt[j];
+                        q[i] += (- 1.0)*(-Isol) - QsExt[j];
                     }
                     else
                     {
-                        //q[i] += (Fmatrix_()[i][j])*Id - QsExt[j];
-                        q[i] += (Fmatrix_()[i][j])*(0) - QsExt[j];
+                        q[i] += 0 - QsExt[j];
                     }
                 }
             }
