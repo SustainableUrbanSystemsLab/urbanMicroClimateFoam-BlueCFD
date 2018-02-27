@@ -70,7 +70,7 @@ Foam::buildingMaterialModels::Impermeable::Impermeable
 void Foam::buildingMaterialModels::Impermeable::update_w_C_cell(const volScalarField& pc, volScalarField& w, volScalarField& Crel, label& celli)
 {
     w.internalField()[celli] = 0;
-    Crel.internalField()[celli] = 0;
+    Crel.internalField()[celli] = 1;
 }
 
 //- Correct the buildingMaterial liquid permeability (cell)
