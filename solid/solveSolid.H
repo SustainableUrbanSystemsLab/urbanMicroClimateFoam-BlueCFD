@@ -28,7 +28,7 @@
                 #include "pcEqn.H"    
 
                 //Firstly, test if all pc values are valid
-                if (gMax(pc) >= 0)// || gMax(pc.boundaryField()) >= 0)
+                if (gMax(pc) >= 0 || gMax(pc.boundaryField()) >= 0)
                 {
                     Info << "This is going to crash (pc)! Decreasing timestep and reverting fields..." << endl;
                     Info << "Error: gMax(pc): " << gMax(pc) << ", gMax(pc.boundaryField()): " << gMax(pc.boundaryField()) << endl;
@@ -100,7 +100,7 @@
 
                 scalar maxChangews = gMax(mag(ws.internalField()-ws_old.internalField())); 
                 scalar maxChangeTs = gMax(mag(Ts.internalField()-Ts_old.internalField())); 
-                if(maxChangews < 0.1 && maxChangeTs < 0.1 && nInternalIter>=2) //force at least 1 internal iteration
+                if(maxChangews < PicardTolerancews && maxChangeTs < PicardToleranceTs && nInternalIter>=2) //force at least 1 internal iteration
                 {
                     ws_old = ws; ws_old.correctBoundaryConditions();
                     Ts_old = Ts; Ts_old.correctBoundaryConditions();

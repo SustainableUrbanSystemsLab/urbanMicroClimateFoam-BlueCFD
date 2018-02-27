@@ -50,4 +50,10 @@ scalar minDeltaT =
 bool adjustTimeStep =
     runTime.controlDict().lookupOrDefault<bool>("adjustTimeStep", true);    
 
+scalar PicardTolerancews =
+    runTime.controlDict().lookupOrDefault<scalar>("PicardTolerancews", 0.01);
+
+scalar PicardToleranceTs =
+    runTime.controlDict().lookupOrDefault<scalar>("PicardToleranceTs", 0.01); 
+
 // ************************************************************************* //
