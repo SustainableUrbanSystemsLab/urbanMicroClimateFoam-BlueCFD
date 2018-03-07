@@ -1,11 +1,12 @@
 {
-    instantList timeDirs = timeSelector::select0(runTime, args);
-//    runTime.setTime(timeDirs.last(),timeDirs.size()-1);
-    runTime.setTime(storeFluidTimeStep-storeFluidDeltaT,storeFluidTimeIndex);
+    const scalar& storeFluidDeltaT = runTime.deltaT().value();
+    const scalar& storeFluidTimeStep = runTime.value();
+    const label& storeFluidTimeIndex = runTime.timeIndex();
 
+    runTime.setTime(storeFluidTimeStep-storeFluidDeltaT,storeFluidTimeIndex);
     runTime.setDeltaT(storeFluidDeltaT * initialSolidTimestepFactor); //this always resets to the small timestep for solid, could it be better?
  
-    scalar solidInternalTime = 0;//runTime.deltaT().value();
+    scalar solidInternalTime = 0;
     scalar timeToOutput = storeFluidDeltaT;
     bool timeStepDecrease = false;
 
@@ -146,13 +147,14 @@
 
         }                
 
-        if (timeStepDecrease != true) 
+        if (timeStepDecrease == false) 
         {
             solidInternalTime += runTime.deltaT().value();
             timeToOutput = storeFluidDeltaT - solidInternalTime;
             if (timeToOutput >= 0.0)
             {
-                runTime++;  
+                runTime.setTime(runTime.value()+runTime.deltaT().value(),runTime.timeIndex()+1);
+                //runTime++;  //using this creates problems when writeInterval != 1
             }
         }
 
@@ -174,6 +176,7 @@
     }
 
     runTime.setDeltaT(storeFluidDeltaT);
+    runTime.setTime(storeFluidTimeStep,storeFluidTimeIndex);
 }
 
 

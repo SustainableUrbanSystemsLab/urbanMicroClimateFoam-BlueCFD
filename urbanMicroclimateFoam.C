@@ -78,19 +78,15 @@ int main(int argc, char *argv[])
         Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
             << "  ClockTime = " << runTime.elapsedClockTime() << " s"
             << nl << endl;
-      
-        scalar storeFluidDeltaT = runTime.deltaT().value();
-        scalar storeFluidTimeStep = runTime.value();
-        label storeFluidTimeIndex = runTime.timeIndex();
-        
-    forAll(solidRegions, i)
-    {
-        Info<< "\nSolving for solid region "
-            << solidRegions[i].name() << endl;
-        #include "setRegionSolidFields.H"
-        #include "readSolidMultiRegionSIMPLEControls.H"
-        #include "solveSolid.H"
-    }
+
+        forAll(solidRegions, i)
+        {
+            Info<< "\nSolving for solid region "
+                << solidRegions[i].name() << endl;
+            #include "setRegionSolidFields.H"
+            #include "readSolidMultiRegionSIMPLEControls.H"
+            #include "solveSolid.H"
+        }
 
         runTime.write();
 

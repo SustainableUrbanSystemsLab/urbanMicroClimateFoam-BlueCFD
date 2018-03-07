@@ -45,10 +45,7 @@ scalar maxDeltaT =
     runTime.controlDict().lookupOrDefault<scalar>("maxDeltaT", 600.0); 
 
 scalar minDeltaT =
-    runTime.controlDict().lookupOrDefault<scalar>("minDeltaT", 1.0);
-
-bool adjustTimeStep =
-    runTime.controlDict().lookupOrDefault<bool>("adjustTimeStep", true);    
+    runTime.controlDict().lookupOrDefault<scalar>("minDeltaT", 1.0);  
 
 scalar PicardTolerancews =
     runTime.controlDict().lookupOrDefault<scalar>("PicardTolerancews", 0.01);
