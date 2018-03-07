@@ -33,57 +33,27 @@
                 {
                     Info << "This is going to crash (pc)! Decreasing timestep and reverting fields..." << endl;
                     Info << "Error: gMax(pc): " << gMax(pc) << ", gMax(pc.boundaryField()): " << gMax(pc.boundaryField()) << endl;
-                    //pc.write();
                     timeStepDecrease = true;
-                    pc=pc.prevIter(); 
-                    forAll(pc.boundaryField(), patchi)
-                    { 
-                        forAll(pc.boundaryField()[patchi], facei)
-                        {
-                            pc.boundaryField()[patchi][facei] = pc.prevIter().boundaryField()[patchi][facei];
-                        }
-                    }
-                    Ts=Ts.prevIter(); 
-                    forAll(Ts.boundaryField(), patchi)
-                    { 
-                        forAll(Ts.boundaryField()[patchi], facei)
-                        {
-                            Ts.boundaryField()[patchi][facei] = Ts.prevIter().boundaryField()[patchi][facei];
-                        }
-                    }
+                    #include "revertValues.H"    
                     break;
                 }
-                pc.correctBoundaryConditions();  
+                pc.correctBoundaryConditions();
 
             ///////////////////////////////
 
             //Heat transfer////////////////
                 #include "TsEqn.H"
-        
+
                 //Firstly, test if all Ts values are valid
                 if (gMin(Ts) <= 0 || gMin(Ts.boundaryField()) <= 0)
                 {           
                     Info << "This is going to crash (Ts)! Decreasing timestep and reverting fields..." << endl;
                     timeStepDecrease = true;
-                    pc=pc.prevIter(); 
-                    forAll(pc.boundaryField(), patchi)
-                    { 
-                        forAll(pc.boundaryField()[patchi], facei)
-                        {
-                            pc.boundaryField()[patchi][facei] = pc.prevIter().boundaryField()[patchi][facei];
-                        }
-                    }
-                    Ts=Ts.prevIter(); 
-                    forAll(Ts.boundaryField(), patchi)
-                    { 
-                        forAll(Ts.boundaryField()[patchi], facei)
-                        {
-                            Ts.boundaryField()[patchi][facei] = Ts.prevIter().boundaryField()[patchi][facei];
-                        }
-                    }
+                    #include "revertValues.H"  
                     break;                      
                 }
                 Ts.correctBoundaryConditions();
+                
             ///////////////////////////////
             
 
@@ -118,24 +88,7 @@
                        << "maxChangeT: " << maxChangeTs << endl
                        << "Total internal iterations: " << nInternalIter << endl;
                     timeStepDecrease = true;                    
-                    pc=pc.prevIter(); 
-                    forAll(pc.boundaryField(), patchi)
-                    { 
-                        forAll(pc.boundaryField()[patchi], facei)
-                        {
-                            pc.boundaryField()[patchi][facei] = pc.prevIter().boundaryField()[patchi][facei];
-                        }
-                    }
-                    //pc.correctBoundaryConditions();
-                    Ts=Ts.prevIter(); 
-                    forAll(Ts.boundaryField(), patchi)
-                    { 
-                        forAll(Ts.boundaryField()[patchi], facei)
-                        {
-                            Ts.boundaryField()[patchi][facei] = Ts.prevIter().boundaryField()[patchi][facei];
-                        }
-                    }
-                    //Ts.correctBoundaryConditions();
+                    #include "revertValues.H"
                 }   
                 else //not converged nor reached the maximum iteration yet, continue
                 {
