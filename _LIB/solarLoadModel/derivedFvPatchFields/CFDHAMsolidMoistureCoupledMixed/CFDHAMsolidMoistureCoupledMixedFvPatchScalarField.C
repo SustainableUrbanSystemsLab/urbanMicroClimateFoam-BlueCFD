@@ -152,19 +152,10 @@ void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
     const fvPatch& nbrPatch =
         refCast<const fvMesh>(nbrMesh).boundary()[samplePatchI];
 
-    scalarField& pcp = *this;
-
     scalar rhol=1.0e3; scalar Rv=8.31451*1000/(18.01534);                        
+    scalar Dm = 2.5e-5; scalar Sct = 0.7;
 
-    const mixedFvPatchScalarField&
-        nbrFieldw = refCast
-            <const mixedFvPatchScalarField>
-            (
-                nbrPatch.lookupPatchField<volScalarField, scalar>("w")
-            ); 
-
-    scalarField gcrNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("gcr");
-        mpp.distribute(gcrNbr); 
+    scalarField& pcp = *this;
 
     const mixedFvPatchScalarField&
         fieldTs = refCast
@@ -172,13 +163,19 @@ void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
             (
                 patch().lookupPatchField<volScalarField, scalar>("Ts")
             );
-
     scalarField Ts(pcp.size(), 0.0);
         Ts = patch().lookupPatchField<volScalarField, scalar>("Ts"); 
-
     scalarField TNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("T");
-    mpp.distribute(TNbr);    
+        mpp.distribute(TNbr); 
 
+    const mixedFvPatchScalarField&
+        nbrFieldw = refCast
+            <const mixedFvPatchScalarField>
+            (
+                nbrPatch.lookupPatchField<volScalarField, scalar>("w")
+            );
+    scalarField wcNbr(nbrFieldw.patchInternalField());
+        mpp.distribute(wcNbr);
     scalarField wNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("w");
     scalarField rhoNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("rho");
     scalarField pv_o = wNbr*1e5/(0.621945*rhoNbr);
@@ -188,6 +185,9 @@ void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
     scalarField pv_o_sat = exp(6.58094e1-7.06627e3/TNbr-5.976*log(TNbr));
     scalarField pc_o=log(pv_o/pv_o_sat)*rhol*Rv*TNbr; 
 
+    scalarField gcrNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("gcr");
+        mpp.distribute(gcrNbr);    
+
     scalarField Krel(pcp.size(), 0.0);
         Krel = patch().lookupPatchField<volScalarField, scalar>("Krel"); 
 
@@ -195,18 +195,16 @@ void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
         K_v = patch().lookupPatchField<volScalarField, scalar>("K_v");             
 
     scalarField deltaCoeff_ = nbrPatch.deltaCoeffs(); 
+        mpp.distribute(deltaCoeff_);
     scalarField mutNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("mut");
         mpp.distribute(mutNbr);
-        mpp.distribute(deltaCoeff_);
     
     scalarField pvsat_s = exp(6.58094e1-7.06627e3/Ts-5.976*log(Ts));
     scalarField pv_s = pvsat_s*exp((pcp)/(rhol*Rv*Ts));
 
     scalarField gl = ((gcrNbr*rhol)/(3600*1000));
 
-    scalar Dm = 2.5e-5; scalar Sct = 0.7;
-
-    scalarField vaporFlux = (rhoNbr*Dm + mutNbr/Sct) * nbrFieldw.snGrad();
+    scalarField vaporFlux = (rhoNbr*Dm + mutNbr/Sct) * (wcNbr-(0.62198*pv_s/1e5)) *deltaCoeff_; 
 
 // term with temperature gradient:
     scalarField K_pt(pcp.size(), 0.0);
