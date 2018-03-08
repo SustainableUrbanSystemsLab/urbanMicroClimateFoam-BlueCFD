@@ -80,7 +80,10 @@ class CFDHAMsolidMoistureCoupledMixedFvPatchScalarField
 :
     public mixedFvPatchScalarField
 {        
-    // Private data                            
+    // Private data
+
+         //- is the patch impermeable?
+        const bool impermeable_;
 
 public:
 

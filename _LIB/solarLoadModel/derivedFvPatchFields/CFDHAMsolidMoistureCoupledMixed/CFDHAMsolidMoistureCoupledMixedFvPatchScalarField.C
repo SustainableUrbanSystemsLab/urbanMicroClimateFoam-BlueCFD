@@ -46,7 +46,8 @@ CFDHAMsolidMoistureCoupledMixedFvPatchScalarField
     const DimensionedField<scalar, volMesh>& iF
 )
 :
-    mixedFvPatchScalarField(p, iF)
+    mixedFvPatchScalarField(p, iF),
+    impermeable_("undefined-impermeable")
 {
     this->refValue() = 0.0;
     this->refGrad() = 0.0;
@@ -63,7 +64,8 @@ CFDHAMsolidMoistureCoupledMixedFvPatchScalarField
     const fvPatchFieldMapper& mapper
 )
 :
-    mixedFvPatchScalarField(psf, p, iF, mapper)
+    mixedFvPatchScalarField(psf, p, iF, mapper),
+    impermeable_(psf.impermeable_)
 {}
 
 
@@ -75,7 +77,8 @@ CFDHAMsolidMoistureCoupledMixedFvPatchScalarField
     const dictionary& dict
 )
 :
-    mixedFvPatchScalarField(p, iF)
+    mixedFvPatchScalarField(p, iF),
+    impermeable_(dict.lookupOrDefault<bool>("impermeable", false)) 
 {
     if (!isA<mappedPatchBase>(this->patch().patch()))
     {
@@ -122,7 +125,8 @@ CFDHAMsolidMoistureCoupledMixedFvPatchScalarField
     const DimensionedField<scalar, volMesh>& iF
 )
 :
-    mixedFvPatchScalarField(psf, iF)  
+    mixedFvPatchScalarField(psf, iF),
+    impermeable_(psf.impermeable_)
 {}
 
 
@@ -202,21 +206,28 @@ void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
 
     scalarField vaporFlux = (rhoNbr*Dm + mutNbr/Sct) * (wcNbr-(0.62198*pv_s/1e5)) *deltaCoeff_; 
 
-// term with temperature gradient:
+    // term with temperature gradient:
     scalarField K_pt(pcp.size(), 0.0);
     K_pt = patch().lookupPatchField<volScalarField, scalar>("K_pt");                 
     scalarField X = K_pt*fieldTs.snGrad();
-//////////////////////////////////                
+    //////////////////////////////////                
 
-//    valueFraction() = pos(patchInternalField()+1E3);
-//    refValue() = -1E2;  
-    refGrad() = (vaporFlux + gl - X)/(Krel + K_v); 
-    forAll(refValue(),faceI)
+    if(impermeable_ == false)
     {
-        if(gl[faceI]>0){refValue()[faceI]=-1001;}
-        else{refValue()[faceI]=pc_o[faceI];}
+        refGrad() = (vaporFlux + gl - X)/(Krel + K_v); 
+        forAll(refValue(),faceI)
+        {
+            if(gl[faceI]>0){refValue()[faceI]=-1001;}
+            else{refValue()[faceI]=pc_o[faceI];}
+        }
+        valueFraction() = pos(patchInternalField()+refGrad()/patch().deltaCoeffs()+1E3 );
     }
-    valueFraction() = pos(patchInternalField()+refGrad()/patch().deltaCoeffs()+1E3 );
+    else 
+    {
+        refGrad() = 0; 
+        refValue() = 0;
+        valueFraction() = 0;        
+    }
     
 //    Pout << "valueFraction:" << valueFraction() << endl;
 //    Pout << "pcp:" << pcp << endl;
@@ -234,7 +245,8 @@ void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::write
     Ostream& os
 ) const
 {
-    mixedFvPatchScalarField::write(os);    
+    mixedFvPatchScalarField::write(os);
+    os.writeKeyword("impermeable")<< impermeable_ << token::END_STATEMENT << nl;  
 }
 
 

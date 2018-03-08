@@ -86,7 +86,10 @@ class CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
         const word QrNbrName_;
         
          //- Name of the solar radiative heat flux in the neighbour region
-        const word QsNbrName_;                        
+        const word QsNbrName_;
+
+         //- is the patch impermeable?
+        const bool impermeable_;                    
 
 public:
 

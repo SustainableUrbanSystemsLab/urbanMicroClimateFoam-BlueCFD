@@ -49,7 +49,8 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 :
     mixedFvPatchScalarField(p, iF),
     QrNbrName_("undefined-QrNbr"),
-    QsNbrName_("undefined-QsNbr")
+    QsNbrName_("undefined-QsNbr"),
+    impermeable_("undefined-impermeable")
 {
     this->refValue() = 0.0;
     this->refGrad() = 0.0;
@@ -68,7 +69,8 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 :
     mixedFvPatchScalarField(psf, p, iF, mapper),
     QrNbrName_(psf.QrNbrName_),
-    QsNbrName_(psf.QsNbrName_)
+    QsNbrName_(psf.QsNbrName_),
+    impermeable_(psf.impermeable_)
 {}
 
 
@@ -82,7 +84,8 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 :
     mixedFvPatchScalarField(p, iF),
     QrNbrName_(dict.lookupOrDefault<word>("QrNbr", "none")),
-    QsNbrName_(dict.lookupOrDefault<word>("QsNbr", "none")) 
+    QsNbrName_(dict.lookupOrDefault<word>("QsNbr", "none")),
+    impermeable_(dict.lookupOrDefault<bool>("impermeable", false))
 {
     if (!isA<mappedPatchBase>(this->patch().patch()))
     {
@@ -131,7 +134,8 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 :
     mixedFvPatchScalarField(psf, iF),
     QrNbrName_(psf.QrNbrName_),
-    QsNbrName_(psf.QsNbrName_)
+    QsNbrName_(psf.QsNbrName_),
+    impermeable_(psf.impermeable_)
 {}
 
 
@@ -269,15 +273,24 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
         mpp.distribute(QsNbr);
     }   
 
-// term with capillary moisture gradient:                          
-    scalarField X = ((cap_l*(Tp-Tref)*Krel)+(cap_v*(Tp-Tref)+L_v)*K_v)*fieldpc.snGrad();
-//////////////////////////////////  
-    scalarField CR = ( pos(patchInternalField()+fieldpc.snGrad()/patch().deltaCoeffs()+1E3)*(Krel+K_v)*fieldpc.snGrad() +
-                       neg(patchInternalField()+fieldpc.snGrad()/patch().deltaCoeffs()+1E3)*gl ) * cap_l*(rainTemp -Tref) * pos(gl-VSMALL);
+        // term with capillary moisture gradient:                          
+        scalarField X = ((cap_l*(Tp-Tref)*Krel)+(cap_v*(Tp-Tref)+L_v)*K_v)*fieldpc.snGrad();
+        //////////////////////////////////  
+        scalarField CR = ( pos(patchInternalField()+fieldpc.snGrad()/patch().deltaCoeffs()+1E3)*(Krel+K_v)*fieldpc.snGrad() +
+                           neg(patchInternalField()+fieldpc.snGrad()/patch().deltaCoeffs()+1E3)*gl ) * cap_l*(rainTemp -Tref) * pos(gl-VSMALL);
 
-    valueFraction() = 0;//pos(fieldpc.patchInternalField()+1E3); 
-    refValue() = 0;//rainTemp;
-    refGrad() = (heatFlux + LE + QrNbr + QsNbr + CR -X)/(lambda_m+K_pt);
+    if(impermeable_ == false)
+    {
+        valueFraction() = 0;//pos(fieldpc.patchInternalField()+1E3); 
+        refValue() = 0;//rainTemp;
+        refGrad() = (heatFlux + LE + QrNbr + QsNbr + CR -X)/(lambda_m+K_pt);
+    }
+    else
+    {
+        valueFraction() = 0;
+        refValue() = 0;
+        refGrad() = (heatFlux + QrNbr + QsNbr)/(lambda_m);
+    }
 
     mixedFvPatchScalarField::updateCoeffs(); 
 
@@ -295,6 +308,7 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::write
     mixedFvPatchScalarField::write(os);
     os.writeKeyword("QrNbr")<< QrNbrName_ << token::END_STATEMENT << nl;
     os.writeKeyword("QsNbr")<< QsNbrName_ << token::END_STATEMENT << nl;
+    os.writeKeyword("impermeable")<< impermeable_ << token::END_STATEMENT << nl;
 }
 
 
