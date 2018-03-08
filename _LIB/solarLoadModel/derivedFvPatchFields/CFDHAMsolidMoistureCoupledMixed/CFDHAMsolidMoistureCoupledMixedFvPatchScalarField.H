@@ -64,7 +64,6 @@ SourceFiles
 #define CFDHAMsolidMoistureCoupledMixedFvPatchScalarField_H
 
 #include "mixedFvPatchFields.H"
-#include "temperatureCoupledBase.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -79,8 +78,7 @@ namespace compressible
 
 class CFDHAMsolidMoistureCoupledMixedFvPatchScalarField
 :
-    public mixedFvPatchScalarField,
-    public temperatureCoupledBase
+    public mixedFvPatchScalarField
 {        
     // Private data                            
 

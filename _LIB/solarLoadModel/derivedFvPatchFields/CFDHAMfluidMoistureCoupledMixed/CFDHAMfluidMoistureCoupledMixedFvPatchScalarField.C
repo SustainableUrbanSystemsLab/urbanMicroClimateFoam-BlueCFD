@@ -45,8 +45,7 @@ CFDHAMfluidMoistureCoupledMixedFvPatchScalarField
     const DimensionedField<scalar, volMesh>& iF
 )
 :
-    mixedFvPatchScalarField(p, iF),
-    temperatureCoupledBase(patch(), "undefined", "undefined", "undefined-K")
+    mixedFvPatchScalarField(p, iF)
 {
     this->refValue() = 0.0;
     this->refGrad() = 0.0;
@@ -63,8 +62,7 @@ CFDHAMfluidMoistureCoupledMixedFvPatchScalarField
     const fvPatchFieldMapper& mapper
 )
 :
-    mixedFvPatchScalarField(psf, p, iF, mapper),
-    temperatureCoupledBase(patch(), psf)
+    mixedFvPatchScalarField(psf, p, iF, mapper)
 {}
 
 
@@ -76,8 +74,7 @@ CFDHAMfluidMoistureCoupledMixedFvPatchScalarField
     const dictionary& dict
 )
 :
-    mixedFvPatchScalarField(p, iF),
-    temperatureCoupledBase(patch(), dict) 
+    mixedFvPatchScalarField(p, iF)
 {
     if (!isA<mappedPatchBase>(this->patch().patch()))
     {
@@ -124,8 +121,7 @@ CFDHAMfluidMoistureCoupledMixedFvPatchScalarField
     const DimensionedField<scalar, volMesh>& iF
 )
 :
-    mixedFvPatchScalarField(psf, iF),
-    temperatureCoupledBase(patch(), psf)    
+    mixedFvPatchScalarField(psf, iF) 
 {}
 
 
@@ -188,7 +184,6 @@ void CFDHAMfluidMoistureCoupledMixedFvPatchScalarField::write
 ) const
 {
     mixedFvPatchScalarField::write(os);
-    temperatureCoupledBase::write(os);
 }
 
 

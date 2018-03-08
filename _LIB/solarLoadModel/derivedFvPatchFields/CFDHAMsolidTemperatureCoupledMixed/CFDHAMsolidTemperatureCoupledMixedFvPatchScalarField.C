@@ -48,7 +48,6 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 )
 :
     mixedFvPatchScalarField(p, iF),
-    temperatureCoupledBase(patch(), "lookup", "lambda_m", "undefined-K"),
     QrNbrName_("undefined-QrNbr"),
     QsNbrName_("undefined-QsNbr")
 {
@@ -68,7 +67,6 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 )
 :
     mixedFvPatchScalarField(psf, p, iF, mapper),
-    temperatureCoupledBase(patch(), psf),
     QrNbrName_(psf.QrNbrName_),
     QsNbrName_(psf.QsNbrName_)
 {}
@@ -83,7 +81,6 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 )
 :
     mixedFvPatchScalarField(p, iF),
-    temperatureCoupledBase(patch(), dict),
     QrNbrName_(dict.lookupOrDefault<word>("QrNbr", "none")),
     QsNbrName_(dict.lookupOrDefault<word>("QsNbr", "none")) 
 {
@@ -133,7 +130,6 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 )
 :
     mixedFvPatchScalarField(psf, iF),
-    temperatureCoupledBase(patch(), psf),
     QrNbrName_(psf.QrNbrName_),
     QsNbrName_(psf.QsNbrName_)
 {}
@@ -299,7 +295,6 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::write
     mixedFvPatchScalarField::write(os);
     os.writeKeyword("QrNbr")<< QrNbrName_ << token::END_STATEMENT << nl;
     os.writeKeyword("QsNbr")<< QsNbrName_ << token::END_STATEMENT << nl;
-    temperatureCoupledBase::write(os);
 }
 
 
