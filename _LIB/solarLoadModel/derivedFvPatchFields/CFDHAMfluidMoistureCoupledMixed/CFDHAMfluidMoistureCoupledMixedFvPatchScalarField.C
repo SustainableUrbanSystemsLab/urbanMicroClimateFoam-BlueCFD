@@ -151,38 +151,12 @@ void CFDHAMfluidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
     const fvPatch& nbrPatch =
         refCast<const fvMesh>(nbrMesh).boundary()[samplePatchI];
 
-//    scalarField Tc(patchInternalField());
     scalarField& Tp = *this;
 
-/*    const mixedFvPatchScalarField& //CFDHAMfluidMoistureCoupledMixedFvPatchScalarField&
-        nbrField = refCast
-            <const mixedFvPatchScalarField>
-            (
-                nbrPatch.lookupPatchField<volScalarField, scalar>(wnbrName_)
-            );   */
+	scalarField TNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("Ts");
+    mpp.distribute(TNbr);
 
-    const mixedFvPatchScalarField& //CFDHAMfluidMoistureCoupledMixedFvPatchScalarField&
-        nbrTField = refCast
-            <const mixedFvPatchScalarField>
-            (
-                nbrPatch.lookupPatchField<volScalarField, scalar>("Ts")
-            );   
-
-    const mixedFvPatchScalarField& //CFDHAMfluidMoistureCoupledMixedFvPatchScalarField&
-        nbrpcField = refCast
-            <const mixedFvPatchScalarField>
-            (
-                nbrPatch.lookupPatchField<volScalarField, scalar>("pc")
-            );                       
-
-    // Swap to obtain full local values of neighbour internal field
-//    scalarField wcNbr(nbrField.patchInternalField());
-//    mpp.distribute(wcNbr);
-
-    scalarField TNbr(nbrTField.patchInternalField());
-    mpp.distribute(TNbr);  
-
-    scalarField pcNbr(nbrpcField.patchInternalField());
+    scalarField pcNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("pc");
     mpp.distribute(pcNbr); 
 
     scalarField p(Tp.size(), 0.0);
