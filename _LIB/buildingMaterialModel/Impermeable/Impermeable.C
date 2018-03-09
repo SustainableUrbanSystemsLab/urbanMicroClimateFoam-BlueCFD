@@ -69,26 +69,26 @@ Foam::buildingMaterialModels::Impermeable::Impermeable
 //- Correct the buildingMaterial moisture content (cell)
 void Foam::buildingMaterialModels::Impermeable::update_w_C_cell(const volScalarField& pc, volScalarField& w, volScalarField& Crel, label& celli)
 {
-    w.internalField()[celli] = 0;
-    Crel.internalField()[celli] = 1;
+    w.internalField()[celli] = VSMALL;
+    Crel.internalField()[celli] = VGREAT;
 }
 
 //- Correct the buildingMaterial liquid permeability (cell)
 void Foam::buildingMaterialModels::Impermeable::update_Krel_cell(const volScalarField& pc, const volScalarField& w, volScalarField& Krel, label& celli)
 {
-    Krel.internalField()[celli] = 0;
+    Krel.internalField()[celli] = VSMALL;
 }
 
 //- Correct the buildingMaterial vapor permeability (cell)
 void Foam::buildingMaterialModels::Impermeable::update_Kv_cell(const volScalarField& pc, const volScalarField& w, const volScalarField& T, volScalarField& K_v, label& celli)
 {
-    K_v.internalField()[celli] = 0;
+    K_v.internalField()[celli] = VSMALL;
 }
 
 //- Correct the buildingMaterial K_pt (cell)
 void Foam::buildingMaterialModels::Impermeable::update_Kpt_cell(const volScalarField& pc, const volScalarField& w, const volScalarField& T, volScalarField& K_pt, label& celli)
 {
-    K_pt.internalField()[celli] = 0;
+    K_pt.internalField()[celli] = VSMALL;
 }
 
 
