@@ -24,39 +24,23 @@ License
 Class
     Foam::
     compressible::
-    turbulentTemperatureRadCoupledMixedFvPatchScalarField
+    CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 
 Description
-    Mixed boundary condition for temperature and radiation heat transfer
-    to be used for in multiregion cases
+    Coupled boundary condition for heat flux at solid boundaries - ayk
 
     Example usage:
         myInterfacePatchName
         {
-            type compressible::turbulentTemperatureRadCoupledMixed;
-            TNbr        T;      // name of T field on neighbour region
-            kappa       lookup;
-            KappaName   kappa;
-            QrNbr       Qr; // or none. Name of Qr field on neighbour region
-            Qr          Qr; // or none. Name of Qr field on local region
-            value       uniform 300;
+            type            compressible::CFDHAMsolidTemperatureCoupledMixed;
+            QrNbr           Qr; //or none, name of thermal radiation from neighbour region
+            QsNbr           Qs; //or none, name of solar radiation from neighbour region
+            impermeable     false; //(or true, default=false);
+            value           uniform -1e7;
         }
 
-    Needs to be on underlying mapped(Wall)FvPatch.
-
-     Note: kappa : heat conduction at patch. Gets supplied how to
-            lookup/calculate
-     kappa:
-    - 'lookup' : lookup volScalarField (or volSymmTensorField) with name
-    - 'fluidThermo' : use fluidThermo and compressible::RASmodel to calculate K
-    - 'solidThermo' : use solidThermo kappa()
-    - 'directionalSolidThermo' directionalKappa()
-
-    Note: runs in parallel with arbitrary decomposition. Uses mapped
-    functionality to calculate exchange.
-
 SourceFiles
-    turbulentTemperatureRadCoupledMixedFvPatchScalarField.C
+    CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField.C
 
 \*---------------------------------------------------------------------------*/
 
