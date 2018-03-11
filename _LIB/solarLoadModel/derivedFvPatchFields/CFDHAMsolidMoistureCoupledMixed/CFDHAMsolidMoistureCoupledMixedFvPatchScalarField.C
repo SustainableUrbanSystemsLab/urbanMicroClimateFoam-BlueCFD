@@ -205,7 +205,7 @@ void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
     scalarField gl = ((gcrNbr*rhol)/(3600*1000));
 
     scalarField vaporFlux = (rhoNbr*Dm + mutNbr/Sct) * (wcNbr-(0.62198*pv_s/1e5)) *deltaCoeff_; 
-
+Info << "111: " << wcNbr << endl;
     // term with temperature gradient:
     scalarField K_pt(pcp.size(), 0.0);
     K_pt = patch().lookupPatchField<volScalarField, scalar>("K_pt");                 

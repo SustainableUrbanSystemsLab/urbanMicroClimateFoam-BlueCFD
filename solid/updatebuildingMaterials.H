@@ -34,22 +34,23 @@ forAll(Materials, MaterialsI)
         cellType[celli] = MaterialsI;
         zoneCell[celli] = true;
         
-        if (update_sequence == 1)
-        {
+//        if (update_sequence == 1)
+//        {
             buildingMaterial->update_w_C_cell(pc,ws,Crel,celli);
             buildingMaterial->update_Krel_cell(pc,ws,Krel,celli);
             buildingMaterial->update_Kv_cell(pc,ws,Ts,K_v,celli);
-            buildingMaterial->update_Kpt_cell(pc,ws,Ts,K_pt,celli);                            
-        }
-        else if (update_sequence == 2)
-        {
+            //buildingMaterial->update_Kpt_cell(pc,ws,Ts,K_pt,celli);                            
+//        }
+//        else if (update_sequence == 2)
+//        {
             rho_m.internalField()[celli] = rho_;
             cap_m.internalField()[celli] = cap_;
             lambda_m.internalField()[celli] = lambda1_ + lambda2_*ws[celli];
-        }
-        else if (update_sequence == 3)
-        {   
-            buildingMaterial->update_w_C_cell(pc,ws,Crel,celli);
-        }
+            buildingMaterial->update_Kpt_cell(pc,ws,Ts,K_pt,celli);                            
+//        }
+//        else if (update_sequence == 3)
+//        {   
+            //buildingMaterial->update_w_C_cell(pc,ws,Crel,celli);
+//        }
     }
 }

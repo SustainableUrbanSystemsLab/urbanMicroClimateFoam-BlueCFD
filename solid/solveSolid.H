@@ -20,7 +20,8 @@
         volScalarField Ts_old = Ts;
         volScalarField ws_old = ws;
 
-        int update_sequence = 1;
+//        int update_sequence = 1;
+        #include "updatebuildingMaterials.H"
 
         for (int nInternalIter=1; nInternalIter<=nInternalIterMax; nInternalIter++)
         {
@@ -37,13 +38,15 @@
                     #include "revertValues.H"    
                     break;
                 }
-                pc.correctBoundaryConditions();
-
+                //pc.correctBoundaryConditions();
+                pc.boundaryField().evaluate();
+                //Ts.correctBoundaryConditions();
             ///////////////////////////////
 
             //Heat transfer////////////////
-                #include "TsEqn.H"
-
+//Info << "AAA: " << Ts.boundaryField() << endl;
+                #include "TsEqn.H" 
+//Info << "BBB: " << Ts.boundaryField() << endl;
                 //Firstly, test if all Ts values are valid
                 if (gMin(Ts) <= 0 || gMin(Ts.boundaryField()) <= 0)
                 {           
@@ -51,30 +54,30 @@
                     timeStepDecrease = true;
                     #include "revertValues.H"  
                     break;                      
-                }
-                Ts.correctBoundaryConditions();
-                
+                } //Info << "CCC: " << Ts.boundaryField() << endl;
+                Ts.correctBoundaryConditions(); //Info << "DDD: " << Ts.boundaryField() << endl;
+                //pc.correctBoundaryConditions();                
             ///////////////////////////////
             
 
             //Convergence test/////////////
 
                 //update moisture content for convergence test
-                update_sequence = 3;
-                pc.dimensions().reset(dimless);
-                ws.dimensions().reset(dimless);
+//                update_sequence = 2;
+                //pc.dimensions().reset(dimless);
+                //ws.dimensions().reset(dimless);
                 #include "updatebuildingMaterials.H"
-                ws.dimensions().reset(dimensionSet( 1, -3, 0, 0, 0, 0, 0));          
-                pc.dimensions().reset(dimensionSet( 1, -1, -2, 0, 0, 0, 0));   
-                
+                //ws.dimensions().reset(dimensionSet( 1, -3, 0, 0, 0, 0, 0));          
+                //pc.dimensions().reset(dimensionSet( 1, -1, -2, 0, 0, 0, 0));   
+              
                 //convergence test
 
                 scalar maxChangews = gMax(mag(ws.internalField()-ws_old.internalField())); 
                 scalar maxChangeTs = gMax(mag(Ts.internalField()-Ts_old.internalField())); 
                 if(maxChangews < PicardTolerancews && maxChangeTs < PicardToleranceTs && nInternalIter>=2) //force at least 1 internal iteration
                 {
-                    ws_old = ws; ws_old.correctBoundaryConditions();
-                    Ts_old = Ts; Ts_old.correctBoundaryConditions();
+                    ws_old = ws; //ws_old.correctBoundaryConditions();
+                    Ts_old = Ts; //Ts_old.correctBoundaryConditions();
                     Info << "Total internal iterations: " << nInternalIter << endl;
                     timeStepDecrease = false;
                     break;
@@ -92,8 +95,8 @@
                 }   
                 else //not converged nor reached the maximum iteration yet, continue
                 {
-                    ws_old = ws; ws_old.correctBoundaryConditions();
-                    Ts_old = Ts; Ts_old.correctBoundaryConditions();
+                    ws_old = ws; //ws_old.correctBoundaryConditions();
+                    Ts_old = Ts; //Ts_old.correctBoundaryConditions();
                     Info << "maxChangews: " << maxChangews << ", maxChangeTs: " << maxChangeTs << endl;
                 }               
             ///////////////////////////////

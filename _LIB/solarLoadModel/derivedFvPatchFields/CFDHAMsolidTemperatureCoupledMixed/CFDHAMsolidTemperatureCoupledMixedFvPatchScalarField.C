@@ -291,7 +291,7 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
         refValue() = 0;
         refGrad() = (heatFlux + QrNbr + QsNbr)/(lambda_m);
     }
-
+//Info << "111: " << heatFlux << " " << LE << " " << -X << " " << K_pt << " " << refGrad() << endl;
     mixedFvPatchScalarField::updateCoeffs(); 
 
     // Restore tag

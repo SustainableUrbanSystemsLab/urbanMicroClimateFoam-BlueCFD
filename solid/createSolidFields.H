@@ -160,7 +160,7 @@ forAll(solidRegions, i)
                 IOobject::NO_WRITE
             ),
             solidRegions[i],
-            dimensionedScalar("Krel", dimensionSet(1,-3,0,0,0,0,0), scalar(1E-3)),
+            dimensionedScalar("Krel", dimensionSet(0, 0, 1, 0, 0, 0, 0), scalar(1E-3)),
             ("zeroGradient")
         )
     );  
@@ -180,7 +180,7 @@ forAll(solidRegions, i)
                 IOobject::NO_WRITE
             ),
             solidRegions[i],
-            dimensionedScalar("K_v", dimensionSet(1,-3,0,0,0,0,0), scalar(1E-3)),
+            dimensionedScalar("K_v", dimensionSet(0, 0, 1, 0, 0, 0, 0), scalar(1E-3)),
             ("zeroGradient")
         )
     ); 
@@ -200,7 +200,7 @@ forAll(solidRegions, i)
                 IOobject::NO_WRITE
             ),
             solidRegions[i],
-            dimensionedScalar("K_pt", dimensionSet(1,-3,0,0,0,0,0), scalar(1E-3)),
+            dimensionedScalar("K_pt", dimensionSet(1, -1, -1, -1, 0, 0, 0), scalar(1E-3)),
             ("zeroGradient")
         )
     ); 
@@ -220,7 +220,7 @@ forAll(solidRegions, i)
                 IOobject::NO_WRITE
             ),
             solidRegions[i],
-            dimensionedScalar("Crel", dimensionSet(1,-3,0,0,0,0,0), scalar(1E-3)),
+            dimensionedScalar("Crel", dimensionSet(0, -2, 2, 0, 0, 0, 0), scalar(1E-3)),
             ("zeroGradient")
         )
     );                                

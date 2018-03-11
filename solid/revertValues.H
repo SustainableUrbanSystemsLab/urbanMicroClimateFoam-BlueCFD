@@ -6,8 +6,8 @@ forAll(pc.boundaryField(), patchi)
         pc.boundaryField()[patchi][facei] = pc.prevIter().boundaryField()[patchi][facei];
     }
 }
-pc.correctBoundaryConditions();
-Ts=Ts.prevIter(); 
+//pc.correctBoundaryConditions();
+Ts=Ts.prevIter();
 forAll(Ts.boundaryField(), patchi)
 { 
     forAll(Ts.boundaryField()[patchi], facei)
@@ -15,4 +15,4 @@ forAll(Ts.boundaryField(), patchi)
         Ts.boundaryField()[patchi][facei] = Ts.prevIter().boundaryField()[patchi][facei];
     }
 }
-Ts.correctBoundaryConditions();
+//Ts.correctBoundaryConditions();
