@@ -54,3 +54,12 @@ forAll(Materials, MaterialsI)
 //        }
     }
 }
+
+ws.correctBoundaryConditions();
+Crel.correctBoundaryConditions();
+Krel.correctBoundaryConditions();
+K_v.correctBoundaryConditions();
+rho_m.correctBoundaryConditions();
+cap_m.correctBoundaryConditions();
+lambda_m.correctBoundaryConditions();
+K_pt.correctBoundaryConditions();

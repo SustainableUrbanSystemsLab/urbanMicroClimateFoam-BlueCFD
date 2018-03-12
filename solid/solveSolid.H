@@ -20,7 +20,6 @@
         volScalarField Ts_old = Ts;
         volScalarField ws_old = ws;
 
-//        int update_sequence = 1;
         #include "updatebuildingMaterials.H"
 
         for (int nInternalIter=1; nInternalIter<=nInternalIterMax; nInternalIter++)
@@ -38,15 +37,11 @@
                     #include "revertValues.H"    
                     break;
                 }
-                //pc.correctBoundaryConditions();
-                pc.boundaryField().evaluate();
-                //Ts.correctBoundaryConditions();
+                pc.correctBoundaryConditions();
             ///////////////////////////////
 
             //Heat transfer////////////////
-//Info << "AAA: " << Ts.boundaryField() << endl;
                 #include "TsEqn.H" 
-//Info << "BBB: " << Ts.boundaryField() << endl;
                 //Firstly, test if all Ts values are valid
                 if (gMin(Ts) <= 0 || gMin(Ts.boundaryField()) <= 0)
                 {           
@@ -54,21 +49,15 @@
                     timeStepDecrease = true;
                     #include "revertValues.H"  
                     break;                      
-                } //Info << "CCC: " << Ts.boundaryField() << endl;
-                Ts.correctBoundaryConditions(); //Info << "DDD: " << Ts.boundaryField() << endl;
-                //pc.correctBoundaryConditions();                
+                }
+                Ts.correctBoundaryConditions();
             ///////////////////////////////
             
 
             //Convergence test/////////////
 
                 //update moisture content for convergence test
-//                update_sequence = 2;
-                //pc.dimensions().reset(dimless);
-                //ws.dimensions().reset(dimless);
                 #include "updatebuildingMaterials.H"
-                //ws.dimensions().reset(dimensionSet( 1, -3, 0, 0, 0, 0, 0));          
-                //pc.dimensions().reset(dimensionSet( 1, -1, -2, 0, 0, 0, 0));   
               
                 //convergence test
 
