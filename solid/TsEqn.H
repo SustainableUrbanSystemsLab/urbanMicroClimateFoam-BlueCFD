@@ -1,11 +1,3 @@
-//update material properties, rho_m and cap_m
-//update_sequence = 2; 
-//#include "updatebuildingMaterials.H"
-
-//rho_m.correctBoundaryConditions();
-//cap_m.correctBoundaryConditions();
-/*Info << "AAA: " << lambda_m << endl;*///lambda_m.correctBoundaryConditions();/*Info << "BBB: " << lambda_m << endl;           */
-//K_pt.correctBoundaryConditions();
 dimensionedScalar cap_l("cap_l",dimensionSet(0,2,-2,-1,0,0,0),scalar(4182));
 dimensionedScalar cap_v("cap_v",dimensionSet(0,2,-2,-1,0,0,0),scalar(1880));
 dimensionedScalar Tref("Tref",dimensionSet(0,0,0,1,0,0,0),scalar(273.15));

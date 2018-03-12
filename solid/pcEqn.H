@@ -1,19 +1,17 @@
-//Crel.correctBoundaryConditions();
-/*fvScalarMatrix dummy(fvm::laplacian(Crel,pc,"laplacian(Krel,pc)"));
-Info << "000: " << dummy.boundaryCoeffs() << endl;
-fvScalarMatrix test(fvm::laplacian(Crel,pc,"laplacian(Krel,pc)"));
-Info << "AAA: " << test.boundaryCoeffs() << endl;*/
+//using mixed form for moisture equation - see suGWFoam
+dimensionedScalar rDeltaT = 1.0/runTime.deltaT();
+volScalarField pc_ss = rDeltaT*(ws_old - ws_n); //additional source term appearing due to dw/dt 
+
+pc.oldTime() = pc_n; //Tricking OpenFOAM to use pc value from previous Picard iteration, instead of previous timestep
 
 fvScalarMatrix pcEqn
 (
     Crel*fvm::ddt(pc)                
-//    fvm::ddt(Crel,pc)
-//    -pc*fvc::grad(Crel)
-//    -fvm::Sp(fvm::ddt(Crel),pc)
     ==
     fvm::laplacian(Krel+K_v,pc,"laplacian(Krel,pc)")
     +fvc::laplacian(K_pt,Ts,"laplacian(Krel,pc)")
+    +pc_ss
 );
-//Info << "AAA: " << pcEqn.boundaryCoeffs() << endl;
 pcEqn.solve(); 
 
+pc.oldTime() = pc_old; //restoring pc.oldTime()

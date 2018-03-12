@@ -17,12 +17,19 @@
         pc.storePrevIter();
         Ts.storePrevIter();
 
-        volScalarField Ts_old = Ts;
-        volScalarField ws_old = ws;
-
         #include "updatebuildingMaterials.H"
 
-        for (int nInternalIter=1; nInternalIter<=nInternalIterMax; nInternalIter++)
+        //store values from previous timestep
+        volScalarField ws_old = ws; //ws_old.boundaryField().updateCoeffs();
+        volScalarField pc_old = pc; //pc_old.boundaryField().updateCoeffs();
+        volScalarField Ts_old = Ts; //Ts_old.boundaryField().updateCoeffs();
+
+        //store values from previous Picard iteration
+        volScalarField ws_n = ws; //ws_n.boundaryField().updateCoeffs();
+        volScalarField pc_n = pc; //pc_n.boundaryField().updateCoeffs();
+        volScalarField Ts_n = Ts; //Ts_n.boundaryField().updateCoeffs();
+
+        for (int nInternalIter=1; nInternalIter<=nInternalIterMax; nInternalIter++) //starting Picard iteration
         {
 
             //Moisture transfer////////////
@@ -56,17 +63,18 @@
 
             //Convergence test/////////////
 
-                //update moisture content for convergence test
+                //update values for convergence test
                 #include "updatebuildingMaterials.H"
               
                 //convergence test
 
-                scalar maxChangews = gMax(mag(ws.internalField()-ws_old.internalField())); 
-                scalar maxChangeTs = gMax(mag(Ts.internalField()-Ts_old.internalField())); 
+                scalar maxChangews = gMax(mag(ws.internalField()-ws_n.internalField())); 
+                scalar maxChangeTs = gMax(mag(Ts.internalField()-Ts_n.internalField())); 
                 if(maxChangews < PicardTolerancews && maxChangeTs < PicardToleranceTs && nInternalIter>=2) //force at least 1 internal iteration
                 {
-                    ws_old = ws; //ws_old.correctBoundaryConditions();
-                    Ts_old = Ts; //Ts_old.correctBoundaryConditions();
+                    pc_n = pc; pc_n.boundaryField().updateCoeffs();
+                    ws_n = ws; ws_n.boundaryField().updateCoeffs();
+                    Ts_n = Ts; Ts_n.boundaryField().updateCoeffs();
                     Info << "Total internal iterations: " << nInternalIter << endl;
                     timeStepDecrease = false;
                     break;
@@ -84,8 +92,9 @@
                 }   
                 else //not converged nor reached the maximum iteration yet, continue
                 {
-                    ws_old = ws; //ws_old.correctBoundaryConditions();
-                    Ts_old = Ts; //Ts_old.correctBoundaryConditions();
+                    pc_n = pc; pc_n.boundaryField().updateCoeffs();
+                    ws_n = ws; ws_n.boundaryField().updateCoeffs();
+                    Ts_n = Ts; Ts_n.boundaryField().updateCoeffs();
                     Info << "maxChangews: " << maxChangews << ", maxChangeTs: " << maxChangeTs << endl;
                 }               
             ///////////////////////////////
