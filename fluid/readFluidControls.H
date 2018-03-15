@@ -22,35 +22,17 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Global
-    readSolidTimeControls
+    readFluidControls
 
 Description
-    Read the control parameters used in the solid
+    Read the control parameters used in the fluid
 
 \*---------------------------------------------------------------------------*/
 
-scalar increase_factor =
-    runTime.controlDict().lookupOrDefault<scalar>("increase_factor", 1.2);
+scalar maxFluidIteration =
+    runTime.controlDict().lookupOrDefault<scalar>("maxFluidIteration", 10000);
 
-scalar decrease_factor =
-    runTime.controlDict().lookupOrDefault<scalar>("decrease_factor", 0.5);    
-
-scalar initialSolidTimestepFactor =
-    runTime.controlDict().lookupOrDefault<scalar>("initialSolidTimestepFactor", 0.1);    
-
-int nInternalIterMax =
-    runTime.controlDict().lookupOrDefault<int>("nInternalIterMax", 10);
-
-scalar maxDeltaT =
-    runTime.controlDict().lookupOrDefault<scalar>("maxDeltaT", 600.0); 
-
-scalar minDeltaT =
-    runTime.controlDict().lookupOrDefault<scalar>("minDeltaT", 1.0);  
-
-scalar PicardTolerancews =
-    runTime.controlDict().lookupOrDefault<scalar>("PicardTolerancews", 0.01);
-
-scalar PicardToleranceTs =
-    runTime.controlDict().lookupOrDefault<scalar>("PicardToleranceTs", 0.01); 
+scalar minFluidIteration =
+    runTime.controlDict().lookupOrDefault<scalar>("minFluidIteration", 1);
 
 // ************************************************************************* //

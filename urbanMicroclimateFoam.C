@@ -59,8 +59,8 @@ int main(int argc, char *argv[])
     #include "createSolidFields.H"
 
     #include "initContinuityErrs.H"
-    #include "readFluidTimeControls.H"
-    #include "readSolidTimeControls.H"
+    #include "readFluidControls.H"
+    #include "readSolidControls.H"
 
     while (runTime.loop())
     {      

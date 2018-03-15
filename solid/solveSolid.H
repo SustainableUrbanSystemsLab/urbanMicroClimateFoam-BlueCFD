@@ -19,10 +19,10 @@
 
         #include "updatebuildingMaterials.H"
 
-        //store values from previous timestep
+        //store values from previous timestep (for mixed form moisture equation)
         volScalarField ws_old = ws; //ws_old.boundaryField().updateCoeffs();
         volScalarField pc_old = pc; //pc_old.boundaryField().updateCoeffs();
-        volScalarField Ts_old = Ts; //Ts_old.boundaryField().updateCoeffs();
+        //volScalarField Ts_old = Ts; //Ts_old.boundaryField().updateCoeffs();
 
         //store values from previous Picard iteration
         volScalarField ws_n = ws; //ws_n.boundaryField().updateCoeffs();
@@ -114,7 +114,6 @@
 
         if (timeToOutput > 0.0)
         {
-            #include "readSolidTimeControls.H"
             #include "setSolidRegionDeltaT.H"
 
             //update thermal radiation fluxes
