@@ -60,6 +60,12 @@ if(timeStepDecrease == false && runTime.deltaT().value() <= maxDeltaT) //time st
 }
 else if(timeStepDecrease == true) //time step is decreased
 {
+  if (runTime.deltaT().value() - minDeltaT < VSMALL)
+  {
+    FatalError
+      << "Cannot decrease time step further. Exiting..." 
+      << abort(FatalError);
+  }
   Info << "Decreasing time step...deltaT = " 
        << min
             (
@@ -86,6 +92,5 @@ else if(timeStepDecrease == true) //time step is decreased
     )
   );
 }
-
 
 // ************************************************************************* //
