@@ -12,8 +12,6 @@ SabaBrick/SabaBrick.C
 CalciumSilicate/CalciumSilicate.C
 AsphaltConcrete/AsphaltConcrete.C
 PorousAsphalt/PorousAsphalt.C
-MartilliWall/MartilliWall.C
-MartilliGround/MartilliGround.C
 Savonnieres/Savonnieres.C
 Impermeable/Impermeable.C
 
