@@ -14,7 +14,7 @@ forAll(Materials, MaterialsI)
     //create the buildingMaterial model
     autoPtr<buildingMaterialModel> buildingMaterial
     (
-       buildingMaterialModel::New("buildingMaterial", solidTransportProperties[i], cellZoneModel)
+       buildingMaterialModel::New("buildingMaterial", dict, cellZoneModel)
     );
     
     label cellZoneID = mesh.cellZones().findZoneID(cellZoneName);

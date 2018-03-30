@@ -42,12 +42,12 @@ namespace Foam
 Foam::buildingMaterialModel::buildingMaterialModel
 (
     const word& name,
-    const dictionary& buildingMaterialProperties,
+    const dictionary& buildingMaterialDict,
     const word& cellZoneModel
 )
 :
     name_(name),
-    buildingMaterialProperties_(buildingMaterialProperties),
+    buildingMaterialDict_(buildingMaterialDict),
     cellZoneModel_(cellZoneModel)
 {}
 

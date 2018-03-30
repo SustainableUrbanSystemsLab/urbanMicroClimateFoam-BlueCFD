@@ -38,7 +38,7 @@ namespace Foam
 autoPtr<buildingMaterialModel> buildingMaterialModel::New
 (
     const word& name,
-    const dictionary& buildingMaterialProperties,
+    const dictionary& buildingMaterialDict,
     const word& cellZoneModel
 )
 {
@@ -67,7 +67,7 @@ autoPtr<buildingMaterialModel> buildingMaterialModel::New
     }
 
     return autoPtr<buildingMaterialModel>
-        (cstrIter()(name, buildingMaterialProperties, cellZoneModel));
+        (cstrIter()(name, buildingMaterialDict, cellZoneModel));
 }
 
 

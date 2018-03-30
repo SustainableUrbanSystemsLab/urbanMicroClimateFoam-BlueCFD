@@ -75,7 +75,7 @@ public:
         PorousAsphalt
         (
             const word& name, 
-            const dictionary& buildingMaterialProperties,
+            const dictionary& buildingMaterialDict,
             const word& cellZoneModel
         );
 

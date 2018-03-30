@@ -72,7 +72,7 @@ protected:
     // Protected data
 
         word name_;
-        dictionary buildingMaterialProperties_;
+        dictionary buildingMaterialDict_;
         word cellZoneModel_;
 
     // Private Member Functions
@@ -99,10 +99,10 @@ public:
             dictionary,
             (
                 const word& name,
-                const dictionary& buildingMaterialProperties,
+                const dictionary& buildingMaterialDict,
                 const word& cellZoneModel
             ),
-            (name, buildingMaterialProperties, cellZoneModel)
+            (name, buildingMaterialDict, cellZoneModel)
         );
 
 
@@ -112,7 +112,7 @@ public:
         static autoPtr<buildingMaterialModel> New
         (
             const word& name,
-            const dictionary& buildingMaterialProperties,
+            const dictionary& buildingMaterialDict,
             const word& cellZoneModel
         );
 
@@ -123,7 +123,7 @@ public:
         buildingMaterialModel
         (
             const word& name,
-            const dictionary& buildingMaterialProperties,
+            const dictionary& buildingMaterialDict,
             const word& cellZoneModel
         );
 
@@ -137,9 +137,9 @@ public:
     // Member Functions
 
         //- Return the buildingMaterial properties dictionary
-        const dictionary& buildingMaterialProperties() const
+        const dictionary& buildingMaterialDict() const
         {
-            return buildingMaterialProperties_;
+            return buildingMaterialDict_;
         }
 
         //- Correct the buildingMaterial moisture content (cell)

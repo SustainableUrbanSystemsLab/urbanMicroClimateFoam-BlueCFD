@@ -54,11 +54,11 @@ namespace buildingMaterialModels
 Foam::buildingMaterialModels::Hamstad5Brick::Hamstad5Brick
 (
     const word& name,
-    const dictionary& buildingMaterialProperties,
+    const dictionary& buildingMaterialDict,
     const word& cellZoneModel
 )
 :
-    buildingMaterialModel(name, buildingMaterialProperties, cellZoneModel)
+    buildingMaterialModel(name, buildingMaterialDict, cellZoneModel)
 {
     
 }

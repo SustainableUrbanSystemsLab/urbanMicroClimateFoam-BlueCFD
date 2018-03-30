@@ -14,5 +14,7 @@ AsphaltConcrete/AsphaltConcrete.C
 PorousAsphalt/PorousAsphalt.C
 Savonnieres/Savonnieres.C
 Impermeable/Impermeable.C
+VanGenuchten/VanGenuchten.C
+VanGenuchtenVapDiff/VanGenuchtenVapDiff.C
 
 LIB = $(FOAM_USER_LIBBIN)/libbuildingMaterialModel

@@ -54,11 +54,11 @@ namespace buildingMaterialModels
 Foam::buildingMaterialModels::CalciumSilicate::CalciumSilicate
 (
     const word& name,
-    const dictionary& buildingMaterialProperties,
+    const dictionary& buildingMaterialDict,
     const word& cellZoneModel
 )
 :
-    buildingMaterialModel(name, buildingMaterialProperties, cellZoneModel)
+    buildingMaterialModel(name, buildingMaterialDict, cellZoneModel)
 {
     
 }
