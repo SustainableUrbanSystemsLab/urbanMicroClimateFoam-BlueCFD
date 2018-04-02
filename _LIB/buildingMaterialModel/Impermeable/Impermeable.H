@@ -23,23 +23,23 @@ License
     Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 Class
-    Foam::buildingMaterialModels::MartilliWall
+    Foam::buildingMaterialModels::Impermeable
 
 Description
-    buildingMaterial constitutive relationship as in MartilliWall et al. (1977).
+    buildingMaterial constitutive relationship as in Impermeable et al. (1977).
    
     Reference:
-    MartilliWall R, Vauclin M, Touma J, Wierenga P, Vachaud G. Comparision of numerical
+    Impermeable R, Vauclin M, Touma J, Wierenga P, Vachaud G. Comparision of numerical
     simulation models for one dimensional infiltration. buildingMaterial Sci. Soc. Am J. 1977,
     41:285-294
 
 SourceFiles
-    MartilliWall.C
+    Impermeable.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef MartilliWall_H
-#define MartilliWall_H
+#ifndef Impermeable_H
+#define Impermeable_H
 
 #include "buildingMaterialModel.H"
 #include "volFields.H"
@@ -52,55 +52,37 @@ namespace buildingMaterialModels
 {
 
 /*---------------------------------------------------------------------------*\
-                           Class MartilliWall Declaration
+                           Class Impermeable Declaration
 \*---------------------------------------------------------------------------*/
 
-class MartilliWall
+class Impermeable
 :
     public buildingMaterialModel
 {
     // Private data
-
-        dictionary MartilliWallCoeffs_;
-
-        dimensionedScalar rho_;
-        dimensionedScalar cap_;    
-
-        //dimensionedTensor Ks_;
-        //dimensionedScalar theta_s_;
-        //dimensionedScalar theta_r_;
-        //dimensionedScalar alpha_;
-        //dimensionedScalar beta_;
-        //dimensionedScalar gamma_;
-        //dimensionedScalar A_;
-        //dimensionedScalar Ss_; 
 
     // Private Member Functions
 
 public:
 
     //- Runtime type information
-    TypeName("MartilliWall");
+    TypeName("Impermeable");
 
 
     // Constructors
 
         //- Construct from components
-        MartilliWall
+        Impermeable
         (
             const word& name, 
-            const dictionary& buildingMaterialProperties,
+            const dictionary& buildingMaterialDict,
             const word& cellZoneModel
-            //volScalarField& h,
-            //volScalarField& theta,
-            //volScalarField& kr,
-            //volScalarField& Ch
         );
 
 
     // Destructor
 
-        ~MartilliWall()
+        ~Impermeable()
         {}
 
 
@@ -109,60 +91,14 @@ public:
         //- Correct the buildingMaterial moisture content (cell)
         void update_w_C_cell(const volScalarField& pc, volScalarField& w, volScalarField& Crel, label& celli);
 
-        //- Correct the buildingMaterial moisture content (boundary)
-        void update_w_C_boundary(const volScalarField& pc, volScalarField& w, volScalarField& Crel, label patchi, label patchFacei);
-
         //- Correct the buildingMaterial liquid permeability (cell)
         void update_Krel_cell(const volScalarField& pc, const volScalarField& w, volScalarField& Krel, label& celli);
-
-        //- Correct the buildingMaterial liquid permeability (boundary)
-        void update_Krel_boundary(const volScalarField& pc, const volScalarField& w, volScalarField& Krel, label patchi, label patchFacei); 
 
         //- Correct the buildingMaterial vapor permeability (cell)
         void update_Kv_cell(const volScalarField& pc, const volScalarField& w, const volScalarField& T, volScalarField& K_v, label& celli);
 
-        //- Correct the buildingMaterial vapor permeability (boundary)
-        void update_Kv_boundary(const volScalarField& pc, const volScalarField& w, const volScalarField& T, volScalarField& K_v, label patchi, label patchFacei); 
-
         //- Correct the buildingMaterial K_pt (cell)
         void update_Kpt_cell(const volScalarField& pc, const volScalarField& w, const volScalarField& T, volScalarField& K_pt, label& celli);
-
-        //- Correct the buildingMaterial K_pt (boundary)
-        void update_Kpt_boundary(const volScalarField& pc, const volScalarField& w, const volScalarField& T, volScalarField& K_pt, label patchi, label patchFacei);
-
-        //- Correct the buildingMaterial lambda (cell)
-        void update_lambda_cell(const volScalarField& w, volScalarField& lambda, label& celli);
-
-        //- Correct the buildingMaterial lambda (boundary)
-        void update_lambda_boundary(const volScalarField& w, volScalarField& lambda, label patchi, label patchFacei);                      
-
-        //- Read transportProperties dictionary
-        bool read(const dictionary& buildingMaterialProperties);
-
-        dimensionedScalar rho()
-        {
-            return rho_;
-        }
-
-        dimensionedScalar cap()
-        {
-            return cap_;
-        }    
-
-        /*dimensionedTensor Ks()
-        {
-            return Ks_;
-        }
-
-        dimensionedScalar theta_s()
-        {
-            return theta_s_;
-        }
-
-        dimensionedScalar Ss()
-        {
-            return Ss_;
-        }*/
 
 };
 

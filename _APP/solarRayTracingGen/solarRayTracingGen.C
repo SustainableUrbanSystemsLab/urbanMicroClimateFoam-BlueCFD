@@ -26,7 +26,7 @@ Application
 
 Description
     Aytac Kubilay, 2015, Empa
-	Based on viewFactorsGen
+    Based on viewFactorsGen
 
 \*---------------------------------------------------------------------------*/
 
@@ -270,8 +270,8 @@ int main(int argc, char *argv[])
 
     const bool dumpRays =
         viewFactorDict.lookupOrDefault<bool>("dumpRays", false);
-		
-	vector skyPos = viewFactorDict.lookup("skyPosVector");
+        
+    vector skyPos = viewFactorDict.lookup("skyPosVector");
 
     // Read sunPosVector list
     vectorIOList sunPosVector
@@ -368,7 +368,7 @@ int main(int argc, char *argv[])
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     label nCoarseFaces = 0;      //total number of coarse faces
-	label nCoarseFacesAll = 0;   //Also includes non-wall faces with greyDiffusive boundary
+    label nCoarseFacesAll = 0;   //Also includes non-wall faces with greyDiffusive boundary
     label nFineFaces = 0;        //total number of fine faces
     label nFineFacesTotal = 0;        //total number of fine faces including non-fixedValueFvPatchScalarField patches following advise from bug report
 
@@ -376,12 +376,12 @@ int main(int argc, char *argv[])
     const polyBoundaryMesh& coarsePatches = coarseMesh.boundaryMesh();
 
     labelList viewFactorsPatches(patches.size());
-	labelList howManyCoarseFacesPerPatch(patches.size());
+    labelList howManyCoarseFacesPerPatch(patches.size());
     DynamicList<label> sunskyMap_(nCoarseFaces);
     const volScalarField::GeometricBoundaryField& Qrb = Qr.boundaryField();
 
     label count = 0;
-	label countAll = 0;
+    label countAll = 0;
     label countForMapping = 0;
     forAll(Qrb, patchI)
     {
@@ -389,15 +389,15 @@ int main(int argc, char *argv[])
         const fvPatchScalarField& QrpI = Qrb[patchI];
 
         //if ((isA<fixedValueFvPatchScalarField>(QrpI)) && (pp.size() > 0))
-		if ((isA<wallFvPatch>(mesh.boundary()[patchI])) && (pp.size() > 0))
+        if ((isA<wallFvPatch>(mesh.boundary()[patchI])) && (pp.size() > 0))
         {
             viewFactorsPatches[count] = QrpI.patch().index();
             nCoarseFaces += coarsePatches[patchI].size();
-			nCoarseFacesAll += coarsePatches[patchI].size();
+            nCoarseFacesAll += coarsePatches[patchI].size();
             nFineFaces += patches[patchI].size();
-			count ++;
-			
-			howManyCoarseFacesPerPatch[countAll] = coarsePatches[patchI].size();
+            count ++;
+            
+            howManyCoarseFacesPerPatch[countAll] = coarsePatches[patchI].size();
 
             label i = 0;
             for (; i < howManyCoarseFacesPerPatch[countAll]; i++)
@@ -407,11 +407,11 @@ int main(int argc, char *argv[])
             }
             nFineFacesTotal += patches[patchI].size();             
         }
-		else if ((isA<fixedValueFvPatchScalarField>(QrpI)) && (pp.size() > 0))
-		{
-			nCoarseFacesAll += coarsePatches[patchI].size();
-			
-			howManyCoarseFacesPerPatch[countAll] = coarsePatches[patchI].size();  
+        else if ((isA<fixedValueFvPatchScalarField>(QrpI)) && (pp.size() > 0))
+        {
+            nCoarseFacesAll += coarsePatches[patchI].size();
+            
+            howManyCoarseFacesPerPatch[countAll] = coarsePatches[patchI].size();  
 
             label i = 0;
             for (; i < howManyCoarseFacesPerPatch[countAll]; i++)
@@ -421,17 +421,17 @@ int main(int argc, char *argv[])
             }        
 
             nFineFacesTotal += patches[patchI].size();        
-		}
-		else 
-		{
-			howManyCoarseFacesPerPatch[countAll] = 0;  
+        }
+        else 
+        {
+            howManyCoarseFacesPerPatch[countAll] = 0;  
 
             nFineFacesTotal += patches[patchI].size();        
-		}
-		countAll ++;
+        }
+        countAll ++;
     }
     viewFactorsPatches.resize(count--);
-	Info << "howManyCoarseFacesPerPatch: " << howManyCoarseFacesPerPatch << endl;
+    Info << "howManyCoarseFacesPerPatch: " << howManyCoarseFacesPerPatch << endl;
 
     List<labelField> sunskyMap__(Pstream::nProcs());
     sunskyMap__[Pstream::myProcNo()] = sunskyMap_;  
@@ -465,7 +465,7 @@ int main(int argc, char *argv[])
     );
     sunskyMap = sunskyMap_;
     sunskyMap.write();
-	
+    
     // total number of coarse faces
     label totalNCoarseFaces = nCoarseFaces;
 
@@ -496,7 +496,7 @@ int main(int argc, char *argv[])
 
         const polyPatch& pp = patches[patchID];
         const labelList& agglom = finalAgglom[patchID];
-		
+        
         label nAgglom = max(agglom)+1;
         labelListList coarseToFine(invertOneToMany(nAgglom, agglom));
         const labelList& coarsePatchFace = coarseMesh.patchFaceMap()[patchID];
@@ -753,7 +753,7 @@ int main(int argc, char *argv[])
             false
         ),
         sunPosVector.size()
-    );	
+    );    
     
     labelList dummy(nCoarseFacesAll, -1);
     scalarList dummy2(nCoarseFacesAll, 0.0);
@@ -762,69 +762,69 @@ int main(int argc, char *argv[])
         sunVisibleOrNot[vectorId] = dummy;
         sunViewCoeff[vectorId] = dummy2;
         skyViewCoeff[vectorId] = dummy2;
-	}
+    }
 
-	scalar cosPhi = 0;
-	scalar radAngleBetween = 0;
-	scalar degAngleBetween = 0;
-	
-	label faceNo = 0;
-	label i = 0;
-	label j = 0;
-	label k = 0;
+    scalar cosPhi = 0;
+    scalar radAngleBetween = 0;
+    scalar degAngleBetween = 0;
+    
+    label faceNo = 0;
+    label i = 0;
+    label j = 0;
+    label k = 0;
 
     forAll(sunPosVector, vectorId)
     {    
         vector sunPos = sunPosVector[vectorId];
 
-    	forAll(viewFactorsPatches, patchID)
-    	{
-    		while (i < viewFactorsPatches[patchID])
-    		{
-    			while (j < howManyCoarseFacesPerPatch[i])
-    			{
-    				sunVisibleOrNot[vectorId][k] = 0;
-    				k++;
-    				j++;
-    			}
-    			j = 0;
-    			i++;
-    		} 
-    		
-    		while (j < howManyCoarseFacesPerPatch[i])
-    		{
-    			sunVisibleOrNot[vectorId][k] = nVisibleFaceFacesList[vectorId][faceNo];
-    			
-    			cosPhi = (localCoarseSf[faceNo] & sunPos)/(mag(localCoarseSf[faceNo])*mag(sunPos) + SMALL);
-    			sunViewCoeff[vectorId][k] = nVisibleFaceFacesList[vectorId][faceNo]*mag(cosPhi) * IDN[vectorId];
+        forAll(viewFactorsPatches, patchID)
+        {
+            while (i < viewFactorsPatches[patchID])
+            {
+                while (j < howManyCoarseFacesPerPatch[i])
+                {
+                    sunVisibleOrNot[vectorId][k] = 0;
+                    k++;
+                    j++;
+                }
+                j = 0;
+                i++;
+            } 
+            
+            while (j < howManyCoarseFacesPerPatch[i])
+            {
+                sunVisibleOrNot[vectorId][k] = nVisibleFaceFacesList[vectorId][faceNo];
+                
+                cosPhi = (localCoarseSf[faceNo] & sunPos)/(mag(localCoarseSf[faceNo])*mag(sunPos) + SMALL);
+                sunViewCoeff[vectorId][k] = nVisibleFaceFacesList[vectorId][faceNo]*mag(cosPhi) * IDN[vectorId];
 
-    			cosPhi = (localCoarseSf[faceNo] & skyPos)/(mag(localCoarseSf[faceNo])*mag(skyPos) + SMALL);
-    			radAngleBetween = Foam::acos( min(max(cosPhi, -1), 1) );
-    			degAngleBetween = radToDeg(radAngleBetween);
-    			if (degAngleBetween > 90 && degAngleBetween <= 180){degAngleBetween=90 - (degAngleBetween-90);}
-    			skyViewCoeff[vectorId][k] = (1-0.5*(degAngleBetween/90)) * Idif[vectorId];			
-    			
-    			k++;
-    			j++;
-    			faceNo++;
-    		}
-    	}
+                cosPhi = (localCoarseSf[faceNo] & skyPos)/(mag(localCoarseSf[faceNo])*mag(skyPos) + SMALL);
+                radAngleBetween = Foam::acos( min(max(cosPhi, -1), 1) );
+                degAngleBetween = radToDeg(radAngleBetween);
+                if (degAngleBetween > 90 && degAngleBetween <= 180){degAngleBetween=90 - (degAngleBetween-90);}
+                skyViewCoeff[vectorId][k] = (1-0.5*(degAngleBetween/90)) * Idif[vectorId];            
+                
+                k++;
+                j++;
+                faceNo++;
+            }
+        }
         i = 0;
         j = 0;
         k = 0;
         faceNo = 0;
     }
-	Info << "sunVisibleOrNot: " << sunVisibleOrNot << endl;	
+    Info << "sunVisibleOrNot: " << sunVisibleOrNot << endl;    
 
-	Info << "localCoarseCf: " << localCoarseCf << endl;	
-	Info << "localCoarseSf: " << localCoarseSf << endl;
-	
-	Info << "sunViewCoeff: " << sunViewCoeff << endl;	
-	Info << "skyViewCoeff: " << skyViewCoeff << endl;	
+    Info << "localCoarseCf: " << localCoarseCf << endl;    
+    Info << "localCoarseSf: " << localCoarseSf << endl;
+    
+    Info << "sunViewCoeff: " << sunViewCoeff << endl;    
+    Info << "skyViewCoeff: " << skyViewCoeff << endl;    
 
-	sunVisibleOrNot.write();
-	sunViewCoeff.write();	
-	skyViewCoeff.write();	
+    sunVisibleOrNot.write();
+    sunViewCoeff.write();    
+    skyViewCoeff.write();    
 
     Info<< "End\n" << endl;
     return 0;

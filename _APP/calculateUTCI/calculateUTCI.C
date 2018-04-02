@@ -99,458 +99,458 @@ int main(int argc, char *argv[])
 
     forAll(timeDirs, timeI)
     {
-    	runTime.setTime(timeDirs[timeI], timeI);
-    	Info<< "Time = " << runTime.timeName() << endl;
-
-			    volScalarField Qr
-			    (
-			        IOobject
-			        (
-			            "Qr",
-			            runTime.timeName(),
-			            mesh,
-			            IOobject::MUST_READ,
-			            IOobject::NO_WRITE
-			        ),
-			        mesh
-			    );
-
-			    volScalarField T
-			    (
-			        IOobject
-			        (
-			            "T",
-			            runTime.timeName(),
-			            mesh,
-			            IOobject::MUST_READ,
-			            IOobject::NO_WRITE
-			        ),
-			        mesh
-			    );
-
-			    volScalarField A
-			    (
-			        IOobject
-			        (
-			            "A",
-			            runTime.timeName(),
-			            mesh,
-			            IOobject::NO_READ,
-			            IOobject::AUTO_WRITE
-			        ),
-			        mesh,
-			        dimensionedScalar("0", dimensionSet(1,-3,-1,0,0,0,0), 0.0)
-			    );    
-
-			    // Read agglomeration map
-			    labelListIOList finalAgglom
-			    (
-			        IOobject
-			        (
-			            "finalAgglom",
-			            mesh.facesInstance(),
-			            mesh,
-			            IOobject::MUST_READ,
-			            IOobject::NO_WRITE,
-			            false
-			        )
-			    );
-
-			    singleCellFvMesh coarseMesh
-			    (
-			        IOobject
-			        (
-			            mesh.name(),
-			            runTime.timeName(),
-			            runTime,
-			            IOobject::NO_READ,
-			            IOobject::NO_WRITE
-			        ),
-			        mesh,
-			        finalAgglom
-			    );  
-
-			    const polyBoundaryMesh& coarsePatches = coarseMesh.boundaryMesh();
-			    const volScalarField::GeometricBoundaryField& Qrp = Qr.boundaryField();
-
-			    label count = 0;
-			    labelList selectedPatches(mesh.boundary().size(), -1);
-			    label nLocalCoarseFaces = 0;
-			    forAll(Qrp, patchI)
-			    {
-			        //const polyPatch& pp = mesh_.boundaryMesh()[patchI];
-			        const fvPatchScalarField& QrPatchI = Qrp[patchI];
-
-			        if ((isA<fixedValueFvPatchScalarField>(QrPatchI)))
-			        {
-			            selectedPatches[count] = QrPatchI.patch().index();
-			            nLocalCoarseFaces += coarsePatches[patchI].size();
-			            count++;
-			        }
-			    }
-			    selectedPatches.resize(count--);
-
-			    Pout<< "Selected patches:" << selectedPatches << endl;
-			    Pout<< "Number of coarse faces:" << nLocalCoarseFaces << endl;
-
-			    label totalNCoarseFaces = nLocalCoarseFaces;
-			    reduce(totalNCoarseFaces, sumOp<label>());
-
-			    if (Pstream::master())
-			    {
-			        Info<< "Total number of clusters : " << totalNCoarseFaces << endl;
-			    }    
-
-			//////////////////////////
-
-			    autoPtr<mapDistribute> map;  
-
-			    labelListIOList subMap
-			    (
-			        IOobject
-			        (
-			            "subMap",
-			            mesh.facesInstance(),
-			            mesh,
-			            IOobject::MUST_READ,
-			            IOobject::NO_WRITE,
-			            false
-			        )
-			    );
-
-			    labelListIOList constructMap
-			    (
-			        IOobject
-			        (
-			            "constructMap",
-			            mesh.facesInstance(),
-			            mesh,
-			            IOobject::MUST_READ,
-			            IOobject::NO_WRITE,
-			            false
-			        )
-			    );
-
-			    IOList<label> consMapDim
-			    (
-			        IOobject
-			        (
-			            "constructMapDim",
-			            mesh.facesInstance(),
-			            mesh,
-			            IOobject::MUST_READ,
-			            IOobject::NO_WRITE,
-			            false
-			        )
-			    );
-			/////////////////////////
-
-			    scalarListIOList FmyProc
-			    (
-			        IOobject
-			        (
-			            "F",
-			            mesh.facesInstance(),
-			            mesh,
-			            IOobject::MUST_READ,
-			            IOobject::NO_WRITE,
-			            false
-			        )
-			    );
-
-			    labelListIOList globalFaceFaces
-			    (
-			        IOobject
-			        (
-			            "globalFaceFaces",
-			            mesh.facesInstance(),
-			            mesh,
-			            IOobject::MUST_READ,
-			            IOobject::NO_WRITE,
-			            false
-			        )
-			    );
-
-			    autoPtr<scalarSquareMatrix> Fmatrix;
-
-			    List<labelListList> globalFaceFacesProc(Pstream::nProcs());
-			    globalFaceFacesProc[Pstream::myProcNo()] = globalFaceFaces;
-			    Pstream::gatherList(globalFaceFacesProc);
-
-			    List<scalarListList> F(Pstream::nProcs());
-			    F[Pstream::myProcNo()] = FmyProc;
-			    Pstream::gatherList(F);
-
-			    globalIndex globalNumbering(nLocalCoarseFaces);
-
-			    if (Pstream::master())
-			    {
-			        Fmatrix.reset
-			        (
-			            new scalarSquareMatrix(totalNCoarseFaces, totalNCoarseFaces, 0.0)
-			        );
-
-			        Info<< "Insert elements in the matrix..." << endl;
-
-			        for (label procI = 0; procI < Pstream::nProcs(); procI++)
-			        {
-			            insertMatrixElements
-			            (
-			                globalNumbering,
-			                procI,
-			                globalFaceFacesProc[procI],
-			                F[procI],
-			                Fmatrix()
-			            );
-			        }
-
-			        //bool smoothing = readBool(coeffs_.lookup("smoothing"));
-			        //if (smoothing)
-			        //{
-			            Info<< "Smoothing the matrix..." << endl;
-
-			            for (label i=0; i<totalNCoarseFaces; i++)
-			            {
-			                scalar sumF = 0.0;
-			                for (label j=0; j<totalNCoarseFaces; j++)
-			                {
-			                    sumF += Fmatrix()[i][j];
-			                }
-			                scalar delta = sumF - 1.0;
-			                for (label j=0; j<totalNCoarseFaces; j++)
-			                {
-			                    Fmatrix()[i][j] *= (1.0 - delta/(sumF + 0.001));
-			                }
-			            }
-			        //}
-			    }    
-
-			/////////////////////////    
-			    
-			    map.reset
-			    (
-			        new mapDistribute
-			        (
-			            consMapDim[0],
-			            Xfer<labelListList>(subMap),
-			            Xfer<labelListList>(constructMap)
-			        )
-			    );      
-
-			    scalarField compactCoarseT(map->constructSize(), 0.0);
-			    scalarField compactCoarseE(map->constructSize(), 0.0);
-			    scalarField compactCoarseQR(map->constructSize(), 0.0);
-			    //scalarField compactCoarseHo(map->constructSize(), 0.0);
-
-			    //globalIndex globalNumbering(nLocalCoarseFaces);
-
-			    // Fill local averaged(T), emissivity(E) and external heatFlux(Ho)
-			    DynamicList<scalar> localCoarseTave(nLocalCoarseFaces);
-			    DynamicList<scalar> localCoarseEave(nLocalCoarseFaces);
-			    DynamicList<scalar> localCoarseQRave(nLocalCoarseFaces);
-			    //DynamicList<scalar> localCoarseHoave(nLocalCoarseFaces);
-			    
-			    // added by aytac
-			        label inletPatchID = mesh.boundaryMesh().findPatchID("inlet");
-			        label outletPatchID = mesh.boundaryMesh().findPatchID("outlet");
-			        label topPatchID = mesh.boundaryMesh().findPatchID("top");     
-			        label side1PatchID = mesh.boundaryMesh().findPatchID("side1");
-			        label side2PatchID = mesh.boundaryMesh().findPatchID("side2");
-			    //
-
-			////////////////////////
-			    forAll(selectedPatches, i)
-			    {
-			        label patchID = selectedPatches[i];
-
-			        const scalarField& Tp = T.boundaryField()[patchID];
-			        const scalarField& Qrboun = Qr.boundaryField()[patchID];
-			        const scalarField& sf = mesh.magSf().boundaryField()[patchID];
-
-			        fvPatchScalarField& QrPatch = Qr.boundaryField()[patchID];
-
-			        Foam::radiation::greyDiffusiveViewFactorFixedValueFvPatchScalarField& Qrp =
-			            refCast
-			            <
-			                Foam::radiation::greyDiffusiveViewFactorFixedValueFvPatchScalarField
-			            >(QrPatch);
-
-			        const scalarList eb = Qrp.emissivity();
-
-			        //const scalarList& Hoi = Qrp.Qro();
-
-			        const polyPatch& pp = coarseMesh.boundaryMesh()[patchID];
-			        const labelList& coarsePatchFace = coarseMesh.patchFaceMap()[patchID];
-
-			        scalarList Tave(pp.size(), 0.0);
-			        scalarList Eave(Tave.size(), 0.0);
-			        scalarList QRave(pp.size(), 0.0);
-			        //scalarList Hoiave(Tave.size(), 0.0);
-
-			        if (pp.size() > 0)
-			        {
-			            const labelList& agglom = finalAgglom[patchID];
-			            label nAgglom = max(agglom) + 1;
-
-			            labelListList coarseToFine(invertOneToMany(nAgglom, agglom));
-
-			            forAll(coarseToFine, coarseI)
-			            {
-			                const label coarseFaceID = coarsePatchFace[coarseI];
-			                const labelList& fineFaces = coarseToFine[coarseFaceID];
-			                UIndirectList<scalar> fineSf
-			                (
-			                    sf,
-			                    fineFaces
-			                );
-			                scalar area = sum(fineSf());
-			                // Temperature, emissivity and external flux area weighting
-			                forAll(fineFaces, j)
-			                {
-			                    label faceI = fineFaces[j];
-			                    if (patchID == inletPatchID || patchID == outletPatchID || patchID == topPatchID || patchID == side1PatchID || patchID == side2PatchID) // added by aytac to take into account sky temperature
-			                    {
-			                        scalar cc = 0; //cloud cover
-			                        scalar ec = (1-0.84*cc)*(0.527 + 0.161*Foam::exp(8.45*(1-273/Tp[faceI]))) +0.84*cc; //cloud emissivity
-			                        scalar Tsky = Foam::pow(9.365574E-6*(1-cc)*pow(Tp[faceI],6) + pow(Tp[faceI],4)*cc*ec ,0.25); // Swinbank model (1963, Cole 1976)
-			                        Tave[coarseI] += (Tsky*sf[faceI])/area;
-			                    }
-			                    else
-			                    {
-			                        Tave[coarseI] += (Tp[faceI]*sf[faceI])/area; 
-			                    }
-			                    Eave[coarseI] += (eb[faceI]*sf[faceI])/area;
-			                    QRave[coarseI] += (Qrboun[faceI]*sf[faceI])/area;
-			                    //Hoiave[coarseI] += (Hoi[faceI]*sf[faceI])/area;
-			                }
-			            }
-			        }
-
-			        localCoarseTave.append(Tave);
-			        localCoarseEave.append(Eave);
-			        localCoarseQRave.append(QRave);
-			        //localCoarseHoave.append(Hoiave);
-			    }
-
-			    // Fill the local values to distribute
-			    SubList<scalar>(compactCoarseT,nLocalCoarseFaces).assign(localCoarseTave);
-			    SubList<scalar>(compactCoarseE,nLocalCoarseFaces).assign(localCoarseEave);
-			    SubList<scalar>(compactCoarseQR,nLocalCoarseFaces).assign(localCoarseQRave);
-			    //SubList<scalar>(compactCoarseHo,nLocalCoarseFaces_).assign(localCoarseHoave);  
-
-			    // Distribute data
-			    map->distribute(compactCoarseT);
-			    map->distribute(compactCoarseE);
-			    map->distribute(compactCoarseQR);
-			    //map_->distribute(compactCoarseHo); 
-
-			    // Distribute local global ID
-			    labelList compactGlobalIds(map->constructSize(), 0.0);
-
-			    labelList localGlobalIds(nLocalCoarseFaces);
-
-			    for(label k = 0; k < nLocalCoarseFaces; k++)
-			    {
-			        localGlobalIds[k] = globalNumbering.toGlobal(Pstream::myProcNo(), k);
-			    }
-
-			    SubList<label>
-			    (
-			        compactGlobalIds,
-			        nLocalCoarseFaces
-			    ).assign(localGlobalIds);
-
-			    map->distribute(compactGlobalIds);
-
-			    // Create global size vectors
-			    scalarField T_(totalNCoarseFaces, 0.0);
-			    scalarField E_(totalNCoarseFaces, 0.0);
-			    scalarField QR_(totalNCoarseFaces, 0.0);
-			    //scalarField QrExt(totalNCoarseFaces, 0.0);
-
-			    // Fill lists from compact to global indexes.
-			    forAll(compactCoarseT, i)
-			    {
-			        T_[compactGlobalIds[i]] = compactCoarseT[i];
-			        E_[compactGlobalIds[i]] = compactCoarseE[i];
-			        QR_[compactGlobalIds[i]] = compactCoarseQR[i];
-			        //QrExt[compactGlobalIds[i]] = compactCoarseHo[i];
-			    }
-
-			    Pstream::listCombineGather(T_, maxEqOp<scalar>());
-			    Pstream::listCombineGather(E_, maxEqOp<scalar>());
-			    Pstream::listCombineGather(QR_, maxEqOp<scalar>());
-			    //Pstream::listCombineGather(QrExt, maxEqOp<scalar>());
-
-			    Pstream::listCombineScatter(T_);
-			    Pstream::listCombineScatter(E_);
-			    Pstream::listCombineScatter(QR_);
-			    //Pstream::listCombineScatter(QrExt);
-
-
-			///////////////////////////////////    
-			    scalar J_ = 0; //J_(totalNCoarseFaces, 0.0); //radiosity
-			    scalarField Tumrt_(totalNCoarseFaces, 0.0);
-
-			    if (Pstream::master())
-			    {
-			        for (label i=0; i<totalNCoarseFaces; i++)
-			        {
-			            for (label j=0; j<totalNCoarseFaces; j++)
-			            {
-			                scalar sigmaT4 =
-			                        constant::physicoChemical::sigma.value()*Foam::pow(T_[j], 4.0);
-			                J_ += (sigmaT4 + QR_[j]*(1-E_[j])/(E_[j])) * Fmatrix()[i][j]; //ref: Heat_4e_Chap13 lecture based on Cengel book
-			            }
-			            Tumrt_[i]=Foam::pow( J_/constant::physicoChemical::sigma.value(), 0.25);
-			            J_ = 0;
-			        }
-
-			    }      
-
-			//////////////////////////////////////////
-			    // Scatter Tumrt_ and fill A
-			    Pstream::listCombineScatter(Tumrt_);
-			    Pstream::listCombineGather(Tumrt_, maxEqOp<scalar>());           
-
-			    label globCoarseId = 0;
-			    forAll(selectedPatches, i)
-			    {
-			        const label patchID = selectedPatches[i];
-			        const polyPatch& pp = mesh.boundaryMesh()[patchID];
-			        if (pp.size() > 0)
-			        {
-			            scalarField& Ap = A.boundaryField()[patchID];
-			            //const scalarField& sf = mesh.magSf().boundaryField()[patchID];
-			            const labelList& agglom = finalAgglom[patchID];
-			            label nAgglom = max(agglom)+1;
-
-			            labelListList coarseToFine(invertOneToMany(nAgglom, agglom));
-
-			            const labelList& coarsePatchFace =
-			                coarseMesh.patchFaceMap()[patchID];
-
-			            //scalar heatFlux = 0.0;
-			            forAll(coarseToFine, coarseI)
-			            {
-			                label globalCoarse =
-			                    globalNumbering.toGlobal(Pstream::myProcNo(), globCoarseId);
-			                const label coarseFaceID = coarsePatchFace[coarseI];
-			                const labelList& fineFaces = coarseToFine[coarseFaceID];
-			                forAll(fineFaces, k)
-			                {
-			                    label faceI = fineFaces[k];
-
-			                    Ap[faceI] = Tumrt_[globalCoarse];
-			                    //heatFlux += Qrp[faceI]*sf[faceI];
-			                }
-			                globCoarseId ++;
-			            }
-			        }
-			    }   
-
-			    A.write(); 
-	}
+        runTime.setTime(timeDirs[timeI], timeI);
+        Info<< "Time = " << runTime.timeName() << endl;
+
+                volScalarField Qr
+                (
+                    IOobject
+                    (
+                        "Qr",
+                        runTime.timeName(),
+                        mesh,
+                        IOobject::MUST_READ,
+                        IOobject::NO_WRITE
+                    ),
+                    mesh
+                );
+
+                volScalarField T
+                (
+                    IOobject
+                    (
+                        "T",
+                        runTime.timeName(),
+                        mesh,
+                        IOobject::MUST_READ,
+                        IOobject::NO_WRITE
+                    ),
+                    mesh
+                );
+
+                volScalarField A
+                (
+                    IOobject
+                    (
+                        "A",
+                        runTime.timeName(),
+                        mesh,
+                        IOobject::NO_READ,
+                        IOobject::AUTO_WRITE
+                    ),
+                    mesh,
+                    dimensionedScalar("0", dimensionSet(1,-3,-1,0,0,0,0), 0.0)
+                );    
+
+                // Read agglomeration map
+                labelListIOList finalAgglom
+                (
+                    IOobject
+                    (
+                        "finalAgglom",
+                        mesh.facesInstance(),
+                        mesh,
+                        IOobject::MUST_READ,
+                        IOobject::NO_WRITE,
+                        false
+                    )
+                );
+
+                singleCellFvMesh coarseMesh
+                (
+                    IOobject
+                    (
+                        mesh.name(),
+                        runTime.timeName(),
+                        runTime,
+                        IOobject::NO_READ,
+                        IOobject::NO_WRITE
+                    ),
+                    mesh,
+                    finalAgglom
+                );  
+
+                const polyBoundaryMesh& coarsePatches = coarseMesh.boundaryMesh();
+                const volScalarField::GeometricBoundaryField& Qrp = Qr.boundaryField();
+
+                label count = 0;
+                labelList selectedPatches(mesh.boundary().size(), -1);
+                label nLocalCoarseFaces = 0;
+                forAll(Qrp, patchI)
+                {
+                    //const polyPatch& pp = mesh_.boundaryMesh()[patchI];
+                    const fvPatchScalarField& QrPatchI = Qrp[patchI];
+
+                    if ((isA<fixedValueFvPatchScalarField>(QrPatchI)))
+                    {
+                        selectedPatches[count] = QrPatchI.patch().index();
+                        nLocalCoarseFaces += coarsePatches[patchI].size();
+                        count++;
+                    }
+                }
+                selectedPatches.resize(count--);
+
+                Pout<< "Selected patches:" << selectedPatches << endl;
+                Pout<< "Number of coarse faces:" << nLocalCoarseFaces << endl;
+
+                label totalNCoarseFaces = nLocalCoarseFaces;
+                reduce(totalNCoarseFaces, sumOp<label>());
+
+                if (Pstream::master())
+                {
+                    Info<< "Total number of clusters : " << totalNCoarseFaces << endl;
+                }    
+
+            //////////////////////////
+
+                autoPtr<mapDistribute> map;  
+
+                labelListIOList subMap
+                (
+                    IOobject
+                    (
+                        "subMap",
+                        mesh.facesInstance(),
+                        mesh,
+                        IOobject::MUST_READ,
+                        IOobject::NO_WRITE,
+                        false
+                    )
+                );
+
+                labelListIOList constructMap
+                (
+                    IOobject
+                    (
+                        "constructMap",
+                        mesh.facesInstance(),
+                        mesh,
+                        IOobject::MUST_READ,
+                        IOobject::NO_WRITE,
+                        false
+                    )
+                );
+
+                IOList<label> consMapDim
+                (
+                    IOobject
+                    (
+                        "constructMapDim",
+                        mesh.facesInstance(),
+                        mesh,
+                        IOobject::MUST_READ,
+                        IOobject::NO_WRITE,
+                        false
+                    )
+                );
+            /////////////////////////
+
+                scalarListIOList FmyProc
+                (
+                    IOobject
+                    (
+                        "F",
+                        mesh.facesInstance(),
+                        mesh,
+                        IOobject::MUST_READ,
+                        IOobject::NO_WRITE,
+                        false
+                    )
+                );
+
+                labelListIOList globalFaceFaces
+                (
+                    IOobject
+                    (
+                        "globalFaceFaces",
+                        mesh.facesInstance(),
+                        mesh,
+                        IOobject::MUST_READ,
+                        IOobject::NO_WRITE,
+                        false
+                    )
+                );
+
+                autoPtr<scalarSquareMatrix> Fmatrix;
+
+                List<labelListList> globalFaceFacesProc(Pstream::nProcs());
+                globalFaceFacesProc[Pstream::myProcNo()] = globalFaceFaces;
+                Pstream::gatherList(globalFaceFacesProc);
+
+                List<scalarListList> F(Pstream::nProcs());
+                F[Pstream::myProcNo()] = FmyProc;
+                Pstream::gatherList(F);
+
+                globalIndex globalNumbering(nLocalCoarseFaces);
+
+                if (Pstream::master())
+                {
+                    Fmatrix.reset
+                    (
+                        new scalarSquareMatrix(totalNCoarseFaces, totalNCoarseFaces, 0.0)
+                    );
+
+                    Info<< "Insert elements in the matrix..." << endl;
+
+                    for (label procI = 0; procI < Pstream::nProcs(); procI++)
+                    {
+                        insertMatrixElements
+                        (
+                            globalNumbering,
+                            procI,
+                            globalFaceFacesProc[procI],
+                            F[procI],
+                            Fmatrix()
+                        );
+                    }
+
+                    //bool smoothing = readBool(coeffs_.lookup("smoothing"));
+                    //if (smoothing)
+                    //{
+                        Info<< "Smoothing the matrix..." << endl;
+
+                        for (label i=0; i<totalNCoarseFaces; i++)
+                        {
+                            scalar sumF = 0.0;
+                            for (label j=0; j<totalNCoarseFaces; j++)
+                            {
+                                sumF += Fmatrix()[i][j];
+                            }
+                            scalar delta = sumF - 1.0;
+                            for (label j=0; j<totalNCoarseFaces; j++)
+                            {
+                                Fmatrix()[i][j] *= (1.0 - delta/(sumF + 0.001));
+                            }
+                        }
+                    //}
+                }    
+
+            /////////////////////////    
+                
+                map.reset
+                (
+                    new mapDistribute
+                    (
+                        consMapDim[0],
+                        Xfer<labelListList>(subMap),
+                        Xfer<labelListList>(constructMap)
+                    )
+                );      
+
+                scalarField compactCoarseT(map->constructSize(), 0.0);
+                scalarField compactCoarseE(map->constructSize(), 0.0);
+                scalarField compactCoarseQR(map->constructSize(), 0.0);
+                //scalarField compactCoarseHo(map->constructSize(), 0.0);
+
+                //globalIndex globalNumbering(nLocalCoarseFaces);
+
+                // Fill local averaged(T), emissivity(E) and external heatFlux(Ho)
+                DynamicList<scalar> localCoarseTave(nLocalCoarseFaces);
+                DynamicList<scalar> localCoarseEave(nLocalCoarseFaces);
+                DynamicList<scalar> localCoarseQRave(nLocalCoarseFaces);
+                //DynamicList<scalar> localCoarseHoave(nLocalCoarseFaces);
+                
+                // added by aytac
+                    label inletPatchID = mesh.boundaryMesh().findPatchID("inlet");
+                    label outletPatchID = mesh.boundaryMesh().findPatchID("outlet");
+                    label topPatchID = mesh.boundaryMesh().findPatchID("top");     
+                    label side1PatchID = mesh.boundaryMesh().findPatchID("side1");
+                    label side2PatchID = mesh.boundaryMesh().findPatchID("side2");
+                //
+
+            ////////////////////////
+                forAll(selectedPatches, i)
+                {
+                    label patchID = selectedPatches[i];
+
+                    const scalarField& Tp = T.boundaryField()[patchID];
+                    const scalarField& Qrboun = Qr.boundaryField()[patchID];
+                    const scalarField& sf = mesh.magSf().boundaryField()[patchID];
+
+                    fvPatchScalarField& QrPatch = Qr.boundaryField()[patchID];
+
+                    Foam::radiation::greyDiffusiveViewFactorFixedValueFvPatchScalarField& Qrp =
+                        refCast
+                        <
+                            Foam::radiation::greyDiffusiveViewFactorFixedValueFvPatchScalarField
+                        >(QrPatch);
+
+                    const scalarList eb = Qrp.emissivity();
+
+                    //const scalarList& Hoi = Qrp.Qro();
+
+                    const polyPatch& pp = coarseMesh.boundaryMesh()[patchID];
+                    const labelList& coarsePatchFace = coarseMesh.patchFaceMap()[patchID];
+
+                    scalarList Tave(pp.size(), 0.0);
+                    scalarList Eave(Tave.size(), 0.0);
+                    scalarList QRave(pp.size(), 0.0);
+                    //scalarList Hoiave(Tave.size(), 0.0);
+
+                    if (pp.size() > 0)
+                    {
+                        const labelList& agglom = finalAgglom[patchID];
+                        label nAgglom = max(agglom) + 1;
+
+                        labelListList coarseToFine(invertOneToMany(nAgglom, agglom));
+
+                        forAll(coarseToFine, coarseI)
+                        {
+                            const label coarseFaceID = coarsePatchFace[coarseI];
+                            const labelList& fineFaces = coarseToFine[coarseFaceID];
+                            UIndirectList<scalar> fineSf
+                            (
+                                sf,
+                                fineFaces
+                            );
+                            scalar area = sum(fineSf());
+                            // Temperature, emissivity and external flux area weighting
+                            forAll(fineFaces, j)
+                            {
+                                label faceI = fineFaces[j];
+                                if (patchID == inletPatchID || patchID == outletPatchID || patchID == topPatchID || patchID == side1PatchID || patchID == side2PatchID) // added by aytac to take into account sky temperature
+                                {
+                                    scalar cc = 0; //cloud cover
+                                    scalar ec = (1-0.84*cc)*(0.527 + 0.161*Foam::exp(8.45*(1-273/Tp[faceI]))) +0.84*cc; //cloud emissivity
+                                    scalar Tsky = Foam::pow(9.365574E-6*(1-cc)*pow(Tp[faceI],6) + pow(Tp[faceI],4)*cc*ec ,0.25); // Swinbank model (1963, Cole 1976)
+                                    Tave[coarseI] += (Tsky*sf[faceI])/area;
+                                }
+                                else
+                                {
+                                    Tave[coarseI] += (Tp[faceI]*sf[faceI])/area; 
+                                }
+                                Eave[coarseI] += (eb[faceI]*sf[faceI])/area;
+                                QRave[coarseI] += (Qrboun[faceI]*sf[faceI])/area;
+                                //Hoiave[coarseI] += (Hoi[faceI]*sf[faceI])/area;
+                            }
+                        }
+                    }
+
+                    localCoarseTave.append(Tave);
+                    localCoarseEave.append(Eave);
+                    localCoarseQRave.append(QRave);
+                    //localCoarseHoave.append(Hoiave);
+                }
+
+                // Fill the local values to distribute
+                SubList<scalar>(compactCoarseT,nLocalCoarseFaces).assign(localCoarseTave);
+                SubList<scalar>(compactCoarseE,nLocalCoarseFaces).assign(localCoarseEave);
+                SubList<scalar>(compactCoarseQR,nLocalCoarseFaces).assign(localCoarseQRave);
+                //SubList<scalar>(compactCoarseHo,nLocalCoarseFaces_).assign(localCoarseHoave);  
+
+                // Distribute data
+                map->distribute(compactCoarseT);
+                map->distribute(compactCoarseE);
+                map->distribute(compactCoarseQR);
+                //map_->distribute(compactCoarseHo); 
+
+                // Distribute local global ID
+                labelList compactGlobalIds(map->constructSize(), 0.0);
+
+                labelList localGlobalIds(nLocalCoarseFaces);
+
+                for(label k = 0; k < nLocalCoarseFaces; k++)
+                {
+                    localGlobalIds[k] = globalNumbering.toGlobal(Pstream::myProcNo(), k);
+                }
+
+                SubList<label>
+                (
+                    compactGlobalIds,
+                    nLocalCoarseFaces
+                ).assign(localGlobalIds);
+
+                map->distribute(compactGlobalIds);
+
+                // Create global size vectors
+                scalarField T_(totalNCoarseFaces, 0.0);
+                scalarField E_(totalNCoarseFaces, 0.0);
+                scalarField QR_(totalNCoarseFaces, 0.0);
+                //scalarField QrExt(totalNCoarseFaces, 0.0);
+
+                // Fill lists from compact to global indexes.
+                forAll(compactCoarseT, i)
+                {
+                    T_[compactGlobalIds[i]] = compactCoarseT[i];
+                    E_[compactGlobalIds[i]] = compactCoarseE[i];
+                    QR_[compactGlobalIds[i]] = compactCoarseQR[i];
+                    //QrExt[compactGlobalIds[i]] = compactCoarseHo[i];
+                }
+
+                Pstream::listCombineGather(T_, maxEqOp<scalar>());
+                Pstream::listCombineGather(E_, maxEqOp<scalar>());
+                Pstream::listCombineGather(QR_, maxEqOp<scalar>());
+                //Pstream::listCombineGather(QrExt, maxEqOp<scalar>());
+
+                Pstream::listCombineScatter(T_);
+                Pstream::listCombineScatter(E_);
+                Pstream::listCombineScatter(QR_);
+                //Pstream::listCombineScatter(QrExt);
+
+
+            ///////////////////////////////////    
+                scalar J_ = 0; //J_(totalNCoarseFaces, 0.0); //radiosity
+                scalarField Tumrt_(totalNCoarseFaces, 0.0);
+
+                if (Pstream::master())
+                {
+                    for (label i=0; i<totalNCoarseFaces; i++)
+                    {
+                        for (label j=0; j<totalNCoarseFaces; j++)
+                        {
+                            scalar sigmaT4 =
+                                    constant::physicoChemical::sigma.value()*Foam::pow(T_[j], 4.0);
+                            J_ += (sigmaT4 + QR_[j]*(1-E_[j])/(E_[j])) * Fmatrix()[i][j]; //ref: Heat_4e_Chap13 lecture based on Cengel book
+                        }
+                        Tumrt_[i]=Foam::pow( J_/constant::physicoChemical::sigma.value(), 0.25);
+                        J_ = 0;
+                    }
+
+                }      
+
+            //////////////////////////////////////////
+                // Scatter Tumrt_ and fill A
+                Pstream::listCombineScatter(Tumrt_);
+                Pstream::listCombineGather(Tumrt_, maxEqOp<scalar>());           
+
+                label globCoarseId = 0;
+                forAll(selectedPatches, i)
+                {
+                    const label patchID = selectedPatches[i];
+                    const polyPatch& pp = mesh.boundaryMesh()[patchID];
+                    if (pp.size() > 0)
+                    {
+                        scalarField& Ap = A.boundaryField()[patchID];
+                        //const scalarField& sf = mesh.magSf().boundaryField()[patchID];
+                        const labelList& agglom = finalAgglom[patchID];
+                        label nAgglom = max(agglom)+1;
+
+                        labelListList coarseToFine(invertOneToMany(nAgglom, agglom));
+
+                        const labelList& coarsePatchFace =
+                            coarseMesh.patchFaceMap()[patchID];
+
+                        //scalar heatFlux = 0.0;
+                        forAll(coarseToFine, coarseI)
+                        {
+                            label globalCoarse =
+                                globalNumbering.toGlobal(Pstream::myProcNo(), globCoarseId);
+                            const label coarseFaceID = coarsePatchFace[coarseI];
+                            const labelList& fineFaces = coarseToFine[coarseFaceID];
+                            forAll(fineFaces, k)
+                            {
+                                label faceI = fineFaces[k];
+
+                                Ap[faceI] = Tumrt_[globalCoarse];
+                                //heatFlux += Qrp[faceI]*sf[faceI];
+                            }
+                            globCoarseId ++;
+                        }
+                    }
+                }   
+
+                A.write(); 
+    }
 
     Info<< "End\n" << endl;
     return 0;

@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2012 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2011 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -21,29 +21,18 @@ License
     You should have received a copy of the GNU General Public License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
+Global
+    readFluidControls
+
+Description
+    Read the control parameters used in the fluid
+
 \*---------------------------------------------------------------------------*/
 
-#ifndef fixedValueForCyclicFvPatchFields_H
-#define fixedValueForCyclicFvPatchFields_H
+scalar maxFluidIteration =
+    runTime.controlDict().lookupOrDefault<scalar>("maxFluidIteration", 10000);
 
-#include "fixedValueForCyclicFvPatchField.H"
-#include "fieldTypes.H"
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-namespace Foam
-{
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-makePatchTypeFieldTypedefs(fixedValueForCyclic);
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-} // End namespace Foam
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-#endif
+scalar minFluidIteration =
+    runTime.controlDict().lookupOrDefault<scalar>("minFluidIteration", 1);
 
 // ************************************************************************* //

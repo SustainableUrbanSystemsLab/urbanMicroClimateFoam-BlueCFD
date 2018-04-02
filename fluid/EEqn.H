@@ -13,8 +13,8 @@
       - fvm::laplacian(turb.alphaEff(), he)
      ==
         rad.Sh(thermo)
-	    +	sol.Sh(thermo)
-      + vegetation.Sh() // vegetation energy source term
+        + sol.Sh(thermo)
+        + vegetation.Sh() // vegetation energy source term
       + fvOptions(rho, he)
     );
 

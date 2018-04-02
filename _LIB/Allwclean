@@ -7,3 +7,5 @@ set -x
 wclean buildingMaterialModel
 wclean simpleControlFluid
 wclean solarLoadModel
+wclean turbulenceModels/compressible/RAS
+wclean vegetationModels

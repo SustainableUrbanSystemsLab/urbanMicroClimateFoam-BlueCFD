@@ -22,17 +22,38 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Global
-    readFluidTimeControls
+    readSolidControls
 
 Description
-    Read the control parameters used in the fluid
+    Read the control parameters used in the solid
 
 \*---------------------------------------------------------------------------*/
 
-scalar maxFluidIteration =
-    runTime.controlDict().lookupOrDefault<scalar>("maxFluidIteration", 10000);
+scalar increase_factor =
+    runTime.controlDict().lookupOrDefault<scalar>("increase_factor", 1.2);
 
-scalar minFluidIteration =
-    runTime.controlDict().lookupOrDefault<scalar>("minFluidIteration", 1);
+scalar decrease_factor =
+    runTime.controlDict().lookupOrDefault<scalar>("decrease_factor", 0.5);    
+
+scalar initialSolidTimestepFactor =
+    runTime.controlDict().lookupOrDefault<scalar>("initialSolidTimestepFactor", 0.1);    
+
+int nInternalIterMax =
+    runTime.controlDict().lookupOrDefault<int>("nInternalIterMax", 10);
+
+scalar maxDeltaT =
+    runTime.controlDict().lookupOrDefault<scalar>("maxDeltaT", 600.0); 
+
+scalar minDeltaT =
+    runTime.controlDict().lookupOrDefault<scalar>("minDeltaT", 1.0);  
+
+scalar PicardTolerancews =
+    runTime.controlDict().lookupOrDefault<scalar>("PicardTolerancews", 0.01);
+
+scalar PicardToleranceTs =
+    runTime.controlDict().lookupOrDefault<scalar>("PicardToleranceTs", 0.01); 
+
+word pcEqnForm =
+    runTime.controlDict().lookupOrDefault<word>("pcEqnForm", "pc-based"); 
 
 // ************************************************************************* //

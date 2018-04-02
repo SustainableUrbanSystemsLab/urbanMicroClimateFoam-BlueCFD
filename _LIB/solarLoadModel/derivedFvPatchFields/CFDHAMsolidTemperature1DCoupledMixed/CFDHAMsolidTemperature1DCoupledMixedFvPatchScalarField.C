@@ -150,7 +150,7 @@ CFDHAMsolidTemperature1DCoupledMixedFvPatchScalarField
     QrNbrName_(psf.QrNbrName_),
     QrName_(psf.QrName_),
     QsNbrName_(psf.QsNbrName_),
-    QsName_(psf.QsName_)	
+    QsName_(psf.QsName_)    
 {}
 
 
@@ -231,13 +231,13 @@ void CFDHAMsolidTemperature1DCoupledMixedFvPatchScalarField::updateCoeffs()
 
     interpolationTable<scalar> Tambient
     (
-	"$FOAM_CASE/0/air/Tambient"
+    "$FOAM_CASE/0/air/Tambient"
     ); 
-	
+    
     interpolationTable<scalar> wambient
     (
-	"$FOAM_CASE/0/air/wambient"
-    ); 	
+    "$FOAM_CASE/0/air/wambient"
+    );     
 ///////////
 
     scalar cap_v = 1880;
@@ -297,13 +297,13 @@ void CFDHAMsolidTemperature1DCoupledMixedFvPatchScalarField::updateCoeffs()
         Krel = patch().lookupPatchField<volScalarField, scalar>("Krel");   
 
 
-	// Calculate rain temperature - approximation for wet-bulb temp///////////
-	scalar saturationPressure = 133.322*pow(10,(8.07131-(1730.63/(233.426+Tambient(time.value())))));
-	scalar airVaporPressure = wambient(time.value())*1e5/0.621945;
-	scalar relhum = airVaporPressure/saturationPressure*100;
-	scalar dewPointTemp = Tambient(time.value()) - (100-relhum)/5;
-	scalar rainTemp = Tambient(time.value()) - (Tambient(time.value())-dewPointTemp)/3;
-	//////////////////////////////////////////////////////////////////////////
+    // Calculate rain temperature - approximation for wet-bulb temp///////////
+    scalar saturationPressure = 133.322*pow(10,(8.07131-(1730.63/(233.426+Tambient(time.value())))));
+    scalar airVaporPressure = wambient(time.value())*1e5/0.621945;
+    scalar relhum = airVaporPressure/saturationPressure*100;
+    scalar dewPointTemp = Tambient(time.value()) - (100-relhum)/5;
+    scalar rainTemp = Tambient(time.value()) - (Tambient(time.value())-dewPointTemp)/3;
+    //////////////////////////////////////////////////////////////////////////
  
     scalar QrNbrAvg(0);
     if (QrNbrName_ != "none")
@@ -328,13 +328,13 @@ void CFDHAMsolidTemperature1DCoupledMixedFvPatchScalarField::updateCoeffs()
     scalarField gl = ((gcrNbr*rhol)/(3600*1000));
     scalar glAvg = gSum(gl*nbrPatch.magSf())/gSum(nbrPatch.magSf());
 //    scalarField CR = gl*cap_l*(Tambient(3600*(timestep+1)) -Tref);    
-	scalarField CR = ( pos(patchInternalField()+fieldpc.snGrad()/patch().deltaCoeffs()+1E3)*(Krel+K_v)*fieldpc.snGrad() +
-						neg(patchInternalField()+fieldpc.snGrad()/patch().deltaCoeffs()+1E3)*glAvg ) * cap_l*(rainTemp -Tref) * pos(glAvg-VSMALL);
-	scalar CRAvg = gSum(CR*patch().magSf())/gSum(patch().magSf());					   
+    scalarField CR = ( pos(patchInternalField()+fieldpc.snGrad()/patch().deltaCoeffs()+1E3)*(Krel+K_v)*fieldpc.snGrad() +
+                        neg(patchInternalField()+fieldpc.snGrad()/patch().deltaCoeffs()+1E3)*glAvg ) * cap_l*(rainTemp -Tref) * pos(glAvg-VSMALL);
+    scalar CRAvg = gSum(CR*patch().magSf())/gSum(patch().magSf());                       
  
-//////////////////////////////////  						   
+//////////////////////////////////                             
     valueFraction() = 0;//pos(fieldpc.patchInternalField()+1E3); 
-    refValue() = 0;//rainTemp;		
+    refValue() = 0;//rainTemp;        
     refGrad() = (heatFluxAvg + LEAvg + QrNbrAvg + QsNbrAvg + CRAvg -X)/(lambda_m+K_pt);
 //        Info << "sum(heatFlux): " << sum(heatFlux) << endl;
 //        Info << "sum(LE): " << sum(LE) << endl;
@@ -378,7 +378,7 @@ void CFDHAMsolidTemperature1DCoupledMixedFvPatchScalarField::write
     os.writeKeyword("QrNbr")<< QrNbrName_ << token::END_STATEMENT << nl;
     os.writeKeyword("Qr")<< QrName_ << token::END_STATEMENT << nl;
     os.writeKeyword("QsNbr")<< QsNbrName_ << token::END_STATEMENT << nl;
-    os.writeKeyword("Qs")<< QsName_ << token::END_STATEMENT << nl;	
+    os.writeKeyword("Qs")<< QsName_ << token::END_STATEMENT << nl;    
     temperatureCoupledBase::write(os);
 }
 

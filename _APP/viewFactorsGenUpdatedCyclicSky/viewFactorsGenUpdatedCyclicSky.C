@@ -34,10 +34,10 @@ Description
     The patches involved in the view factor calculation are taken from the Qr
     volScalarField (radiative flux) when is greyDiffusiveRadiationViewFactor
     otherwise they are not included.
-	
-	- Based on viewFactorsGenUpdatedCyclic but considers sky view factor as 1-(other surfaces)
-	- sky boundary name is hardcoded as "top"
-	ayk	
+    
+    - Based on viewFactorsGenUpdatedCyclic but considers sky view factor as 1-(other surfaces)
+    - sky boundary name is hardcoded as "top"
+    ayk    
 
 \*---------------------------------------------------------------------------*/
 
@@ -905,7 +905,7 @@ int main(int argc, char *argv[])
         }
     }
     ////////////////////////////////////////////////////////////////////        
-	
+    
     if (Pstream::master())
     {
         Info << "Writing view factor matrix..." << endl;
