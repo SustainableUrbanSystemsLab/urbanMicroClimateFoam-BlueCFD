@@ -1170,19 +1170,19 @@ int main(int argc, char *argv[])
 
             //word nameLAIi("LAI" + name(vectorID));
 
-            // volScalarField LAIi
-            // (
-            //   IOobject
-            //   (
-            //      "LAI",
-            //      runTime.timeName(),
-            //      mesh,
-            //      IOobject::NO_READ
-            //   ),
-            //   mesh,
-            //   dimensionedScalar("0", dimensionSet(0,0,0,0,0,0,0), 0.0),
-            //   boundaryTypes
-            // );
+             volScalarField LAIi
+             (
+               IOobject
+               (
+                  "LAI",
+                  runTime.timeName(),
+                  mesh,
+                  IOobject::NO_READ
+               ),
+               mesh,
+               dimensionedScalar("0", dimensionSet(0,0,0,0,0,0,0), 0.0),
+               boundaryTypes
+             );
 
             volVectorField qrswi
             (
@@ -1214,14 +1214,14 @@ int main(int argc, char *argv[])
 
             forAll(qrswi, cellI)
             {
-                //LAIi[cellI] = LAI[cellI];
+                LAIi[cellI] = LAI[cellI];
                 qrswi[cellI] = qrsw[cellI];
                 divqrswi[cellI] = divqrsw[cellI];
             }
-            //LAIi.correctBoundaryConditions();
+            LAIi.correctBoundaryConditions();
             qrswi.correctBoundaryConditions();
             divqrswi.correctBoundaryConditions();
-            //LAIi.write();
+            LAIi.write();
             qrswi.write();
             //LAD.write();
             divqrswi.write();
