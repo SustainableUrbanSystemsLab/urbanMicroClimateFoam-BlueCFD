@@ -57,6 +57,18 @@
             )
         ); 
 
+        radiation.set
+        (
+            i,
+            radiation::radiationModel::New(thermoFluid[i].T())
+        );
+        
+        solarLoad.set
+        (
+            i,
+            solarLoad::solarLoadModel::New(thermoFluid[i].T())
+        );
+
         if (fluidRegions[i].name() != "vegetation")             
         {
            Info<< "    Adding to UFluid\n" << endl;
@@ -213,18 +225,7 @@
 
             // Force p_rgh to be consistent with p
             p_rghFluid[i] = thermoFluid[i].p() - rhoFluid[i]*ghFluid[i];
-
-        radiation.set
-        (
-            i,
-            radiation::radiationModel::New(thermoFluid[i].T())
-        );
-        
-        solarLoad.set
-        (
-            i,
-            solarLoad::solarLoadModel::New(thermoFluid[i].T())
-        );        
+     
 
             initialMassFluid[i] = fvc::domainIntegrate(rhoFluid[i]).value();
 
