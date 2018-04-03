@@ -1225,7 +1225,8 @@ int main(int argc, char *argv[])
             qrswi.write();
             //LAD.write();
             divqrswi.write();
-            runTime++;
+            //runTime++;
+            runTime.setTime(runTime.value()+runTime.deltaT().value(),runTime.timeIndex()+1);
         }
 
         ////////////////////////////////////////////////////////////////////////
