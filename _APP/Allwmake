@@ -11,4 +11,4 @@ wmake viewFactorsGenUpdated
 wmake viewFactorsGenUpdatedCyclic
 wmake viewFactorsGenUpdatedCyclicSky
 wmake calcLAI
-wmake calcqrsw
+wmake solarRayTracingVegGen

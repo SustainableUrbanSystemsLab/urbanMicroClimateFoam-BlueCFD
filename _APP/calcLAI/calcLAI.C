@@ -1003,7 +1003,8 @@ int main(int argc, char *argv[])
             {
                 if (!pHitListCells[cellI].hit())
                 {
-                    qrsw[cellI] = -n2*IDN[vectorID];//*Foam::exp(-beta*LAI[cellI]);
+                    //qrsw[cellI] = -n2*IDN[vectorID];//*Foam::exp(-beta*LAI[cellI]);
+                    qrsw[cellI] = -n2*IDN[vectorID]*Foam::exp(-beta*LAI[cellI]);
                 }
             }
 
@@ -1225,6 +1226,7 @@ int main(int argc, char *argv[])
             qrswi.write();
             //LAD.write();
             divqrswi.write();
+
             //runTime++;
             runTime.setTime(runTime.value()+runTime.deltaT().value(),runTime.timeIndex()+1);
         }

@@ -11,4 +11,4 @@ wclean viewFactorsGenUpdated
 wclean viewFactorsGenUpdatedCyclic
 wclean viewFactorsGenUpdatedCyclicSky
 wclean calcLAI
-wclean calcqrsw
+wclean solarRayTracingGen
