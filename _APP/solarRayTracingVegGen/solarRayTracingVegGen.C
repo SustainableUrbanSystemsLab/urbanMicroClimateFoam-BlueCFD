@@ -826,8 +826,10 @@ int main(int argc, char *argv[])
     			sunVisibleOrNot[vectorId][k] = nVisibleFaceFacesList[vectorId][faceNo];
 
     			cosPhi = (localCoarseSf[faceNo] & sunPos)/(mag(localCoarseSf[faceNo])*mag(sunPos) + SMALL);
-    			sunViewCoeff[vectorId][k] = nVisibleFaceFacesList[vectorId][faceNo]*mag(cosPhi) * IDN[vectorId] * Foam::exp(-beta*LAIboundaryList[vectorId][k]); // beer-lambert law
-
+    			//sunViewCoeff[vectorId][k] = nVisibleFaceFacesList[vectorId][faceNo]*mag(cosPhi) * IDN[vectorId] * Foam::exp(-beta*LAIboundaryList[vectorId][k]); // beer-lambert law
+                //nVisibleFaceFacesList controls if a coarseFace sees the sun or not. This is done by calcLAI application for vegetation already.
+                sunViewCoeff[vectorId][k] = mag(cosPhi) * IDN[vectorId] * Foam::exp(-beta*LAIboundaryList[vectorId][k]); // beer-lambert law
+                
     			cosPhi = (localCoarseSf[faceNo] & skyPos)/(mag(localCoarseSf[faceNo])*mag(skyPos) + SMALL);
     			radAngleBetween = Foam::acos( min(max(cosPhi, -1), 1) );
     			degAngleBetween = radToDeg(radAngleBetween);

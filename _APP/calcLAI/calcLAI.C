@@ -923,9 +923,9 @@ int main(int argc, char *argv[])
                 // Cell center point (rotated coordinate system)
                 ptemp = pmeshCRot[cellI];
 
-                if ( (ptemp.x() > pminRot.x()) && (ptemp.x() < pmaxRot.x()) &&
-                     (ptemp.y() > pminRot.y()) && (ptemp.y() < pmaxRot.y()) &&
-                     (ptemp.z() > pmeshMinRot.z()) && (ptemp.z() < pmaxRot.z()) )
+                if ( (ptemp.x() >= pminRot.x()) && (ptemp.x() <= pmaxRot.x()) &&
+                     (ptemp.y() >= pminRot.y()) && (ptemp.y() <= pmaxRot.y()) &&
+                     (ptemp.z() >= pmeshMinRot.z()) && (ptemp.z() <= pmaxRot.z()) )
                 {
                     nCellsinVegetationBBOX++;
                 }
@@ -941,9 +941,9 @@ int main(int argc, char *argv[])
                 // Cell center point (rotated coordinate system)
                 ptemp = pmeshCRot[cellI];
 
-                if ( (ptemp.x() > pminRot.x()) && (ptemp.x() < pmaxRot.x()) &&
-                     (ptemp.y() > pminRot.y()) && (ptemp.y() < pmaxRot.y()) &&
-                     (ptemp.z() > pmeshMinRot.z()) && (ptemp.z() < pmaxRot.z()) )
+                if ( (ptemp.x() >= pminRot.x()) && (ptemp.x() <= pmaxRot.x()) &&
+                     (ptemp.y() >= pminRot.y()) && (ptemp.y() <= pmaxRot.y()) &&
+                     (ptemp.z() >= pmeshMinRot.z()) && (ptemp.z() <= pmaxRot.z()) )
                 {
 
                     // Check if cell in building shadow shadow
@@ -1068,9 +1068,9 @@ int main(int argc, char *argv[])
                 // Cell center point (rotated coordinate system)
                 ptemp = transform(T, vegLocalCoarseCf[faceI]);
 
-                if ( (ptemp.x() > pminRot.x()) && (ptemp.x() < pmaxRot.x()) &&
-                     (ptemp.y() > pminRot.y()) && (ptemp.y() < pmaxRot.y()) &&
-                     (ptemp.z() < pmaxRot.z()) )
+                if ( (ptemp.x() >= pminRot.x()) && (ptemp.x() <= pmaxRot.x()) &&
+                     (ptemp.y() >= pminRot.y()) && (ptemp.y() <= pmaxRot.y()) &&
+                     (ptemp.z() <= pmaxRot.z()) )
                 {
                     nFacesinVegetationBBOX++;
                 }
@@ -1088,9 +1088,9 @@ int main(int argc, char *argv[])
                 // Cell center point (rotated coordinate system)
                 ptemp = transform(T, vegLocalCoarseCf[faceI]);
 
-                if ( (ptemp.x() > pminRot.x()) && (ptemp.x() < pmaxRot.x()) &&
-                     (ptemp.y() > pminRot.y()) && (ptemp.y() < pmaxRot.y()) &&
-                     (ptemp.z() > pmeshMinRot.z()) && (ptemp.z() < pmaxRot.z()) )
+                if ( (ptemp.x() >= pminRot.x()) && (ptemp.x() <= pmaxRot.x()) &&
+                     (ptemp.y() >= pminRot.y()) && (ptemp.y() <= pmaxRot.y()) &&
+                     (ptemp.z() <= pmaxRot.z()) )
                 {
 
                     // Check if cell in building shadow shadow
