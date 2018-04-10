@@ -90,6 +90,7 @@ class VanGenuchtenVapDiff
         scalar Ks_;
         scalar muDry_;
         scalar A_;
+        scalar wr_;
 
         bool vaporDiffusion_;
     // Private Member Functions
