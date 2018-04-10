@@ -115,6 +115,8 @@ Foam::buildingMaterialModels::VanGenuchtenVapDiff::VanGenuchtenVapDiff
           VanGenuchtenVapDiffCoeffs_.lookup("wr")
        )
    )
+   
+
 
 
 {
@@ -127,6 +129,8 @@ Foam::buildingMaterialModels::VanGenuchtenVapDiff::VanGenuchtenVapDiff
 //- Correct the buildingMaterial moisture content (cell)
 void Foam::buildingMaterialModels::VanGenuchtenVapDiff::update_w_C_cell(const volScalarField& pc, volScalarField& w, volScalarField& Crel, label& celli)
 {
+  
+   scalar pci = pc.internalField()[celli];
 
    scalar pci = pc.internalField()[celli];
 
@@ -135,7 +139,6 @@ void Foam::buildingMaterialModels::VanGenuchtenVapDiff::update_w_C_cell(const vo
    w.internalField()[celli] = (wcap_ - wr_)*pow(1+tmp,-m_) + wr_;
    scalar tmp2 = 1+tmp;
    Crel.internalField()[celli] = mag(-(wcap_-wr_)*m_*n_*alpha_*pow(tmp2,-1-m_)*pow(-alpha_*pci,n_-1));
-
 
 }
 
