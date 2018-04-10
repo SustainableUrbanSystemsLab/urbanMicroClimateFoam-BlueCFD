@@ -199,7 +199,7 @@ void Foam::buildingMaterialModels::VanGenuchtenVapDiff::update_Kpt_cell(const vo
 
            scalar relhum = Foam::exp(pc.internalField()[celli]/(rho_l*R_v*T.internalField()[celli])); // relative humidity [-]
 
-           scalar tmp3 = 1 - 1 - ((w.internalField()[celli]-wr_)/(wcap_-wr_));
+           scalar tmp3 = 1 - ((w.internalField()[celli]-wr_)/(wcap_-wr_));
            scalar delta = 2.61e-5 * tmp3/(R_v*T.internalField()[celli]*muDry_*(A_*tmp3*tmp3 + B_)); // Water vapour diffusion coefficient
            K_pt.internalField()[celli] = ( (delta*p_vsat*relhum)/(rho_l*R_v*pow(T.internalField()[celli],2)) )*(rho_l*L_v - pc.internalField()[celli]);
         }
