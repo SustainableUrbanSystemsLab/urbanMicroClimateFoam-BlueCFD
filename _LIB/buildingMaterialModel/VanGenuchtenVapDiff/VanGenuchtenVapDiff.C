@@ -132,8 +132,6 @@ void Foam::buildingMaterialModels::VanGenuchtenVapDiff::update_w_C_cell(const vo
   
    scalar pci = pc.internalField()[celli];
 
-   scalar pci = pc.internalField()[celli];
-
    scalar m_ = 1.0 - 1.0/n_;
    scalar tmp = pow(-alpha_*pci, n_);
    w.internalField()[celli] = (wcap_ - wr_)*pow(1+tmp,-m_) + wr_;
@@ -148,7 +146,7 @@ void Foam::buildingMaterialModels::VanGenuchtenVapDiff::update_Krel_cell(const v
     scalar m_ = 1.0 - 1.0/n_;
 
     scalar tmp = (w.internalField()[celli]-wr_)/(wcap_-wr_);
-    scalar tmp1 = pow(tmp,1/m_)
+    scalar tmp1 = pow(tmp,1/m_);
     scalar tmp2 = pow(1-tmp1, m_);
     Krel.internalField()[celli] = Ks_*(Foam::sqrt(tmp))*pow(1-tmp2,2);
 
