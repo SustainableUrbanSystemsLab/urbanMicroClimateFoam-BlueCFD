@@ -18,4 +18,4 @@ submodels/scatterModel/solarLoadScatterModel/solarLoadScatterModel.C
 submodels/scatterModel/solarLoadScatterModel/solarLoadScatterModelNew.C
 submodels/scatterModel/noScatter/noScatter.C
 
-LIB = $(FOAM_USER_LIBBIN)/libsolarLoadDev
+LIB = $(FOAM_USER_LIBBIN)/libsolarLoad
