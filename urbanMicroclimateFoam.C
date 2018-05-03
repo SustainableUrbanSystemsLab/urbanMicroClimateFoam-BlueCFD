@@ -59,6 +59,7 @@ int main(int argc, char *argv[])
     #include "createSolidFields.H"
 
     #include "initContinuityErrs.H"
+    #include "initSolidContinuityErrs.H"
     #include "readFluidControls.H"
     #include "readSolidControls.H"
 

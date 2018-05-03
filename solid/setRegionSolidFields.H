@@ -18,3 +18,5 @@ volScalarField& Krel = KrelSolid[i];
 volScalarField& K_v = K_vSolid[i];
 volScalarField& K_pt = K_ptSolid[i];
 volScalarField& Crel = CrelSolid[i];
+const uniformDimensionedVectorField& g = gSolid[i];
+

@@ -30,6 +30,7 @@ License
 #include "mappedPatchBase.H"
 #include "fixedValueFvPatchFields.H"
 #include "interpolationTable.H"
+#include "uniformDimensionedFields.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -279,11 +280,19 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
         scalarField CR = ( pos(patchInternalField()+fieldpc.snGrad()/patch().deltaCoeffs()+1E3)*(Krel+K_v)*fieldpc.snGrad() +
                            neg(patchInternalField()+fieldpc.snGrad()/patch().deltaCoeffs()+1E3)*gl ) * cap_l*(rainTemp -Tref) * pos(gl-VSMALL);
 
+        //-- Gravity-enthalpy flux --//
+        //lookup gravity vector
+       uniformDimensionedVectorField g = db().lookupObject<uniformDimensionedVectorField>("g");
+       scalarField gn = g.value() & patch().nf();
+
+       scalarField phiGT = (cap_l*(Tp-Tref))*Krel*rhol*gn;
+
     if(impermeable_ == false)
     {
         valueFraction() = 0;//pos(fieldpc.patchInternalField()+1E3); 
         refValue() = 0;//rainTemp;
-        refGrad() = (heatFlux + LE + QrNbr + QsNbr + CR -X)/(lambda_m+K_pt);
+        refGrad() = (heatFlux + LE + QrNbr + QsNbr + CR + phiGT -X)/(lambda_m+K_pt);
+//      refGrad() = (heatFlux + LE + QrNbr + QsNbr + CR -X)/(lambda_m+K_pt);
     }
     else
     {
