@@ -116,7 +116,7 @@ void Foam::buildingMaterialModels::VanGenuchten::update_Krel_cell(const volScala
     scalar m_ = 1.0 - 1.0/n_;
 
     scalar tmp = w.internalField()[celli]/wcap_;
-    scalar tmp2 = pow(pow(1-tmp,1/m_), m_);
+    scalar tmp2 = pow(1-pow(tmp,1/m_), m_);
     Krel.internalField()[celli] = Ks_*(Foam::sqrt(tmp))*pow(1-tmp2,2);
 
 }
