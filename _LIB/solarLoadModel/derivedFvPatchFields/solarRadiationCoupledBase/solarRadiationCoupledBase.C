@@ -81,13 +81,8 @@ Foam::solarRadiationCoupledBase::solarRadiationCoupledBase
         {
             if (!isA<mappedPatchBase>(patch_.patch()))
             {
-                FatalIOErrorIn
+                FatalIOErrorInFunction
                 (
-                    "solarRadiationCoupledBase::solarRadiationCoupledBase\n"
-                    "(\n"
-                    "    const fvPatch& p,\n"
-                    "    const dictionary& dict\n"
-                    ")\n",
                     dict
                 )   << "\n    patch type '" << patch_.type()
                     << "' not type '" << mappedPatchBase::typeName << "'"
@@ -103,13 +98,8 @@ Foam::solarRadiationCoupledBase::solarRadiationCoupledBase
         {
             if (!dict.found("albedo"))
             {
-                FatalIOErrorIn
+                FatalIOErrorInFunction
                 (
-                    "solarRadiationCoupledBase::solarRadiationCoupledBase\n"
-                    "(\n"
-                    "    const fvPatch& p,\n"
-                    "    const dictionary& dict\n"
-                    ")\n",
                     dict
                 )   << "\n    albedo key does not exist for patch "
                     << patch_.name()
@@ -174,10 +164,8 @@ Foam::scalarField Foam::solarRadiationCoupledBase::albedo() const
 
         default:
         {
-            FatalErrorIn
-            (
-                "solarRadiationCoupledBase::albedo(const scalarField&)"
-            )   << "Unimplemented method " << method_ << endl
+            FatalErrorInFunction
+                << "Unimplemented method " << method_ << endl
                 << "Please set 'albedo' to one of "
                 << albedoMethodTypeNames_.toc()
                 << exit(FatalError);

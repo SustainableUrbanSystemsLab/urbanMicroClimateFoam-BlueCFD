@@ -5,5 +5,4 @@ makeType=${1:-libso}
 set -x
 
 wmake $makeType buildingMaterialModel
-wmake $makeType simpleControlFluid
 wmake $makeType solarLoadModel

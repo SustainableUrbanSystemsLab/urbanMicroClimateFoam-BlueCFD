@@ -29,13 +29,13 @@ Group
 
 Description
     This boundary condition provides a grey-diffuse condition for radiative
-    heat flux, \c Qr, for use with the view factor model
+    heat flux, \c qr, for use with the view factor model
 
     \heading Patch usage
 
     \table
         Property     | Description             | Required    | Default value
-        Qro          | external radiative heat flux | yes    |
+        qro          | external radiative heat flux | yes    |
         emissivityMode | emissivity mode: solidThermo or lookup | yes |
     \endtable
 
@@ -44,7 +44,7 @@ Description
     myPatch
     {
         type            greyDiffusiveRadiationViewFactor;
-        Qro             uniform 0;
+        qro             uniform 0;
         emissivityMode  solidThermo;
         value           uniform 0;
     }
@@ -85,7 +85,7 @@ class solarLoadViewFactorFixedValueFvPatchScalarField
     // Private data
 
         //- External radiative heat flux
-        scalarField Qso_;
+        scalarField qso_;
 
 
 public:
@@ -165,9 +165,9 @@ public:
         // Access
 
             //- Return external radiative heat flux
-            const scalarList& Qso()
+            const scalarList& qso()
             {
-                return Qso_;
+                return qso_;
             }
 
 

@@ -1,8 +1,13 @@
-simpleControlFluid simpleControlFluid(fluidRegions[i]);
+simpleControl simpleControl(fluidRegions[i]);
+
+const scalar storeFluidDeltaT = runTime.deltaT().value();
+const scalar storeFluidTimeStep = runTime.value();
+const label storeFluidTimeIndex = runTime.timeIndex();
+runTime.setTime(0,0);
+runTime.setDeltaT(1); 
 
 label fluidIteration = 1;
-
-while ((simpleControlFluid.loop() || fluidIteration <= minFluidIteration) && fluidIteration <= maxFluidIteration)
+while ((simpleControl.loop(runTime) || fluidIteration <= minFluidIteration) && fluidIteration <= maxFluidIteration)
 {
 //  Pressure-velocity SIMPLE corrector
     Info << "Internal iteration number: " << fluidIteration << endl;
@@ -22,10 +27,10 @@ while ((simpleControlFluid.loop() || fluidIteration <= minFluidIteration) && flu
     fluidIteration++;
 }
 
-Info<< nl << fluidRegions[i].name() << " region solution converged in "
-    << fluidIteration-1 << " iterations" << nl << endl;
-
 Info << "Updating long-wave radiation heat transfer for region: " << fluidRegions[i].name() << endl;
 rad.correct();
 Info << "Updating short-wave radiation heat transfer for region: " << fluidRegions[i].name() << endl;
 sol.correct();
+
+runTime.setDeltaT(storeFluidDeltaT);
+runTime.setTime(storeFluidTimeStep,storeFluidTimeIndex);

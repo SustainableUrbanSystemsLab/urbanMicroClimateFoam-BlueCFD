@@ -23,9 +23,9 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-inline const Foam::volScalarField& Foam::radiation::viewFactorSky::Qr() const
+inline const Foam::volScalarField& Foam::radiation::viewFactorSky::qr() const
 {
-    return Qr_;
+    return qr_;
 }
 
 

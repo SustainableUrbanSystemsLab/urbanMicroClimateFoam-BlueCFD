@@ -33,8 +33,8 @@ Description
         myInterfacePatchName
         {
             type            compressible::CFDHAMsolidTemperatureCoupledMixed;
-            QrNbr           Qr; //or none, name of thermal radiation from neighbour region
-            QsNbr           Qs; //or none, name of solar radiation from neighbour region
+            qrNbr           qr; //or none, name of thermal radiation from neighbour region
+            qsNbr           qs; //or none, name of solar radiation from neighbour region
             impermeable     false; //(or true, default=false);
             value           uniform -1e7;
         }
@@ -67,10 +67,10 @@ class CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
     // Private data
 
          //- Name of the thermal radiative heat flux in the neighbour region
-        const word QrNbrName_;
+        const word qrNbrName_;
         
          //- Name of the solar radiative heat flux in the neighbour region
-        const word QsNbrName_;
+        const word qsNbrName_;
 
          //- is the patch impermeable?
         const bool impermeable_;                    

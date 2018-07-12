@@ -49,8 +49,8 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 )
 :
     mixedFvPatchScalarField(p, iF),
-    QrNbrName_("undefined-QrNbr"),
-    QsNbrName_("undefined-QsNbr"),
+    qrNbrName_("undefined-qrNbr"),
+    qsNbrName_("undefined-qsNbr"),
     impermeable_("undefined-impermeable")
 {
     this->refValue() = 0.0;
@@ -69,8 +69,8 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 )
 :
     mixedFvPatchScalarField(psf, p, iF, mapper),
-    QrNbrName_(psf.QrNbrName_),
-    QsNbrName_(psf.QsNbrName_),
+    qrNbrName_(psf.qrNbrName_),
+    qsNbrName_(psf.qsNbrName_),
     impermeable_(psf.impermeable_)
 {}
 
@@ -84,28 +84,19 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 )
 :
     mixedFvPatchScalarField(p, iF),
-    QrNbrName_(dict.lookupOrDefault<word>("QrNbr", "none")),
-    QsNbrName_(dict.lookupOrDefault<word>("QsNbr", "none")),
+    qrNbrName_(dict.lookupOrDefault<word>("qrNbr", "none")),
+    qsNbrName_(dict.lookupOrDefault<word>("qsNbr", "none")),
     impermeable_(dict.lookupOrDefault<bool>("impermeable", false))
 {
     if (!isA<mappedPatchBase>(this->patch().patch()))
     {
-        FatalErrorIn
-        (
-            "CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::"
-            "CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField\n"
-            "(\n"
-            "    const fvPatch& p,\n"
-            "    const DimensionedField<scalar, volMesh>& iF,\n"
-            "    const dictionary& dict\n"
-            ")\n"
-        )   << "\n    patch type '" << p.type()
+        FatalErrorInFunction
             << "' not type '" << mappedPatchBase::typeName << "'"
             << "\n    for patch " << p.name()
-            << " of field " << dimensionedInternalField().name()
-            << " in file " << dimensionedInternalField().objectPath()
+            << " of field " << internalField().name()
+            << " in file " << internalField().objectPath()
             << exit(FatalError);
-    }  
+    }
 
     fvPatchScalarField::operator=(scalarField("value", dict, p.size()));
 
@@ -134,8 +125,8 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 )
 :
     mixedFvPatchScalarField(psf, iF),
-    QrNbrName_(psf.QrNbrName_),
-    QsNbrName_(psf.QsNbrName_),
+    qrNbrName_(psf.qrNbrName_),
+    qsNbrName_(psf.qsNbrName_),
     impermeable_(psf.impermeable_)
 {}
 
@@ -217,15 +208,15 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
         mpp.distribute(deltaCoeff_);
     scalarField alphatNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("alphat");
         mpp.distribute(alphatNbr);
-    scalarField mutNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("mut");
-        mpp.distribute(mutNbr); 
+    scalarField nutNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("nut");
+        mpp.distribute(nutNbr); 
     
     scalarField heatFlux = (muair/Pr + alphatNbr)*cp*(TcNbr-Tp)*deltaCoeff_; 
             
     scalarField pvsat_s = exp(6.58094e1-7.06627e3/Tp-5.976*log(Tp));
     scalarField pv_s = pvsat_s*exp((pc)/(rhol*Rv*Tp));
     
-    scalarField vaporFlux = (rhoNbr*Dm + mutNbr/Sct) * (wcNbr-(0.62198*pv_s/1e5)) *deltaCoeff_;         
+    scalarField vaporFlux = rhoNbr*(Dm + nutNbr/Sct) * (wcNbr-(0.62198*pv_s/1e5)) *deltaCoeff_; 
     scalarField LE = (cap_v*(Tp-Tref)+L_v)*vaporFlux;//Latent and sensible heat transfer due to vapor exchange   */
 
     scalarField K_v(Tp.size(), 0.0);
@@ -260,18 +251,18 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
     scalar rainTemp = Tambient(time.value()) - (Tambient(time.value())-dewPointTemp)/3;
     //////////////////////////////////////////////////////////////////////////
 
-    scalarField QrNbr(Tp.size(), 0.0);
-    if (QrNbrName_ != "none")
+    scalarField qrNbr(Tp.size(), 0.0);
+    if (qrNbrName_ != "none")
     {
-        QrNbr = nbrPatch.lookupPatchField<volScalarField, scalar>(QrNbrName_);
-        mpp.distribute(QrNbr);
+        qrNbr = nbrPatch.lookupPatchField<volScalarField, scalar>(qrNbrName_);
+        mpp.distribute(qrNbr);
     }
 
-    scalarField QsNbr(Tp.size(), 0.0);
-    if (QsNbrName_ != "none")
+    scalarField qsNbr(Tp.size(), 0.0);
+    if (qsNbrName_ != "none")
     {
-        QsNbr = nbrPatch.lookupPatchField<volScalarField, scalar>(QsNbrName_);
-        mpp.distribute(QsNbr);
+        qsNbr = nbrPatch.lookupPatchField<volScalarField, scalar>(qsNbrName_);
+        mpp.distribute(qsNbr);
     }   
 
         // term with capillary moisture gradient:                          
@@ -291,14 +282,14 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
     {
         valueFraction() = 0;//pos(fieldpc.patchInternalField()+1E3); 
         refValue() = 0;//rainTemp;
-        refGrad() = (heatFlux + LE + QrNbr + QsNbr + CR + phiGT -X)/(lambda_m+K_pt);
-//      refGrad() = (heatFlux + LE + QrNbr + QsNbr + CR -X)/(lambda_m+K_pt);
+        refGrad() = (heatFlux + LE + qrNbr + qsNbr + CR + phiGT -X)/(lambda_m+K_pt);
+//      refGrad() = (heatFlux + LE + qrNbr + qsNbr + CR -X)/(lambda_m+K_pt);
     }
     else
     {
         valueFraction() = 0;
         refValue() = 0;
-        refGrad() = (heatFlux + QrNbr + QsNbr)/(lambda_m);
+        refGrad() = (heatFlux + qrNbr + qsNbr)/(lambda_m);
     }
 //Info << "111: " << heatFlux << " " << LE << " " << -X << " " << K_pt << " " << refGrad() << endl;
     mixedFvPatchScalarField::updateCoeffs(); 
@@ -315,8 +306,8 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::write
 ) const
 {
     mixedFvPatchScalarField::write(os);
-    os.writeKeyword("QrNbr")<< QrNbrName_ << token::END_STATEMENT << nl;
-    os.writeKeyword("QsNbr")<< QsNbrName_ << token::END_STATEMENT << nl;
+    os.writeKeyword("qrNbr")<< qrNbrName_ << token::END_STATEMENT << nl;
+    os.writeKeyword("qsNbr")<< qsNbrName_ << token::END_STATEMENT << nl;
     os.writeKeyword("impermeable")<< impermeable_ << token::END_STATEMENT << nl;
 }
 

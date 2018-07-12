@@ -38,9 +38,9 @@ forAll(Materials, MaterialsI)
         buildingMaterial->update_w_C_cell(pc,ws,Crel,celli);
         buildingMaterial->update_Krel_cell(pc,ws,Krel,celli);
         buildingMaterial->update_Kv_cell(pc,ws,Ts,K_v,celli);
-        rho_m.internalField()[celli] = rho_;
-        cap_m.internalField()[celli] = cap_;
-        lambda_m.internalField()[celli] = lambda1_ + lambda2_*ws[celli];
+        rho_m.ref()[celli] = rho_;
+        cap_m.ref()[celli] = cap_;
+        lambda_m.ref()[celli] = lambda1_ + lambda2_*ws[celli];
         buildingMaterial->update_Kpt_cell(pc,ws,Ts,K_pt,celli);
     }
 }

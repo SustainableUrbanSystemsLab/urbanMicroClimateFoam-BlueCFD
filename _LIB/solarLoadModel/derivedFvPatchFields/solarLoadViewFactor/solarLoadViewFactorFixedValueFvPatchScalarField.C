@@ -40,7 +40,7 @@ solarLoadViewFactorFixedValueFvPatchScalarField
 :
     fixedValueFvPatchScalarField(p, iF),
     solarRadiationCoupledBase(patch(), "undefined", scalarField::null()),
-    Qso_(p.size(), 0.0)
+    qso_(p.size(), 0.0)
 {}
 
 
@@ -60,7 +60,7 @@ solarLoadViewFactorFixedValueFvPatchScalarField
         ptf.albedoMethod(),
         ptf.albedo_
     ),
-    Qso_(ptf.Qso_)
+    qso_(ptf.qso_)
 {}
 
 
@@ -72,9 +72,9 @@ solarLoadViewFactorFixedValueFvPatchScalarField
     const dictionary& dict
 )
 :
-    fixedValueFvPatchScalarField(p, iF),
+    fixedValueFvPatchScalarField(p, iF, dict, false),
     solarRadiationCoupledBase(p, dict),
-    Qso_("Qso", dict, p.size())
+    qso_("qso", dict, p.size())
 {
     if (dict.found("value"))
     {
@@ -104,7 +104,7 @@ solarLoadViewFactorFixedValueFvPatchScalarField
         ptf.albedoMethod(),
         ptf.albedo_
     ),
-    Qso_(ptf.Qso_)
+    qso_(ptf.qso_)
 {}
 
 
@@ -122,7 +122,7 @@ solarLoadViewFactorFixedValueFvPatchScalarField
         ptf.albedoMethod(),
         ptf.albedo_
     ),
-    Qso_(ptf.Qso_)
+    qso_(ptf.qso_)
 {}
 
 
@@ -144,7 +144,7 @@ updateCoeffs()
 
         Info<< patch().boundaryMesh().mesh().name() << ':'
             << patch().name() << ':'
-            << this->dimensionedInternalField().name() << " <- "
+            << this->internalField().name() << " <- "
             << " heat transfer rate:" << Q
             << " wall radiative heat flux "
             << " min:" << gMin(*this)
@@ -165,7 +165,7 @@ write
 {
     fixedValueFvPatchScalarField::write(os);
     solarRadiationCoupledBase::write(os);
-    Qso_.writeEntry("Qso", os);
+    qso_.writeEntry("qso", os);
 }
 
 

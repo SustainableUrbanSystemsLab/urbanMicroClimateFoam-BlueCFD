@@ -1,16 +1,18 @@
-pc=pc.prevIter(); 
-forAll(pc.boundaryField(), patchi)
+pc=pc_old;//pc.prevIter(); 
+volScalarField::Boundary& pcBf = pc.boundaryFieldRef();
+forAll(pcBf, patchi)
 { 
-    forAll(pc.boundaryField()[patchi], facei)
+    forAll(pcBf[patchi], facei)
     {
-        pc.boundaryField()[patchi][facei] = pc.prevIter().boundaryField()[patchi][facei];
+        pcBf[patchi][facei] = pc_old.boundaryField()[patchi][facei];
     }
 }
-Ts=Ts.prevIter();
-forAll(Ts.boundaryField(), patchi)
+Ts=Ts_old;//.prevIter();
+volScalarField::Boundary& TsBf = Ts.boundaryFieldRef();
+forAll(TsBf, patchi)
 { 
-    forAll(Ts.boundaryField()[patchi], facei)
+    forAll(TsBf[patchi], facei)
     {
-        Ts.boundaryField()[patchi][facei] = Ts.prevIter().boundaryField()[patchi][facei];
+        TsBf[patchi][facei] = Ts_old.boundaryField()[patchi][facei];
     }
 }

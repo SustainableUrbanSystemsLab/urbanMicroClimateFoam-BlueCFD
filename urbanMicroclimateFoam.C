@@ -32,16 +32,15 @@ Description
 
 #include "fvCFD.H"
 #include "rhoThermo.H"
-#include "turbulenceModel.H"
+#include "turbulentFluidThermoModel.H"
 #include "fixedGradientFvPatchFields.H"
 #include "regionProperties.H"
 #include "buildingMaterialModel.H"
 #include "solidThermo.H"
 #include "radiationModel.H"
 #include "solarLoadModel.H"
-#include "simpleControlFluid.H"
-#include "fvIOoptionList.H"
-#include "fixedFluxPressureFvPatchScalarField.H"
+#include "simpleControl.H"
+#include "fvOptions.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -64,7 +63,7 @@ int main(int argc, char *argv[])
     #include "readSolidControls.H"
 
     while (runTime.loop())
-    {      
+    {
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
         forAll(fluidRegions, i)

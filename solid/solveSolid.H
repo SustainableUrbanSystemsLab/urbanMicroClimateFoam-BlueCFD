@@ -1,11 +1,12 @@
 {
-    const scalar& storeFluidDeltaT = runTime.deltaT().value();
-    const scalar& storeFluidTimeStep = runTime.value();
-    const label& storeFluidTimeIndex = runTime.timeIndex();
+    const scalar storeFluidDeltaT = runTime.deltaT().value();
+    const scalar storeFluidTimeStep = runTime.value();
+    const label storeFluidTimeIndex = runTime.timeIndex();
 
-    runTime.setTime(storeFluidTimeStep-storeFluidDeltaT,storeFluidTimeIndex);
+    instantList Times = runTime.times(); 
+    runTime.setTime(Times.last(),Times.size()-1);
     runTime.setDeltaT(storeFluidDeltaT * initialSolidTimestepFactor); //this always resets to the small timestep for solid, could it be better?
- 
+
     scalar solidInternalTime = 0;
     scalar timeToOutput = storeFluidDeltaT;
     bool timeStepDecrease = false;
@@ -14,8 +15,8 @@
     {         
         Info << nl << "Time = " << runTime.timeName() << ", deltaT = " << runTime.deltaT().value() << endl;  
         Info << "solidInternalTime: " << solidInternalTime << endl;
-        pc.storePrevIter();
-        Ts.storePrevIter();
+        //pc.storePrevIter();
+        //Ts.storePrevIter();
 
         #include "updatebuildingMaterials.H"
 
@@ -68,13 +69,13 @@
               
                 //convergence test
 
-                scalar maxChangews = gMax(mag(ws.internalField()-ws_n.internalField())); 
-                scalar maxChangeTs = gMax(mag(Ts.internalField()-Ts_n.internalField())); 
+                scalar maxChangews = gMax(mag(ws.primitiveField()-ws_n.primitiveField())); 
+                scalar maxChangeTs = gMax(mag(Ts.primitiveField()-Ts_n.primitiveField())); 
                 if(maxChangews < PicardTolerancews && maxChangeTs < PicardToleranceTs && nInternalIter>=2) //force at least 1 internal iteration
                 {
-                    pc_n = pc; pc_n.boundaryField().updateCoeffs();
-                    ws_n = ws; ws_n.boundaryField().updateCoeffs();
-                    Ts_n = Ts; Ts_n.boundaryField().updateCoeffs();
+                    pc_n = pc; pc_n.boundaryFieldRef().updateCoeffs();
+                    ws_n = ws; ws_n.boundaryFieldRef().updateCoeffs();
+                    Ts_n = Ts; Ts_n.boundaryFieldRef().updateCoeffs();
                     Info << "Total internal iterations: " << nInternalIter << endl;
                     timeStepDecrease = false;
                     break;
@@ -92,9 +93,9 @@
                 }   
                 else //not converged nor reached the maximum iteration yet, continue
                 {
-                    pc_n = pc; pc_n.boundaryField().updateCoeffs();
-                    ws_n = ws; ws_n.boundaryField().updateCoeffs();
-                    Ts_n = Ts; Ts_n.boundaryField().updateCoeffs();
+                    pc_n = pc; pc_n.boundaryFieldRef().updateCoeffs();
+                    ws_n = ws; ws_n.boundaryFieldRef().updateCoeffs();
+                    Ts_n = Ts; Ts_n.boundaryFieldRef().updateCoeffs();
                     Info << "maxChangews: " << maxChangews << ", maxChangeTs: " << maxChangeTs << endl;
                 }               
             ///////////////////////////////
