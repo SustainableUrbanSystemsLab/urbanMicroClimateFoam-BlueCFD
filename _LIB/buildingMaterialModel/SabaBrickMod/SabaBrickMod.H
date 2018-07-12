@@ -23,21 +23,21 @@ License
     Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 Class
-    Foam::buildingMaterialModels::SabaBrick
+    Foam::buildingMaterialModels::SabaBrickMod
 
 Description
     buildingMaterial constitutive relationship as in Saba Saneinejad Phd Thesis 2013.
    
-    This file represents the moisture transport properties before the modification
+    This file represents the moisture transport properties after the modification
     in Section 4.3. See Fig. 4.23 for more details.
 
 SourceFiles
-    SabaBrick.C
+    SabaBrickMod.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef SabaBrick_H
-#define SabaBrick_H
+#ifndef SabaBrickMod_H
+#define SabaBrickMod_H
 
 #include "buildingMaterialModel.H"
 #include "volFields.H"
@@ -50,10 +50,10 @@ namespace buildingMaterialModels
 {
 
 /*---------------------------------------------------------------------------*\
-                           Class SabaBrick Declaration
+                           Class SabaBrickMod Declaration
 \*---------------------------------------------------------------------------*/
 
-class SabaBrick
+class SabaBrickMod
 :
     public buildingMaterialModel
 {
@@ -64,13 +64,13 @@ class SabaBrick
 public:
 
     //- Runtime type information
-    TypeName("SabaBrick");
+    TypeName("SabaBrickMod");
 
 
     // Constructors
 
         //- Construct from components
-        SabaBrick
+        SabaBrickMod
         (
             const word& name, 
             const dictionary& buildingMaterialDict,
@@ -80,7 +80,7 @@ public:
 
     // Destructor
 
-        ~SabaBrick()
+        ~SabaBrickMod()
         {}
 
 

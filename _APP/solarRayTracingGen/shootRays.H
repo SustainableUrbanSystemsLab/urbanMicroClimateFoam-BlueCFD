@@ -48,11 +48,11 @@ const label maxDynListLength = 10000;
         surfacesMesh.findLine(start, end, hitInfo);
         
         Info << "start: " << start << endl;
-        //Info << "startArea: " << startArea << endl;
-        Info << "end: " << end << endl;
         
         forAll (hitInfo, rayI)
         {
+            Info << "rayI: " << rayI << start[rayI] << end[rayI] << endl;
+
             if (!hitInfo[rayI].hit()) // if the ray did not hit any surface between start and end positions...
             {
                 scalar cosPhiTest = (startArea[rayI] & sunPos)/(mag(startArea[rayI])*mag(sunPos) + SMALL);
@@ -60,8 +60,17 @@ const label maxDynListLength = 10000;
                 {
                     rayStartFace.append(startIndex[rayI]);
                     rayEndFace.append(endIndex[rayI]);
+                    Info << "Clear" << endl;
                 }
+		        else
+		        {
+		            Info << "Not looking towards the sun" << endl;
+		        }
             }
+		    else
+		    {
+		        Info << "Hit a wall" << endl;
+		    }
         }
 
         start.clear();

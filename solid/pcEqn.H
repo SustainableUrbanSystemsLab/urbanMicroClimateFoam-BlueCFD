@@ -1,3 +1,14 @@
+//Construct gravity flux
+dimensionedScalar rhol
+(
+   "rhol",
+   dimMass/dimVolume,
+   scalar(1000)
+);
+
+surfaceScalarField phiG =  (fvc::interpolate(Krel,"Krel")*rhol*g) & mesh.Sf();
+
+
 if(pcEqnForm == "mixed")
 {
     //using mixed form for moisture equation - see suGWFoam
@@ -8,13 +19,14 @@ if(pcEqnForm == "mixed")
 
     fvScalarMatrix pcEqn
     (
-        Crel*fvm::ddt(pc)                
+        Crel*fvm::ddt(pc)
         ==
         fvm::laplacian(Krel+K_v,pc,"laplacian(Krel,pc)")
         +fvc::laplacian(K_pt,Ts,"laplacian(Krel,pc)")
+        -fvc::div(phiG)
         +pc_ss
     );
-    pcEqn.solve(); 
+    pcEqn.solve();
 
     pc.oldTime() = pc_old; //restoring pc.oldTime()
 }
@@ -22,10 +34,11 @@ else
 {
     fvScalarMatrix pcEqn
     (
-        Crel*fvm::ddt(pc)                
+        Crel*fvm::ddt(pc)
         ==
         fvm::laplacian(Krel+K_v,pc,"laplacian(Krel,pc)")
         +fvc::laplacian(K_pt,Ts,"laplacian(Krel,pc)")
+        -fvc::div(phiG)
     );
-    pcEqn.solve(); 
+    pcEqn.solve();
 }

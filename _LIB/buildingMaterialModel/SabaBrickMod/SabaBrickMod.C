@@ -24,7 +24,7 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "SabaBrick.H"
+#include "SabaBrickMod.H"
 #include "addToRunTimeSelectionTable.H"
 #include "surfaceFields.H"
 
@@ -34,12 +34,12 @@ namespace Foam
 {
 namespace buildingMaterialModels
 {
-    defineTypeNameAndDebug(SabaBrick, 0);
+    defineTypeNameAndDebug(SabaBrickMod, 0);
 
     addToRunTimeSelectionTable
     (
         buildingMaterialModel,
-        SabaBrick,
+        SabaBrickMod,
         dictionary
     );
 }
@@ -51,7 +51,7 @@ namespace buildingMaterialModels
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-Foam::buildingMaterialModels::SabaBrick::SabaBrick
+Foam::buildingMaterialModels::SabaBrickMod::SabaBrickMod
 (
     const word& name,
     const dictionary& buildingMaterialDict,
@@ -67,12 +67,12 @@ Foam::buildingMaterialModels::SabaBrick::SabaBrick
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 
 //- Correct the buildingMaterial moisture content (cell)
-void Foam::buildingMaterialModels::SabaBrick::update_w_C_cell(const volScalarField& pc, volScalarField& w, volScalarField& Crel, label& celli)
+void Foam::buildingMaterialModels::SabaBrickMod::update_w_C_cell(const volScalarField& pc, volScalarField& w, volScalarField& Crel, label& celli)
 {
     List<scalar> reta; reta.setSize(2); reta[0]=-1.394e-5; reta[1]=-0.9011e-5;
     List<scalar> retn; retn.setSize(2); retn[0]=4.0; retn[1]=1.69;
     List<scalar> retm; retm.setSize(2); retm[0]=0.75; retm[1]=0.408;
-    List<scalar> retw; retw.setSize(2); retw[0]=0.846; retw[1]=0.154;
+    List<scalar> retw; retw.setSize(2); retw[0]=0.3; retw[1]=0.7;
     scalar w_tmp = 0; scalar tmp = 0; scalar C_tmp = 0; scalar tmp2 = 0;    
     for (int i=0; i<=1; i++)
     {
@@ -86,7 +86,7 @@ void Foam::buildingMaterialModels::SabaBrick::update_w_C_cell(const volScalarFie
 }
 
 //- Correct the buildingMaterial liquid permeability (cell)
-void Foam::buildingMaterialModels::SabaBrick::update_Krel_cell(const volScalarField& pc, const volScalarField& w, volScalarField& Krel, label& celli)
+void Foam::buildingMaterialModels::SabaBrickMod::update_Krel_cell(const volScalarField& pc, const volScalarField& w, volScalarField& Krel, label& celli)
 {
     scalar logpc = log10(-pc.internalField()[celli]);
     scalar logKl = 0;
@@ -98,29 +98,29 @@ void Foam::buildingMaterialModels::SabaBrick::update_Krel_cell(const volScalarFi
         5.0, 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9,
         6.0, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9,
         7.0, 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 7.9,
-        8.0, 8.1, 8.2, 8.3, 8.4, 8.5}; 
-    double logKl_M[]={-8.92794, -8.92794,
-		-8.92794, -8.92794, -8.92794, -8.92794, -8.92794, -8.92794, -8.92794, -8.92794, -8.92794, -8.92794,
-		-8.92794, -8.92794, -8.93773, -8.93911, -8.93897, -8.93882, -8.94078, -8.94362, -8.94646, -8.94732,
-		-8.94453, -8.94174, -8.93895, -8.94507, -8.95779, -8.97429, -9.02347, -9.18217, -9.49125, -10.0536,
-		-10.79787, -11.36061, -11.60279, -11.86336, -12.11727, -12.42233, -12.70457, -13.02313, -13.33343, -13.64144,
-		-13.95344, -14.25428, -14.54486, -14.81010, -15.06522, -15.30617, -15.53395, -15.76026, -15.98008, -16.18471,
-		-16.40591, -16.62637, -16.84284, -17.06045, -17.27514, -17.49799, -17.73289, -17.97538, -18.22149, -18.45738,
-		-18.68240, -18.93321, -19.18097, -19.42663, -19.66755, -19.90545};
+        8.0, 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7}; 
+    double logKl_M[]={-8.98948, -8.98948,
+        -8.98948, -8.98948, -8.98948, -8.98948, -8.98948, -8.98948, -8.98948, -8.98948, -8.98948, -8.98948,
+        -8.98948, -8.98948, -9.00559, -9.01466,    -9.02910, -9.03776,    -9.05780, -9.06909, -9.07804, -9.09519,
+        -9.10965, -9.11990, -9.13950, -9.15950, -9.17391, -9.19479, -9.22407, -9.24009, -9.26129, -9.34327,
+        -9.62563, -10.4525, -11.3834, -11.9125, -12.2147, -12.4166, -12.5976, -12.80016, -12.99059, -13.18770,
+        -13.39622, -13.59598, -13.80275, -14.01786, -14.21726, -14.43521, -14.65280, -14.86426, -15.06456, -15.28297,
+        -15.50445, -15.71004, -15.92619, -16.14416, -16.36091, -16.57563, -16.78501, -17.00474, -17.22890, -17.43526,
+        -17.65389, -17.87138, -18.09213, -18.30780, -18.52101, -18.73308, -18.95110, -19.16511};
 
     if (logpc < scalar(1.8))
     {
         i = 0;
         logKl = logKl_M[i] + (((logKl_M[i+1] - logKl_M[i])/(logpc_M[i+1] - logpc_M[i]))*(logpc - logpc_M[i])) ;
     }
-    else if (logpc >= scalar(8.5))
+    else if (logpc >= scalar(8.7))
     {
-        i = 66;
+        i = 68;
         logKl = logKl_M[i] + (((logKl_M[i+1] - logKl_M[i])/(logpc_M[i+1] - logpc_M[i]))*(logpc - logpc_M[i])) ;
     }
     else
     {
-        for (i=0; i<=66; ++i)
+        for (i=0; i<=68; ++i)
         {
             if ( (logpc_M[i] <= logpc) && (logpc < logpc_M[i+1]) )
             {
@@ -133,7 +133,7 @@ void Foam::buildingMaterialModels::SabaBrick::update_Krel_cell(const volScalarFi
 }
 
 //- Correct the buildingMaterial vapor permeability (cell)
-void Foam::buildingMaterialModels::SabaBrick::update_Kv_cell(const volScalarField& pc, const volScalarField& w, const volScalarField& T, volScalarField& K_v, label& celli)
+void Foam::buildingMaterialModels::SabaBrickMod::update_Kv_cell(const volScalarField& pc, const volScalarField& w, const volScalarField& T, volScalarField& K_v, label& celli)
 {
     scalar rho_l = 1.0e3; 
     scalar R_v = 8.31451*1000/(18.01534); 
@@ -148,7 +148,7 @@ void Foam::buildingMaterialModels::SabaBrick::update_Kv_cell(const volScalarFiel
 }
 
 //- Correct the buildingMaterial K_pt (cell)
-void Foam::buildingMaterialModels::SabaBrick::update_Kpt_cell(const volScalarField& pc, const volScalarField& w, const volScalarField& T, volScalarField& K_pt, label& celli)
+void Foam::buildingMaterialModels::SabaBrickMod::update_Kpt_cell(const volScalarField& pc, const volScalarField& w, const volScalarField& T, volScalarField& K_pt, label& celli)
 {
     scalar rho_l = 1.0e3; 
     scalar R_v = 8.31451*1000/(18.01534); 
