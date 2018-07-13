@@ -4,4 +4,5 @@ cd ${0%/*} || exit 1    # run from this directory
 set -x
 
 wmake solarRayTracingGen
-wmake viewFactorsGenSky
+wmake solarRayTracingGenCyclic
+wmake viewFactorsGenCyclic

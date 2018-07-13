@@ -3,10 +3,6 @@ cd ${0%/*} || exit 1    # run from this directory
 
 set -x
 
-wclean calculateUTCI
 wclean solarRayTracingGen
 wclean solarRayTracingGenCyclic
-wclean viewFactorsGenSky
-wclean viewFactorsGenUpdated
-wclean viewFactorsGenUpdatedCyclic
-wclean viewFactorsGenUpdatedCyclicSky
+wclean viewFactorsGenCyclic

@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
+   \\    /   O peration     | Website:  https://openfoam.org
     \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
@@ -34,10 +34,6 @@ Description
     The patches involved in the view factor calculation are taken from the qr
     volScalarField (radiative flux) when is greyDiffusiveRadiationViewFactor
     otherwise they are not included.
-    
-    - Based on viewFactorsGen but considers sky view factor as 1-(other surfaces)
-    - sky boundary name is hardcoded as "top"
-    ayk
 
 \*---------------------------------------------------------------------------*/
 
@@ -194,13 +190,38 @@ scalar calculateViewFactorFij
     const vector& i,
     const vector& j,
     const vector& dAi,
-    const vector& dAj
+    const vector& dAj,
+    label& isPeriodic_,
+    point& min__,
+    point& max__
 )
 {
-    vector r = i - j;
+    vector i_ = i;
+    vector j_ = j;
+
+    if (isPeriodic_ != -1)
+    {
+        if (isPeriodic_ == 0)
+        {
+            if (i_.x() < j_.x()){ i_.x() += max__.x() - min__.x(); }
+            else if (i_.x() > j_.x()){ j_.x() += max__.x() - min__.x(); }
+        }
+        else if (isPeriodic_ == 1)
+        {
+            if (i_.y() < j_.y()){ i_.y() += max__.y() - min__.y(); }
+            else if (i_.y() > j_.y()){ j_.y() += max__.y() - min__.y(); }
+        }  
+        else if (isPeriodic_ == 2)
+        {
+            if (i_.z() < j_.z()){ i_.z() += max__.z() - min__.z(); }
+            else if (i_.z() > j_.z()){ j_.z() += max__.z() - min__.z(); }
+        }              
+    }
+
+    vector r = i_ - j_;
     scalar rMag = mag(r);
 
-    if (rMag > SMALL)
+    if (rMag > small)
     {
         scalar dAiMag = mag(dAi);
         scalar dAjMag = mag(dAj);
@@ -438,7 +459,7 @@ int main(int argc, char *argv[])
             ) = upp.localPoints();
 
             point cfo = cf;
-            scalar dist = GREAT;
+            scalar dist = great;
             forAll(availablePoints, iPoint)
             {
                 point cfFine = availablePoints[iPoint];
@@ -489,6 +510,26 @@ int main(int argc, char *argv[])
 
     DynamicList<label> rayEndFace(rayStartFace.size());
 
+    DynamicList<label> isPeriodic(rayStartFace.size());
+
+    // Find the bounding box of the domain
+    // ######################################
+    List<point> minList(Pstream::nProcs());
+    List<point> maxList(Pstream::nProcs());
+    minList[Pstream::myProcNo()] = Foam::min(mesh.points());
+    maxList[Pstream::myProcNo()] = Foam::max(mesh.points());
+    Pstream::gatherList(minList);
+    Pstream::gatherList(maxList);
+    Pstream::scatterList(minList);
+    Pstream::scatterList(maxList);
+
+    point min_(point::zero);
+    point max_(point::zero);
+    for (label i = 0; i < minList.size(); i++)
+    {
+        min_ = ::Foam::min(min_, minList[i]);
+        max_ = ::Foam::max(max_, maxList[i]);
+    } 
 
     // Return rayStartFace in local index andrayEndFace in global index
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -504,12 +545,15 @@ int main(int argc, char *argv[])
     }
 
     labelListList visibleFaceFaces(nCoarseFaces);
+    labelListList isPeriodicMatrix(nCoarseFaces);
 
     label nViewFactors = 0;
     forAll(nVisibleFaceFaces, facei)
     {
         visibleFaceFaces[facei].setSize(nVisibleFaceFaces[facei]);
         nViewFactors += nVisibleFaceFaces[facei];
+
+        isPeriodicMatrix[facei].setSize(nVisibleFaceFaces[facei]);
     }
 
 
@@ -580,9 +624,11 @@ int main(int argc, char *argv[])
     {
         label facei = rayStartFace[i];
         label compactI = rayEndFace[i];
+        isPeriodicMatrix[facei][nVisibleFaceFaces[facei]] = isPeriodic[i];
         visibleFaceFaces[facei][nVisibleFaceFaces[facei]++] = compactI;
     }
-
+    //Info << "visibleFaceFaces: " << visibleFaceFaces << endl;
+    //Info << "isPeriodicMatrix: " << isPeriodicMatrix << endl;
 
     // Construct data in compact addressing
     // I need coarse Sf (Ai), fine Sf (dAi) and fine Cf(r) to calculate Fij
@@ -684,12 +730,6 @@ int main(int argc, char *argv[])
     );
 
     scalarList patchArea(totalPatches, 0.0);
-    
-    scalarList rowSumViewFactorPatch //ayk
-    (
-        totalPatches,
-        0.0
-    );     
 
     if (Pstream::master())
     {
@@ -733,7 +773,10 @@ int main(int argc, char *argv[])
                             dCi,
                             dCj,
                             dAi,
-                            dAj
+                            dAj,
+                            isPeriodicMatrix[coarseFacei][visCoarseFacei],
+                            min_,
+                            max_
                         );
 
                         Fij += dIntFij;
@@ -741,7 +784,6 @@ int main(int argc, char *argv[])
                 }
                 F[coarseFacei][visCoarseFacei] = Fij/mag(Ai);
                 sumViewFactorPatch[fromPatchId][toPatchId] += Fij;
-                rowSumViewFactorPatch[fromPatchId] += Fij; //ayk
             }
         }
     }
@@ -794,53 +836,9 @@ int main(int argc, char *argv[])
 
                 F[coarseFacei][visCoarseFacei] = Fij;
                 sumViewFactorPatch[fromPatchId][toPatchId] += Fij*mag(Ai);
-                rowSumViewFactorPatch[fromPatchId] += Fij*mag(Ai); //ayk
             }
         }
     }
-    
-    reduce(sumViewFactorPatch, sumOp<scalarSquareMatrix>());
-    reduce(patchArea, sumOp<scalarList>()); 
-    reduce(rowSumViewFactorPatch, sumOp<scalarList>()); //ayk    
-
-    // ayk modified from viewFactorsGenUpdated /////////////////////////
-    label TOP_PATCH_ID = mesh.boundaryMesh().findPatchID("top");
-    // sum of all rows in F matrix
-    
-    if (Pstream::master() && debug)
-    {
-        forAll(viewFactorsPatches, i)
-        {
-            label patchI =  viewFactorsPatches[i];
-                       
-            Info << "from patchI " << patchI << ": "
-                 << rowSumViewFactorPatch[patchI]/patchArea[patchI]
-                 << " with area: "
-                 << patchArea[patchI]
-                 << endl;
-        }
-    }
-
-    forAll(localCoarseSf, coarseFaceI)
-    {
-        const label fromPatchId = compactPatchId[coarseFaceI];
-
-        const labelList& visCoarseFaces = visibleFaceFaces[coarseFaceI];
-        forAll (visCoarseFaces, visCoarseFaceI)
-        {
-            label compactJ = visCoarseFaces[visCoarseFaceI];            
-            const label toPatchId = compactPatchId[compactJ];
-
-            if ((fromPatchId != TOP_PATCH_ID) && (toPatchId == TOP_PATCH_ID))
-            {
-                //Info << "from: " << fromPatchId << ", to: " << toPatchId << ", rowSumViewFactorPatch: " << rowSumViewFactorPatch[fromPatchId] << ", sumViewFactorPatch: " << sumViewFactorPatch[fromPatchId][TOP_PATCH_ID]/patchArea[fromPatchId] << endl;
-                scalar A = rowSumViewFactorPatch[fromPatchId]/patchArea[fromPatchId]; // sum of F (from this patch to all)
-                scalar B = sumViewFactorPatch[fromPatchId][TOP_PATCH_ID]/patchArea[fromPatchId]; // sum of F (from this patch to top)
-                F[coarseFaceI][visCoarseFaceI] *= (1-A+B)/(B);
-            }
-        }
-    }
-    ////////////////////////////////////////////////////////////////////        
 
     if (Pstream::master())
     {
@@ -849,6 +847,10 @@ int main(int argc, char *argv[])
 
     // Write view factors matrix in listlist form
     F.write();
+
+    reduce(sumViewFactorPatch, sumOp<scalarSquareMatrix>());
+    reduce(patchArea, sumOp<scalarList>());
+
 
     if (Pstream::master() && debug)
     {
