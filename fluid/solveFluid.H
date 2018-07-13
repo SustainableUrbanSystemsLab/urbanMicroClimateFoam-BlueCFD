@@ -1,13 +1,14 @@
-simpleControl simpleControl(fluidRegions[i]);
+simpleControlFluid simpleControlFluid(fluidRegions[i]);
 
 const scalar storeFluidDeltaT = runTime.deltaT().value();
 const scalar storeFluidTimeStep = runTime.value();
 const label storeFluidTimeIndex = runTime.timeIndex();
+const dimensionedScalar storeFluidEndTime = runTime.endTime();
 runTime.setTime(0,0);
-runTime.setDeltaT(1); 
+runTime.setDeltaT(1);
 
 label fluidIteration = 1;
-while ((simpleControl.loop(runTime) || fluidIteration <= minFluidIteration) && fluidIteration <= maxFluidIteration)
+while ((simpleControlFluid.loop(runTime) || fluidIteration <= minFluidIteration) && fluidIteration <= maxFluidIteration)
 {
 //  Pressure-velocity SIMPLE corrector
     Info << "Internal iteration number: " << fluidIteration << endl;
@@ -34,3 +35,4 @@ sol.correct();
 
 runTime.setDeltaT(storeFluidDeltaT);
 runTime.setTime(storeFluidTimeStep,storeFluidTimeIndex);
+runTime.setEndTime(storeFluidEndTime);

@@ -6,3 +6,4 @@ set -x
 
 wclean buildingMaterialModel
 wclean solarLoadModel
+wclean simpleControlFluid

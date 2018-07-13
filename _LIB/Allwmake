@@ -6,3 +6,4 @@ set -x
 
 wmake $makeType buildingMaterialModel
 wmake $makeType solarLoadModel
+wmake $makeType simpleControlFluid

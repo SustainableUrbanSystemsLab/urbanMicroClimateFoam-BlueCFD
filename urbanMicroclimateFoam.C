@@ -39,7 +39,7 @@ Description
 #include "solidThermo.H"
 #include "radiationModel.H"
 #include "solarLoadModel.H"
-#include "simpleControl.H"
+#include "simpleControlFluid.H"
 #include "fvOptions.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 
     while (runTime.loop())
     {
-        Info<< "Time = " << runTime.timeName() << nl << endl;
+        Info<< nl << "Time = " << runTime.timeName() << endl;
 
         forAll(fluidRegions, i)
         {
