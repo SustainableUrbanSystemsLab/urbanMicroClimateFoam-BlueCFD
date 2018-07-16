@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
        IOobject
        (
             "sunPosVector",
-            runTime.constant(),
+            runTime.caseConstant(),
             mesh,
             IOobject::MUST_READ,
             IOobject::NO_WRITE
@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
        IOobject
        (
             "IDN",
-            runTime.constant(),
+            runTime.caseConstant(),
             mesh,
             IOobject::MUST_READ,
             IOobject::NO_WRITE
@@ -212,7 +212,7 @@ int main(int argc, char *argv[])
        IOobject
        (
             "Idif",
-            runTime.constant(),
+            runTime.caseConstant(),
             mesh,
             IOobject::MUST_READ,
             IOobject::NO_WRITE
