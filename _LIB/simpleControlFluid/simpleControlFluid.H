@@ -96,14 +96,9 @@ public:
             //- Time run loop
             bool run(Time& time);
 
-            //- Time loop loop
-            bool loop(Time& time);
-
             //- Flag to indicate whether convergance has been reached
             bool converged();
 
-            //- End the run if convergance has been reached
-            bool endIfConverged(Time& time);
 };
 
 

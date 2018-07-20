@@ -1,14 +1,10 @@
 simpleControlFluid simpleControlFluid(fluidRegions[i]);
 
-const scalar storeFluidDeltaT = runTime.deltaT().value();
-const scalar storeFluidTimeStep = runTime.value();
-const label storeFluidTimeIndex = runTime.timeIndex();
-const dimensionedScalar storeFluidEndTime = runTime.endTime();
-runTime.setTime(0,0);
-runTime.setDeltaT(1);
+TimeState pts(runTime); //store time state
 
 label fluidIteration = 1;
-while ((simpleControlFluid.loop(runTime) || fluidIteration <= minFluidIteration) && fluidIteration <= maxFluidIteration)
+
+while ((simpleControlFluid.run(runTime) || fluidIteration <= minFluidIteration) && fluidIteration <= maxFluidIteration)
 {
 //  Pressure-velocity SIMPLE corrector
     Info << "Internal iteration number: " << fluidIteration << endl;
@@ -28,11 +24,13 @@ while ((simpleControlFluid.loop(runTime) || fluidIteration <= minFluidIteration)
     fluidIteration++;
 }
 
+Info<< nl << fluidRegions[i].name() << " region solution converged in "
+    << fluidIteration-1 << " iterations" << nl << endl;
+
 Info << "Updating long-wave radiation heat transfer for region: " << fluidRegions[i].name() << endl;
 rad.correct();
 Info << "Updating short-wave radiation heat transfer for region: " << fluidRegions[i].name() << endl;
 sol.correct();
 
-runTime.setDeltaT(storeFluidDeltaT);
-runTime.setTime(storeFluidTimeStep,storeFluidTimeIndex);
-runTime.setEndTime(storeFluidEndTime);
+runTime.TimeState::operator=(pts); //restore time state
+

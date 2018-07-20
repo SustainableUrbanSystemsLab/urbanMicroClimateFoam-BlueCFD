@@ -66,25 +66,17 @@ bool Foam::simpleControlFluid::run(Time& time)
 {
     read();
 
-    if (!endIfConverged(time))
+    if (converged())
+    {
+        return false;
+    }
+    else
     {
         storePrevIterFields();
+        time.setDeltaT(0);
+        time++; //necessary for iter().stream() to get the correct iteration for convergence control - ayk
+        return true;
     }
-
-    return time.run();
-}
-
-
-bool Foam::simpleControlFluid::loop(Time& time)
-{
-    read();
-
-    if (!endIfConverged(time))
-    {
-        storePrevIterFields();
-    }
-
-    return time.loop();
 }
 
 bool Foam::simpleControlFluid::converged()
@@ -95,38 +87,12 @@ bool Foam::simpleControlFluid::converged()
      && criteriaSatisfied()
     )
     {
-        Info<< nl << control_.algorithmName() << " solution converged in "
-            << control_.time().timeName() << " iterations" << nl << endl;
-
+//        Info<< nl << control_.algorithmName() << " solution converged in "
+//            << control_.time().timeName() << " iterations" << nl << endl;
         return true;
     }
 
     return false;
-}
-
-
-bool Foam::simpleControlFluid::endIfConverged(Time& time)
-{
-    if (converged())
-    {
-        /*if (time.writeTime())
-        {
-            time.stopAt(Time::saNoWriteNow);
-            time.setEndTime(time);
-        }
-        else
-        {
-            time.writeAndEnd();
-        }*/
-        time.stopAt(Time::saEndTime);
-        time.setEndTime(time);
-
-        return true;
-    }
-    else
-    {
-        return false;
-    }
 }
 
 // ************************************************************************* //
