@@ -41,7 +41,8 @@ Foam::simpleControlFluid::simpleControlFluid(fvMesh& mesh, const word& algorithm
     singleRegionConvergenceControl
     (
         static_cast<singleRegionSolutionControl&>(*this)
-    )
+    ),
+    initialised_(false)
 {
     read();
     printResidualControls();
@@ -66,33 +67,28 @@ bool Foam::simpleControlFluid::run(Time& time)
 {
     read();
 
-    if (converged())
+    if (initialised_)
     {
-        return false;
+        if (criteriaSatisfied())
+        {
+            return false;
+        }
+        else
+        {
+            storePrevIterFields();
+            time.setDeltaT(1); //this is related to the calculation of timestep continuity error
+            time.setTime(time.value(),time.timeIndex()+1); //necessary for iter().stream() to get the correct iteration for convergence control
+            //time value must stay the same, otherwise wrong ambient value is read
+            return true;
+        }
     }
     else
     {
+        initialised_ = true;
         storePrevIterFields();
-        time.setDeltaT(0);
-        time++; //necessary for iter().stream() to get the correct iteration for convergence control - ayk
-        return true;
-    }
-}
-
-bool Foam::simpleControlFluid::converged()
-{
-    if
-    (
-        control_.time().timeIndex() != control_.time().startTimeIndex()
-     && criteriaSatisfied()
-    )
-    {
-//        Info<< nl << control_.algorithmName() << " solution converged in "
-//            << control_.time().timeName() << " iterations" << nl << endl;
-        return true;
     }
 
-    return false;
+    return true;
 }
 
 // ************************************************************************* //

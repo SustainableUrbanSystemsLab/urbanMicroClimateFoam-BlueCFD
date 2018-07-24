@@ -66,6 +66,14 @@ class simpleControlFluid
     public fluidSolutionControl,
     public singleRegionConvergenceControl
 {
+
+protected:
+
+    // Protected Data
+
+        //- Initialised flag
+        bool initialised_;
+
 public:
 
     // Static data members
@@ -95,9 +103,6 @@ public:
 
             //- Time run loop
             bool run(Time& time);
-
-            //- Flag to indicate whether convergance has been reached
-            bool converged();
 
 };
 

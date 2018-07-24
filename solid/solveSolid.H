@@ -1,17 +1,14 @@
 {
-    const scalar storeFluidDeltaT = runTime.deltaT().value();
-    const scalar storeFluidTimeStep = runTime.value();
-    const label storeFluidTimeIndex = runTime.timeIndex();
+    TimeState pts(runTime); //store time state
 
-    instantList Times = runTime.times(); 
-    runTime.setTime(Times.last(),Times.size()-1);
-    runTime.setDeltaT(storeFluidDeltaT * initialSolidTimestepFactor); //this always resets to the small timestep for solid, could it be better?
+    runTime.setTime(pts.timeOutputValue()-pts.deltaTValue(),pts.timeIndex()-1);
+    runTime.setDeltaT(pts.deltaTValue() * initialSolidTimestepFactor);
 
     scalar solidInternalTime = 0;
-    scalar timeToOutput = storeFluidDeltaT;
+    scalar timeToOutput = pts.deltaTValue();
     bool timeStepDecrease = false;
 
-    while ( solidInternalTime < storeFluidDeltaT )
+    while ( solidInternalTime < pts.deltaTValue() )
     {         
         Info << nl << "Time = " << runTime.timeName() << ", deltaT = " << runTime.deltaT().value() << endl;  
         Info << "solidInternalTime: " << solidInternalTime << endl;
@@ -107,7 +104,7 @@
             #include "solidContinuityErrs.H"
 
             solidInternalTime += runTime.deltaT().value();
-            timeToOutput = storeFluidDeltaT - solidInternalTime;
+            timeToOutput = pts.deltaTValue() - solidInternalTime;
             if (timeToOutput >= 0.0)
             {
                 runTime.setTime(runTime.value()+runTime.deltaT().value(),runTime.timeIndex()+1);
@@ -131,8 +128,7 @@
         Info << "timeToOutput: " << timeToOutput << endl;
     }
 
-    runTime.setDeltaT(storeFluidDeltaT);
-    runTime.setTime(storeFluidTimeStep,storeFluidTimeIndex);
+    runTime.TimeState::operator=(pts); //restore time state
 }
 
 
