@@ -45,7 +45,7 @@ Foam::solarLoad::solarLoadModel::New
     );
 
     word modelType("none");
-    if (solIO.headerOk())
+    if (solIO.typeHeaderOk<IOdictionary>(false))
     {
         IOdictionary(solIO).lookup("solarLoadModel") >> modelType;
     }
@@ -62,10 +62,8 @@ Foam::solarLoad::solarLoadModel::New
 
     if (cstrIter == TConstructorTablePtr_->end())
     {
-        FatalErrorIn
-        (
-            "solarLoadModel::New(const volScalarField&)"
-        )   << "Unknown solarLoadModel type "
+        FatalErrorInFunction
+            << "Unknown solarLoadModel type "
             << modelType << nl << nl
             << "Valid solarLoadModel types are:" << nl
             << TConstructorTablePtr_->sortedToc()
@@ -92,10 +90,8 @@ Foam::solarLoad::solarLoadModel::New
 
     if (cstrIter == dictionaryConstructorTablePtr_->end())
     {
-        FatalErrorIn
-        (
-            "solarLoadModel::New(const dictionary&, const volScalarField&)"
-        )   << "Unknown solarLoadModel type "
+        FatalErrorInFunction
+            << "Unknown solarLoadModel type "
             << modelType << nl << nl
             << "Valid solarLoadModel types are:" << nl
             << dictionaryConstructorTablePtr_->sortedToc()

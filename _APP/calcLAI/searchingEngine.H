@@ -7,14 +7,14 @@ label nCoarseFacesAll = 0;   //Also includes non-wall faces with greyDiffusive b
 label nFineFacesTotal = 0;        //total number of fine faces including non-fixedValueFvPatchScalarField patches following advise from bug report
 
 //const volScalarField::GeometricBoundaryField& LADb = LAD.boundaryField();
-const volScalarField::GeometricBoundaryField& Qrb = Qr.boundaryField();
+const volScalarField::Boundary& qrb = qr.boundaryField();
 
 
 //forAll(LADb, patchI)
-forAll(Qrb, patchI)
+forAll(qrb, patchI)
 {
     const polyPatch& pp = patches[patchI];
-    const fvPatchScalarField& QrpI = Qrb[patchI];
+    const fvPatchScalarField& qrpI = qrb[patchI];
 
     if ((isA<wallFvPatch>(mesh.boundary()[patchI])) && (pp.size() > 0))
     {
@@ -23,7 +23,7 @@ forAll(Qrb, patchI)
       nFineFacesTotal += patches[patchI].size();
     }
     //else if (!pp.coupled() && !isA<cyclicAMIPolyPatch>(pp))
-    else if ((isA<fixedValueFvPatchScalarField>(QrpI)) && (pp.size() > 0))
+    else if ((isA<fixedValueFvPatchScalarField>(qrpI)) && (pp.size() > 0))
     {
         nCoarseFacesAll += coarsePatches[patchI].size();
         nFineFacesTotal += patches[patchI].size();
@@ -34,7 +34,6 @@ forAll(Qrb, patchI)
     }
 
 }
-
 
 globalIndex globalNumbering(nCoarseFaces);
 
@@ -47,7 +46,7 @@ List<treeBoundBox> meshBb
     treeBoundBox
     (
         boundBox(mesh.points(), false)
-    ).extend(rndGen, 1e-3)
+    ).extend(1e-3)
 );
 
 // Dummy bounds dictionary
@@ -64,12 +63,17 @@ dict.add
 dict.add("mergeDistance", SMALL);
 
 labelHashSet includePatches;
-forAll(patches, patchI)
+forAll(patches, patchi)
 {
-    const polyPatch& pp = patches[patchI];
-    if (!pp.coupled() && !isA<cyclicAMIPolyPatch>(pp))
+    const polyPatch& pp = patches[patchi];
+    if 
+    (
+        !pp.coupled() 
+     && !isA<cyclicAMIPolyPatch>(pp)
+     && !isA<emptyPolyPatch>(pp)
+    )
     {
-        includePatches.insert(patchI);
+        includePatches.insert(patchi);
     }
 }
 

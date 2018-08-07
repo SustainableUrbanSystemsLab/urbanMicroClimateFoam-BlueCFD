@@ -32,7 +32,7 @@ Description
 
 #include "fvCFD.H"
 #include "rhoThermo.H"
-#include "turbulenceModel.H"
+#include "turbulentFluidThermoModel.H"
 #include "fixedGradientFvPatchFields.H"
 #include "regionProperties.H"
 #include "buildingMaterialModel.H"
@@ -40,8 +40,7 @@ Description
 #include "radiationModel.H"
 #include "solarLoadModel.H"
 #include "simpleControlFluid.H"
-#include "fvIOoptionList.H"
-#include "fixedFluxPressureFvPatchScalarField.H"
+#include "fvOptions.H"
 
 #include "simplifiedVegetationModel.H"  // vegetation model by Lento added    
 
@@ -68,8 +67,8 @@ int main(int argc, char *argv[])
     #include "readSolidControls.H"
 
     while (runTime.loop())
-    {      
-        Info<< "Time = " << runTime.timeName() << nl << endl;
+    {
+        Info<< nl << "Time = " << runTime.timeName() << endl;
 
         forAll(fluidRegions, i)
         {

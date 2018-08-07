@@ -7,7 +7,7 @@ List<treeBoundBox> meshBb
     treeBoundBox
     (
         boundBox(coarseMesh.points(), false)
-    ).extend(rndGen, 1e-3)
+    ).extend(1e-3)
 );
 
 // Dummy bounds dictionary
@@ -24,12 +24,17 @@ dict.add
 dict.add("mergeDistance", SMALL);
 
 labelHashSet includePatches;
-forAll(patches, patchI)
+forAll(patches, patchi)
 {
-    const polyPatch& pp = patches[patchI];
-    if (!pp.coupled() && !isA<cyclicAMIPolyPatch>(pp))
+    const polyPatch& pp = patches[patchi];
+    if 
+    (
+        !pp.coupled() 
+     && !isA<cyclicAMIPolyPatch>(pp)
+     && !isA<emptyPolyPatch>(pp)
+    )
     {
-        includePatches.insert(patchI);
+        includePatches.insert(patchi);
     }
 }
 

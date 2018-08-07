@@ -81,8 +81,8 @@ void Foam::buildingMaterialModels::Savonnieres::update_w_C_cell(const volScalarF
         tmp2 = pow( (1 + tmp) , retm[i] );
         C_tmp = C_tmp - retw[i]/tmp2 * retm[i]*retn[i]*tmp/((1 + tmp)*pc.internalField()[celli]); 
     } 
-    w.internalField()[celli] = w_tmp*133;   
-    Crel.internalField()[celli] = mag( C_tmp*133);   
+    w.ref()[celli] = w_tmp*133;   
+    Crel.ref()[celli] = mag( C_tmp*133);   
 }
 
 //- Correct the buildingMaterial liquid permeability (cell)
@@ -127,7 +127,7 @@ void Foam::buildingMaterialModels::Savonnieres::update_Krel_cell(const volScalar
             }
         }
     }
-    Krel.internalField()[celli] = pow(10,logKl);
+    Krel.ref()[celli] = pow(10,logKl);
 }
 
 //- Correct the buildingMaterial vapor permeability (cell)
@@ -142,7 +142,7 @@ void Foam::buildingMaterialModels::Savonnieres::update_Kv_cell(const volScalarFi
     scalar tmp = 1 - (w.internalField()[celli]/133); 
     scalar delta = 2.61e-5 * tmp/(R_v*T.internalField()[celli]*90.7*(0.503*tmp*tmp + 0.497)); // Water vapour diffusion coefficient [s]
     
-    K_v.internalField()[celli] = (delta*p_vsat*relhum)/(rho_l*R_v*T.internalField()[celli]);
+    K_v.ref()[celli] = (delta*p_vsat*relhum)/(rho_l*R_v*T.internalField()[celli]);
 }
 
 //- Correct the buildingMaterial K_pt (cell)
@@ -160,7 +160,7 @@ void Foam::buildingMaterialModels::Savonnieres::update_Kpt_cell(const volScalarF
     scalar tmp = 1 - (w.internalField()[celli]/133); 
     scalar delta = 2.61e-5 * tmp/(R_v*T.internalField()[celli]*90.7*(0.503*tmp*tmp + 0.497)); // Water vapour diffusion coefficient [s]
 
-    K_pt.internalField()[celli] = ( (delta*p_vsat*relhum)/(rho_l*R_v*pow(T.internalField()[celli],2)) ) * (rho_l*L_v - pc.internalField()[celli]);
+    K_pt.ref()[celli] = ( (delta*p_vsat*relhum)/(rho_l*R_v*pow(T.internalField()[celli],2)) ) * (rho_l*L_v - pc.internalField()[celli]);
 }
 
 //*********************************************************** //

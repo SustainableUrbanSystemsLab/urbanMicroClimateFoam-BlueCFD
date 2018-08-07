@@ -3,12 +3,8 @@ cd ${0%/*} || exit 1    # run from this directory
 
 set -x
 
-wmake calculateUTCI
 wmake solarRayTracingGen
 wmake solarRayTracingGenCyclic
-wmake viewFactorsGenSky
-wmake viewFactorsGenUpdated
-wmake viewFactorsGenUpdatedCyclic
-wmake viewFactorsGenUpdatedCyclicSky
+wmake viewFactorsGenCyclic
 wmake calcLAI
 wmake solarRayTracingVegGen

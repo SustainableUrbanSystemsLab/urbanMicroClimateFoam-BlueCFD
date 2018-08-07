@@ -50,17 +50,17 @@ namespace Foam
 void Foam::solarLoad::directAndDiffuse::initialise()
 {
     const polyBoundaryMesh& coarsePatches = coarseMesh_.boundaryMesh();
-    const volScalarField::GeometricBoundaryField& Qsp = Qs_.boundaryField();
+    const volScalarField::Boundary& qsp = qs_.boundaryField();
 
     label count = 0;
-    forAll(Qsp, patchI)
+    forAll(qsp, patchI)
     {
         //const polyPatch& pp = mesh_.boundaryMesh()[patchI];
-        const fvPatchScalarField& QsPatchI = Qsp[patchI];
+        const fvPatchScalarField& qsPatchI = qsp[patchI];
 
-        if ((isA<fixedValueFvPatchScalarField>(QsPatchI)))
+        if ((isA<fixedValueFvPatchScalarField>(qsPatchI)))
         {
-            selectedPatches_[count] = QsPatchI.patch().index();
+            selectedPatches_[count] = qsPatchI.patch().index();
             nLocalCoarseFaces_ += coarsePatches[patchI].size();
             
             if ((isA<wallFvPatch>(mesh_.boundary()[patchI])))
@@ -241,7 +241,7 @@ void Foam::solarLoad::directAndDiffuse::initialise()
     {
         Fmatrix_.reset
         (
-            new scalarSquareMatrix(totalNCoarseFaces_, totalNCoarseFaces_, 0.0)
+            new scalarSquareMatrix(totalNCoarseFaces_, 0.0)
         );    
         
         skyViewCoeffMatrix_.reset
@@ -304,12 +304,12 @@ void Foam::solarLoad::directAndDiffuse::initialise()
                 scalar sumF = 0.0;
                 for (label j=0; j<totalNCoarseFaces_; j++)
                 {
-                    sumF += Fmatrix_()[i][j];
+                    sumF += Fmatrix_()(i, j);
                 }
                 scalar delta = sumF - 1.0;
                 for (label j=0; j<totalNCoarseFaces_; j++)
                 {
-                    Fmatrix_()[i][j] *= (1.0 - delta/sumF);
+                    Fmatrix_()(i, j) *= (1.0 - delta/sumF);
                 }
             }
         }
@@ -322,12 +322,11 @@ void Foam::solarLoad::directAndDiffuse::initialise()
                 new scalarSquareMatrix
                 (
                     totalNCoarseFaces_,
-                    totalNCoarseFaces_,
                     0.0
                 )
             );
 
-            pivotIndices_.setSize(CLU_().n());
+            pivotIndices_.setSize(CLU_().m());
         }
     
         timestepsInADay_ = readLabel(coeffs_.lookup("timestepsInADay"));
@@ -366,11 +365,11 @@ Foam::solarLoad::directAndDiffuse::directAndDiffuse(const volScalarField& T)
         mesh_,
         finalAgglom_
     ),
-    Qs_
+    qs_
     (
         IOobject
         (
-            "Qs",
+            "qs",
             mesh_.time().timeName(),
             mesh_,
             IOobject::MUST_READ,
@@ -429,7 +428,7 @@ Foam::solarLoad::directAndDiffuse::directAndDiffuse
         mesh_,
         finalAgglom_
     ),
-    Qs_
+    qs_
     (
         IOobject
         (
@@ -535,7 +534,7 @@ void Foam::solarLoad::directAndDiffuse::insertRectangularMatrixElements
 void Foam::solarLoad::directAndDiffuse::calculate()
 {
     // Store previous iteration
-    Qs_.storePrevIter();
+    qs_.storePrevIter();
 
     scalarField compactCoarseA(map_->constructSize(), 0.0);
     scalarField compactCoarseHo(map_->constructSize(), 0.0);
@@ -546,23 +545,25 @@ void Foam::solarLoad::directAndDiffuse::calculate()
     DynamicList<scalar> localCoarseAave(nLocalCoarseFaces_);
     DynamicList<scalar> localCoarseHoave(nLocalCoarseFaces_);
 
+    volScalarField::Boundary& qsBf = qs_.boundaryFieldRef();
+
     forAll(selectedPatches_, i)
     {
         label patchID = selectedPatches_[i];
 
         const scalarField& sf = mesh_.magSf().boundaryField()[patchID];
 
-        fvPatchScalarField& QsPatch = Qs_.boundaryField()[patchID];
+        fvPatchScalarField& qsPatch = qsBf[patchID];
 
-        solarLoadViewFactorFixedValueFvPatchScalarField& Qsp =
+        solarLoadViewFactorFixedValueFvPatchScalarField& qsp =
             refCast
             <
                 solarLoadViewFactorFixedValueFvPatchScalarField
-            >(QsPatch);
+            >(qsPatch);
 
-        const scalarList ab = Qsp.albedo();
+        const scalarList ab = qsp.albedo();
 
-        const scalarList& Hoi = Qsp.Qso();
+        const scalarList& Hoi = qsp.qso();
 
         const polyPatch& pp = coarseMesh_.boundaryMesh()[patchID]; 
         const labelList& coarsePatchFace = coarseMesh_.patchFaceMap()[patchID]; 
@@ -586,7 +587,7 @@ void Foam::solarLoad::directAndDiffuse::calculate()
                     sf,
                     fineFaces
                 );
-                scalar area = sum(fineSf());
+                const scalar area = sum(fineSf());
                 // albedo and external flux area weighting
                 forAll(fineFaces, j)
                 {
@@ -603,9 +604,8 @@ void Foam::solarLoad::directAndDiffuse::calculate()
     }
 
     // Fill the local values to distribute
-    SubList<scalar>(compactCoarseA,nLocalCoarseFaces_).assign(localCoarseAave);
-    SubList<scalar>
-        (compactCoarseHo,nLocalCoarseFaces_).assign(localCoarseHoave);
+    SubList<scalar>(compactCoarseA,nLocalCoarseFaces_) = localCoarseAave;
+    SubList<scalar>(compactCoarseHo,nLocalCoarseFaces_) = localCoarseHoave;
 
     // Distribute data
     map_->distribute(compactCoarseA);
@@ -625,26 +625,26 @@ void Foam::solarLoad::directAndDiffuse::calculate()
     (
         compactGlobalIds,
         nLocalCoarseFaces_
-    ).assign(localGlobalIds);
+    ) = localGlobalIds;
 
     map_->distribute(compactGlobalIds);
 
     // Create global size vectors
     scalarField A(totalNCoarseFaces_, 0.0);
-    scalarField QsExt(totalNCoarseFaces_, 0.0);
+    scalarField qsExt(totalNCoarseFaces_, 0.0);
 
     // Fill lists from compact to global indexes.
     forAll(compactCoarseA, i)
     {
         A[compactGlobalIds[i]] = compactCoarseA[i];
-        QsExt[compactGlobalIds[i]] = compactCoarseHo[i];
+        qsExt[compactGlobalIds[i]] = compactCoarseHo[i];
     }
 
     Pstream::listCombineGather(A, maxEqOp<scalar>());
-    Pstream::listCombineGather(QsExt, maxEqOp<scalar>());
+    Pstream::listCombineGather(qsExt, maxEqOp<scalar>());
 
     Pstream::listCombineScatter(A);
-    Pstream::listCombineScatter(QsExt);
+    Pstream::listCombineScatter(qsExt);
 
     // Net solarLoad
     scalarField q(totalNCoarseFaces_, 0.0);
@@ -660,7 +660,7 @@ void Foam::solarLoad::directAndDiffuse::calculate()
         // Variable Albedo
         if (!constAlbedo_) //this is not tested - aytac
         {
-            scalarSquareMatrix C(totalNCoarseFaces_, totalNCoarseFaces_, 0.0);
+            scalarSquareMatrix C(totalNCoarseFaces_, 0.0);
 
             for (label i=0; i<totalNCoarseFaces_; i++)
             {
@@ -670,13 +670,13 @@ void Foam::solarLoad::directAndDiffuse::calculate()
                     scalar Isol = (skyViewCoeffMatrix_()[timestep][j] + sunViewCoeffMatrix_()[timestep][j]);
                     if (i==j)
                     {
-                        C[i][j] = (1/(1-A[j]))-(A[j]/(1-A[j]))*Fmatrix_()[i][j];
-                        q[i] += (- 1.0)*(-Isol) - QsExt[j];
+                        C(i, j) = (1/(1-A[j]))-(A[j]/(1-A[j]))*Fmatrix_()(i, j);
+                        q[i] += (- 1.0)*(-Isol) - qsExt[j];
                     }
                     else
                     {
-                        C[i][j] = -(A[j]/(1-A[j]))*Fmatrix_()[i][j];
-                        q[i] += 0 - QsExt[j];
+                        C(i, j) = -(A[j]/(1-A[j]))*Fmatrix_()(i, j);
+                        q[i] += 0 - qsExt[j];
                     }
 
                 }
@@ -698,11 +698,11 @@ void Foam::solarLoad::directAndDiffuse::calculate()
                         //scalar invEj = 1/E[j];
                         if (i==j)
                         {
-                            CLU_()[i][j] = (1/(1-A[j]))-(A[j]/(1-A[j]))*Fmatrix_()[i][j];
+                            CLU_()(i, j) = (1/(1-A[j]))-(A[j]/(1-A[j]))*Fmatrix_()(i, j);
                         }
                         else
                         {
-                            CLU_()[i][j] = -(A[j]/(1-A[j]))*Fmatrix_()[i][j];
+                            CLU_()(i, j) = -(A[j]/(1-A[j]))*Fmatrix_()(i, j);
                         }
                     }
                 }
@@ -717,11 +717,11 @@ void Foam::solarLoad::directAndDiffuse::calculate()
                     scalar Isol = (skyViewCoeffMatrix_()[timestep][j] + sunViewCoeffMatrix_()[timestep][j]);
                     if (i==j)
                     {
-                        q[i] += (- 1.0)*(-Isol) - QsExt[j];
+                        q[i] += (- 1.0)*(-Isol) - qsExt[j];
                     }
                     else
                     {
-                        q[i] += 0 - QsExt[j];
+                        q[i] += 0 - qsExt[j];
                     }
                 }
             }
@@ -732,7 +732,7 @@ void Foam::solarLoad::directAndDiffuse::calculate()
         }
     }
 
-    // Scatter q and fill Qs
+    // Scatter q and fill qs
     Pstream::listCombineScatter(q);
     Pstream::listCombineGather(q, maxEqOp<scalar>());
 
@@ -744,7 +744,7 @@ void Foam::solarLoad::directAndDiffuse::calculate()
         const polyPatch& pp = mesh_.boundaryMesh()[patchID];
         if (pp.size() > 0)
         {
-            scalarField& Qsp = Qs_.boundaryField()[patchID];
+            scalarField& qsp = qsBf[patchID];
             const scalarField& sf = mesh_.magSf().boundaryField()[patchID];
             const labelList& agglom = finalAgglom_[patchID];
             label nAgglom = max(agglom)+1;
@@ -765,8 +765,8 @@ void Foam::solarLoad::directAndDiffuse::calculate()
                 {
                     label faceI = fineFaces[k];
 
-                    Qsp[faceI] = q[globalCoarse];
-                    heatFlux += Qsp[faceI]*sf[faceI];
+                    qsp[faceI] = q[globalCoarse];
+                    heatFlux += qsp[faceI]*sf[faceI];
                 }
                 globCoarseId ++;
             }
@@ -775,19 +775,19 @@ void Foam::solarLoad::directAndDiffuse::calculate()
 
     if (debug)
     {
-        forAll(Qs_.boundaryField(), patchID)
+        forAll(qsBf, patchID)
         {
-            const scalarField& Qsp = Qs_.boundaryField()[patchID];
+            const scalarField& qsp = qs_.boundaryField()[patchID];
             const scalarField& magSf = mesh_.magSf().boundaryField()[patchID];
-            scalar heatFlux = gSum(Qsp*magSf);
+            const scalar heatFlux = gSum(qsp*magSf);
             Info<< "Total heat transfer rate at patch: "
                 << patchID << " "
                 << heatFlux << endl;
         }
     }
 
-    // Relax Qs if necessary
-    Qs_.relax();
+    // Relax qs if necessary
+    qs_.relax();
 }
 
 
@@ -818,12 +818,12 @@ Foam::tmp<Foam::volScalarField> Foam::solarLoad::directAndDiffuse::Rp() const
 }
 
 
-Foam::tmp<Foam::DimensionedField<Foam::scalar, Foam::volMesh> >
+Foam::tmp<Foam::DimensionedField<Foam::scalar, Foam::volMesh>>
 Foam::solarLoad::directAndDiffuse::Ru() const
 {
-    return tmp<DimensionedField<scalar, volMesh> >
+    return tmp<volScalarField::Internal>
     (
-        new DimensionedField<scalar, volMesh>
+        new volScalarField::Internal 
         (
             IOobject
             (

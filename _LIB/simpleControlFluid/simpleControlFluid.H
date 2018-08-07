@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -22,18 +22,35 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::simpleControl
+    Foam::simpleControlFluid
 
 Description
-    SIMPLE control class to supply convergence information/checks for
-    the SIMPLE loop.
+    Simple control class. Provides time-loop control methods which exit the
+    simulation once convergence criteria have been reached. Example usage:
+
+    \verbatim
+    simpleControlFluid simple(mesh);
+
+    while (simple.loop(runTime))
+    {
+        Info<< "Time = " << runTime.timeName() << nl << endl;
+
+        // solve ...
+    }
+    \endverbatim
+
+SourceFiles
+    simpleControlFluid.C
 
 \*---------------------------------------------------------------------------*/
 
 #ifndef simpleControlFluid_H
 #define simpleControlFluid_H
 
-#include "solutionControl.H"
+#include "fluidSolutionControl.H"
+#include "singleRegionConvergenceControl.H"
+
+#define SIMPLE_CONTROL
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -46,7 +63,8 @@ namespace Foam
 
 class simpleControlFluid
 :
-    public solutionControl
+    public fluidSolutionControl,
+    public singleRegionConvergenceControl
 {
 
 protected:
@@ -56,26 +74,9 @@ protected:
         //- Initialised flag
         bool initialised_;
 
-
-    // Protected Member Functions
-
-        //- Read controls from fvSolution dictionary
-        void read();
-
-        //- Return true if all convergence checks are satisfied
-        bool criteriaSatisfied();
-
-        //- Disallow default bitwise copy construct
-        simpleControlFluid(const simpleControlFluid&);
-
-        //- Disallow default bitwise assignment
-        void operator=(const simpleControlFluid&);
-
-
 public:
 
-
-    // Static Data Members
+    // Static data members
 
         //- Run-time type information
         TypeName("simpleControlFluid");
@@ -83,8 +84,8 @@ public:
 
     // Constructors
 
-        //- Construct from mesh
-        simpleControlFluid(fvMesh& mesh);
+        //- Construct from a mesh and the name of the algorithm
+        simpleControlFluid(fvMesh& mesh, const word& algorithmName="SIMPLE");
 
 
     //- Destructor
@@ -93,10 +94,16 @@ public:
 
     // Member Functions
 
-        // Solution control
+        // IO
 
-            //- Loop loop
-            virtual bool loop();
+            //- Read controls
+            virtual bool read();
+
+        // Evolution
+
+            //- Time run loop
+            bool run(Time& time);
+
 };
 
 

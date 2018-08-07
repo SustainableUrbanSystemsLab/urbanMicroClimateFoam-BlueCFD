@@ -398,14 +398,14 @@ void simplifiedVegetationModel::radiation()
 
     const fvPatch& vegiPatch = vegiMesh.boundary()[patchi];
 
-    scalarField vegiPatchQr = vegiPatch.lookupPatchField<volScalarField, scalar>("Qr");
-    scalarField vegiPatchQs = vegiPatch.lookupPatchField<volScalarField, scalar>("Qs");
+    scalarField vegiPatchQr = vegiPatch.lookupPatchField<volScalarField, scalar>("qr");
+    scalarField vegiPatchQs = vegiPatch.lookupPatchField<volScalarField, scalar>("qs");
     scalar integrateQr = gSum(vegiPatch.magSf() * vegiPatchQr);
     scalar integrateQs = gSum(vegiPatch.magSf() * vegiPatchQs);
 
 	Info << "test: integrateQr: " << integrateQr << endl;
  	Info << "test: integrateQs: " << integrateQs << endl;
-    scalar vegiVolume = gSum(pos(Cf_.internalField() - 10*SMALL)*mesh_.V());
+    scalar vegiVolume = gSum(pos(Cf_.primitiveField() - 10*SMALL)*mesh_.V().field());
 	Info << "test: vegiVolume: " << vegiVolume << endl;
 
     label timestepsInADay_ = divqrsw.size(); //readLabel(coeffs_.lookup("timestepsInADay"));
@@ -581,8 +581,8 @@ void simplifiedVegetationModel::solve(volVectorField& U, volScalarField& T, volS
              << " K, iteration i="   << i << endl;
 
         // Check rel. L-infinity error
-        maxError = gMax(mag(new_Tl.internalField()-Tl_.internalField()));
-        maxRelError = maxError/gMax(mag(new_Tl.internalField()));
+        maxError = gMax(mag(new_Tl.primitiveField()-Tl_.primitiveField()));
+        maxRelError = maxError/gMax(mag(new_Tl.primitiveField()));
 
         // read relaxation factor for Tl - aytac
         dictionary relaxationDict = mesh_.solutionDict().subDict("relaxationFactors");

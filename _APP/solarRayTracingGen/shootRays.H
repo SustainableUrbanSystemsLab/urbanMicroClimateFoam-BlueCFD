@@ -2,11 +2,14 @@
 // Pre-size by assuming a certain percentage is visible.
 
 // Maximum length for dynamicList
-const label maxDynListLength = 10000;
+const label maxDynListLength
+(
+    viewFactorDict.lookupOrDefault<label>("maxDynListLength", 100000)
+);
 
-//for (label procI = 0; procI < Pstream::nProcs(); procI++)
+//for (label proci = 0; proci < Pstream::nProcs(); proci++)
 //{
-    // Shoot rays from me to procI. Note that even if processor has
+    // Shoot rays from me to proci. Note that even if processor has
     // 0 faces we still need to call findLine to keep calls synced.
 
     DynamicField<point> start(coarseMesh.nFaces());
@@ -18,7 +21,7 @@ const label maxDynListLength = 10000;
     const pointField& myFc = localCoarseCf_[Pstream::myProcNo()];
     const vectorField& myArea = localCoarseSf_[Pstream::myProcNo()];
 
-    //const pointField& remoteArea = remoteCoarseSf[procI];
+    //const pointField& remoteArea = remoteCoarseSf[proci];
     const pointField& remoteFc = remoteCoarseCf_[Pstream::myProcNo()];
 
     label i = 0;
@@ -49,7 +52,7 @@ const label maxDynListLength = 10000;
         
         Info << "start: " << start << endl;
         
-        forAll (hitInfo, rayI)
+        forAll(hitInfo, rayI)
         {
             Info << "rayI: " << rayI << start[rayI] << end[rayI] << endl;
 

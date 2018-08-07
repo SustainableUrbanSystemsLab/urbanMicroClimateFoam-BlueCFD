@@ -1,12 +1,15 @@
 // All rays expressed as start face (local) index end end face (global)
 // Pre-size by assuming a certain percentage is visible.
 
-// Maximum lenght for dynamicList
-const label maxDynListLength = 10000000;
+// Maximum length for dynamicList
+const label maxDynListLength
+(
+    viewFactorDict.lookupOrDefault<label>("maxDynListLength", 100000)
+);
 
-for (label procI = 0; procI < Pstream::nProcs(); procI++)
+for (label proci = 0; proci < Pstream::nProcs(); proci++)
 {
-    // Shoot rays from me to procI. Note that even if processor has
+    // Shoot rays from me to proci. Note that even if processor has
     // 0 faces we still need to call findLine to keep calls synced.
 
     DynamicField<point> start(coarseMesh.nFaces());
@@ -21,7 +24,7 @@ for (label procI = 0; procI < Pstream::nProcs(); procI++)
     DynamicList<label> periodicityDir(3*start.size());
 
     DynamicField<point> startCyclic2(3*coarseMesh.nFaces()); //3 times the size because it mirror points in 3 directions
-    DynamicField<point> endCyclic2(3*start.size());  
+    DynamicField<point> endCyclic2(3*start.size());
 
     DynamicList<label> startAgg(start.size());
     DynamicList<label> endAgg(start.size());
@@ -30,9 +33,9 @@ for (label procI = 0; procI < Pstream::nProcs(); procI++)
     const vectorField& myArea = remoteCoarseSf[Pstream::myProcNo()];
     const labelField& myAgg = remoteCoarseAgg[Pstream::myProcNo()];
 
-    const pointField& remoteArea = remoteCoarseSf[procI];
-    const pointField& remoteFc = remoteCoarseCf[procI];
-    const labelField& remoteAgg = remoteCoarseAgg[procI];
+    const pointField& remoteArea = remoteCoarseSf[proci];
+    const pointField& remoteFc = remoteCoarseCf[proci];
+    const labelField& remoteAgg = remoteCoarseAgg[proci];
 
     label i = 0;
     label j = 0;
@@ -44,9 +47,9 @@ for (label procI = 0; procI < Pstream::nProcs(); procI++)
             const vector& fA = myArea[i];
             const label& fAgg = myAgg[i];
 
-            for (; j < remoteFc.size(); j++)//
+            for (; j < remoteFc.size(); j++)
             {
-                if (procI != Pstream::myProcNo() || i != j)
+                if (proci != Pstream::myProcNo() || i != j)
                 {
                     const point& remFc = remoteFc[j];
                     const vector& remA = remoteArea[j];
@@ -58,17 +61,15 @@ for (label procI = 0; procI < Pstream::nProcs(); procI++)
                     {
                         start.append(fc + 0.001*d);
                         startIndex.append(i);
-                        startAgg.append(globalNumbering.toGlobal(procI, fAgg));
+                        startAgg.append(globalNumbering.toGlobal(proci, fAgg));
                         end.append(fc + 0.999*d);
-                        label globalI = globalNumbering.toGlobal(procI, j);
+                        label globalI = globalNumbering.toGlobal(proci, j);
                         endIndex.append(globalI);
-                        endAgg.append(globalNumbering.toGlobal(procI, remAgg));
+                        endAgg.append(globalNumbering.toGlobal(proci, remAgg));
                         if (startIndex.size() > maxDynListLength)
                         {
-                            FatalErrorIn
-                            (
-                                "shootRays"
-                            )   << "Dynamic list need from capacity."
+                            FatalErrorInFunction
+                                << "Dynamic list need from capacity."
                                 << "Actual size maxDynListLength : "
                                 <<  maxDynListLength
                                 << abort(FatalError);
@@ -88,7 +89,7 @@ for (label procI = 0; procI < Pstream::nProcs(); procI++)
                                 startCyclic.append(A + 0.001*dd);
                                 startIndexCyclic.append(i);
                                 endCyclic.append(A + 0.999*dd);
-                                label globalI = globalNumbering.toGlobal(procI, j);
+                                label globalI = globalNumbering.toGlobal(proci, j);
                                 endIndexCyclic.append(globalI);
 
                                 A = fc;
@@ -114,7 +115,7 @@ for (label procI = 0; procI < Pstream::nProcs(); procI++)
                                 startCyclic.append(A + 0.001*dd);
                                 startIndexCyclic.append(i);
                                 endCyclic.append(A + 0.999*dd);
-                                label globalI = globalNumbering.toGlobal(procI, j);
+                                label globalI = globalNumbering.toGlobal(proci, j);
                                 endIndexCyclic.append(globalI);
 
                                 A = fc;
@@ -140,7 +141,7 @@ for (label procI = 0; procI < Pstream::nProcs(); procI++)
                                 startCyclic.append(A + 0.001*dd);
                                 startIndexCyclic.append(i);
                                 endCyclic.append(A + 0.999*dd);
-                                label globalI = globalNumbering.toGlobal(procI, j);
+                                label globalI = globalNumbering.toGlobal(proci, j);
                                 endIndexCyclic.append(globalI);
 
                                 A = fc;
@@ -168,13 +169,14 @@ for (label procI = 0; procI < Pstream::nProcs(); procI++)
                     }
                 }
             }
+
             if (j == remoteFc.size())
             {
                 j = 0;
             }
         }
 
-    }while (returnReduce(i < myFc.size(), orOp<bool>()));
+    } while (returnReduce(i < myFc.size(), orOp<bool>()));
 
     List<pointIndexHit> hitInfo(startIndex.size());
     surfacesMesh.findLine(start, end, hitInfo);
@@ -187,14 +189,14 @@ for (label procI = 0; procI < Pstream::nProcs(); procI++)
 
     // Collect the rays which has not abstacle in bettween in rayStartFace
     // and rayEndFace. If the ray hit itself get stored in dRayIs
-    forAll (hitInfo, rayI)
+    forAll(hitInfo, rayI)
     {
         if (!hitInfo[rayI].hit())
         {
             rayStartFace.append(startIndex[rayI]);
             rayEndFace.append(endIndex[rayI]);
             isPeriodic.append(label(-1));
-         }
+        }
         else if (aggHitIndex[rayI] == startAgg[rayI])
         {
             dRayIs.append(rayI);
@@ -250,7 +252,7 @@ for (label procI = 0; procI < Pstream::nProcs(); procI++)
         labelField rayIs;
         rayIs.transfer(dRayIs);
         dRayIs.clear();
-        forAll (rayIs, rayI)
+        forAll(rayIs, rayI)
         {
             const label rayID = rayIs[rayI];
             label hitIndex = -1;
@@ -300,7 +302,7 @@ for (label procI = 0; procI < Pstream::nProcs(); procI++)
         firstLoop = false;
         iter ++;
 
-    }while (returnReduce(hitInfo.size(), orOp<bool>()) > 0 && iter < 10);
+    } while (returnReduce(hitInfo.size(), orOp<bool>()) > 0 && iter < 10);
 
     startIndex.clear();
     end.clear();
@@ -311,5 +313,5 @@ for (label procI = 0; procI < Pstream::nProcs(); procI++)
     startIndexCyclic.clear();
     endCyclic.clear();
     endCyclic2.clear();
-    endIndexCyclic.clear();    
+    endIndexCyclic.clear();  
 }

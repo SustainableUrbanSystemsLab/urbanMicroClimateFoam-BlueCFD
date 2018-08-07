@@ -4,37 +4,27 @@
     rho = min(rho, rhoMax[i]);
     rho.relax();
 
-    volScalarField rAU(1.0/UEqn().A());
-    surfaceScalarField rhorAUf("Dp", fvc::interpolate(rho*rAU));
-
-    volVectorField HbyA("HbyA", U);
-    HbyA = rAU*UEqn().H();
-    UEqn.clear();
+    volScalarField rAU("rAU", 1.0/UEqn.A());
+    surfaceScalarField rhorAUf("rhorAUf", fvc::interpolate(rho*rAU));
+    volVectorField HbyA(constrainHbyA(rAU*UEqn.H(), U, p_rgh));
+    tUEqn.clear();
 
     surfaceScalarField phig(-rhorAUf*ghf*fvc::snGrad(rho)*mesh.magSf());
 
     surfaceScalarField phiHbyA
     (
         "phiHbyA",
-        fvc::interpolate(rho)*(fvc::interpolate(HbyA) & mesh.Sf())
+        fvc::flux(rho*HbyA)
     );
 
-    fvOptions.makeRelative(fvc::interpolate(rho), phiHbyA);
+    MRF.makeRelative(fvc::interpolate(rho), phiHbyA);
 
     bool closedVolume = adjustPhi(phiHbyA, U, p_rgh);
 
     phiHbyA += phig;
 
-    // Update the fixedFluxPressure BCs to ensure flux consistency
-    setSnGrad<fixedFluxPressureFvPatchScalarField>
-    (
-        p_rgh.boundaryField(),
-        (
-            phiHbyA.boundaryField()
-          - fvOptions.relative(mesh.Sf().boundaryField() & U.boundaryField())
-           *rho.boundaryField()
-        )/(mesh.magSf().boundaryField()*rhorAUf.boundaryField())
-    );    
+    // Update the pressure BCs to ensure flux consistency
+    constrainPressure(p_rgh, rho, U, phiHbyA, rhorAUf, MRF);
 
     dimensionedScalar compressibility = fvc::domainIntegrate(psi);
     bool compressible = (compressibility.value() > SMALL);

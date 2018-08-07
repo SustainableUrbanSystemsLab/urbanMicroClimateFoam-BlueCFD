@@ -43,10 +43,8 @@ Foam::autoPtr<Foam::solarLoad::solarLoadScatterModel> Foam::solarLoad::solarLoad
 
     if (cstrIter == dictionaryConstructorTablePtr_->end())
     {
-        FatalErrorIn
-        (
-            "solarLoadScatterModel::New(const dictionary&, const fvMesh&)"
-        )   << "Unknown solarLoadScatterModel type "
+        FatalErrorInFunction
+            << "Unknown solarLoadScatterModel type "
             << modelType << nl << nl
             << "Valid solarLoadScatterModel types are :" << nl
             << dictionaryConstructorTablePtr_->sortedToc()

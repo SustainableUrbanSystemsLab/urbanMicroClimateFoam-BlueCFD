@@ -23,9 +23,9 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-inline const Foam::volScalarField& Foam::solarLoad::directAndDiffuse::Qs() const
+inline const Foam::volScalarField& Foam::solarLoad::directAndDiffuse::qs() const
 {
-    return Qs_;
+    return qs_;
 }
 
 

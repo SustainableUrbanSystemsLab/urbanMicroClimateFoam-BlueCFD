@@ -27,7 +27,7 @@ License
 #include "solarLoadAbsorptionEmissionModel.H"
 #include "solarLoadScatterModel.H"
 #include "fvmSup.H"
-#include "fluidThermo.H"
+#include "basicThermo.H"
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
@@ -58,7 +58,7 @@ Foam::IOobject Foam::solarLoad::solarLoadModel::createIOobject
         IOobject::NO_WRITE
     );
 
-    if (io.headerOk())
+    if (io.typeHeaderOk<IOdictionary>(true))
     {
         io.readOpt() = IOobject::MUST_READ_IF_MODIFIED;
         return io;
@@ -109,8 +109,8 @@ Foam::solarLoad::solarLoadModel::solarLoadModel(const volScalarField& T)
     coeffs_(dictionary::null),
     solverFreq_(0),
     firstIter_(true),
-    solarLoadAbsorptionEmission_(NULL),
-    solarLoadScatter_(NULL)
+    solarLoadAbsorptionEmission_(nullptr),
+    solarLoadScatter_(nullptr)
 {}
 
 
@@ -128,8 +128,8 @@ Foam::solarLoad::solarLoadModel::solarLoadModel
     coeffs_(subOrEmptyDict(type + "Coeffs")),
     solverFreq_(1),
     firstIter_(true),
-    solarLoadAbsorptionEmission_(NULL),
-    solarLoadScatter_(NULL)
+    solarLoadAbsorptionEmission_(nullptr),
+    solarLoadScatter_(nullptr)
 {
     if (readOpt() == IOobject::NO_READ)
     {
@@ -166,8 +166,8 @@ Foam::solarLoad::solarLoadModel::solarLoadModel
     coeffs_(subOrEmptyDict(type + "Coeffs")),
     solverFreq_(1),
     firstIter_(true),
-    solarLoadAbsorptionEmission_(NULL),
-    solarLoadScatter_(NULL)
+    solarLoadAbsorptionEmission_(nullptr),
+    solarLoadScatter_(nullptr)
 {
     initialise();
 }
@@ -217,10 +217,10 @@ void Foam::solarLoad::solarLoadModel::correct()
 
 Foam::tmp<Foam::fvScalarMatrix> Foam::solarLoad::solarLoadModel::Sh
 (
-    fluidThermo& thermo
+    const basicThermo& thermo,
+    const volScalarField& he
 ) const
 {
-    volScalarField& he = thermo.he();
     const volScalarField Cpv(thermo.Cpv());
     const volScalarField T3(pow3(T_));
 
@@ -252,11 +252,7 @@ Foam::solarLoad::solarLoadModel::solarLoadAbsorptionEmission() const
 {
     if (!solarLoadAbsorptionEmission_.valid())
     {
-        FatalErrorIn
-        (
-            "const Foam::solarLoad::solarLoadAbsorptionEmissionModel&"
-            "Foam::solarLoad::solarLoadModel::solarLoadAbsorptionEmission() const"
-        )
+        FatalErrorInFunction
             << "Requested solarLoad solarLoadAbsorptionEmission model, but model is "
             << "not activate" << abort(FatalError);
     }

@@ -81,7 +81,7 @@ class directAndDiffuse
         singleCellFvMesh coarseMesh_;
 
         //- Net radiative heat flux [W/m2]
-        volScalarField Qs_;
+        volScalarField qs_;
 
         //- View factor matrix
         autoPtr<scalarSquareMatrix> Fmatrix_;        
@@ -191,13 +191,13 @@ public:
             virtual tmp<volScalarField> Rp() const;
 
             //- Source term component (constant)
-            virtual tmp<DimensionedField<scalar, volMesh> > Ru() const;
+            virtual tmp<volScalarField::Internal> Ru() const;
 
 
     // Access
 
         //- Const access to total radiative heat flux field
-        inline const volScalarField& Qs() const;
+        inline const volScalarField& qs() const;
 };
 
 

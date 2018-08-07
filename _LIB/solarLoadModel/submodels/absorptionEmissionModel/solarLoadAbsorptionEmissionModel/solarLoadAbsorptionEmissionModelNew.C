@@ -44,10 +44,8 @@ Foam::solarLoad::solarLoadAbsorptionEmissionModel::New
 
     if (cstrIter == dictionaryConstructorTablePtr_->end())
     {
-        FatalErrorIn
-        (
-            "solarLoadAbsorptionEmissionModel::New(const dictionary&, const fvMesh&)"
-        )   << "Unknown solarLoadAbsorptionEmissionModel type "
+        FatalErrorInFunction
+            << "Unknown solarLoadAbsorptionEmissionModel type "
             << modelType << nl << nl
             << "Valid solarLoadAbsorptionEmissionModel types are :" << nl
             << dictionaryConstructorTablePtr_->sortedToc() << exit(FatalError);

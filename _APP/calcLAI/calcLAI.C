@@ -606,11 +606,11 @@ int main(int argc, char *argv[])
     }
     */
 
-    volScalarField Qr
+    volScalarField qr
     (
       IOobject
       (
-          "Qr",
+          "qr",
           runTime.timeName(),
           mesh,
           IOobject::MUST_READ,

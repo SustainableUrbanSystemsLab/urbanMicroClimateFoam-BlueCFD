@@ -2,11 +2,14 @@
 // Pre-size by assuming a certain percentage is visible.
 
 // Maximum length for dynamicList
-const label maxDynListLength = 10000;
+const label maxDynListLength
+(
+    viewFactorDict.lookupOrDefault<label>("maxDynListLength", 100000)
+);
 
-//for (label procI = 0; procI < Pstream::nProcs(); procI++)
+//for (label proci = 0; proci < Pstream::nProcs(); proci++)
 //{
-    // Shoot rays from me to procI. Note that even if processor has
+    // Shoot rays from me to proci. Note that even if processor has
     // 0 faces we still need to call findLine to keep calls synced.
 
     DynamicField<point> start(coarseMesh.nFaces());
@@ -18,7 +21,7 @@ const label maxDynListLength = 10000;
     const pointField& myFc = localCoarseCf_[Pstream::myProcNo()];
     const vectorField& myArea = localCoarseSf_[Pstream::myProcNo()];
 
-    //const pointField& remoteArea = remoteCoarseSf[procI];
+    //const pointField& remoteArea = remoteCoarseSf[proci];
     const pointField& remoteFc = remoteCoarseCf_[Pstream::myProcNo()];
 
     label i = 0;
@@ -28,31 +31,31 @@ const label maxDynListLength = 10000;
         {
             const point& fc = myFc[i];
             const vector& area = myArea[i];
-			const point& remFc = remoteFc[i];
-
-			const vector& d = remFc - fc;
-
-			start.append(fc + 0.0001*d);
-			startIndex.append(i);
+            const point& remFc = remoteFc[i];
+            
+            const vector& d = remFc - fc;
+           
+            start.append(fc + 0.0001*d);
+            startIndex.append(i);
             startArea.append(area);
-			end.append(fc + 0.9999*d);
-			label globalI = globalNumbering.toGlobal(Pstream::myProcNo(), i);
-			endIndex.append(globalI);
-			if (startIndex.size() > maxDynListLength)
-			{
-				break;
-			}
-		}
-
+            end.append(fc + 0.9999*d);
+            label globalI = globalNumbering.toGlobal(Pstream::myProcNo(), i);
+            endIndex.append(globalI);
+            if (startIndex.size() > maxDynListLength)
+            {
+                break;
+            }
+        }
+        
         List<pointIndexHit> hitInfo(startIndex.size());
         surfacesMesh.findLine(start, end, hitInfo);
-
-		//Info << "start: " << start << endl;
-        //Info << "startArea: " << startArea << endl;
-		//Info << "end: " << end << endl;
-
-        forAll (hitInfo, rayI)
+        
+        Info << "start: " << start << endl;
+        
+        forAll(hitInfo, rayI)
         {
+            Info << "rayI: " << rayI << start[rayI] << end[rayI] << endl;
+
             if (!hitInfo[rayI].hit()) // if the ray did not hit any surface between start and end positions...
             {
                 scalar cosPhiTest = (startArea[rayI] & sunPos)/(mag(startArea[rayI])*mag(sunPos) + SMALL);
@@ -60,8 +63,17 @@ const label maxDynListLength = 10000;
                 {
                     rayStartFace.append(startIndex[rayI]);
                     rayEndFace.append(endIndex[rayI]);
+                    Info << "Clear" << endl;
                 }
+		        else
+		        {
+		            Info << "Not looking towards the sun" << endl;
+		        }
             }
+		    else
+		    {
+		        Info << "Hit a wall" << endl;
+		    }
         }
 
         start.clear();

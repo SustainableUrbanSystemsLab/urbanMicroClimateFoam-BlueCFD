@@ -1,20 +1,25 @@
     // Solve the Momentum equation
-    tmp<fvVectorMatrix> UEqn
+
+    MRF.correctBoundaryVelocity(U);
+
+    tmp<fvVectorMatrix> tUEqn
     (
         fvm::div(phi, U)
+      + MRF.DDt(rho, U)
       + turb.divDevRhoReff(U)
      ==
         fvOptions(rho, U)
       + vegetation.Su(rho, U) // vegetation momentum source
     );
+    fvVectorMatrix& UEqn = tUEqn.ref();
 
-    UEqn().relax();
+    UEqn.relax();
 
-    fvOptions.constrain(UEqn());
+    fvOptions.constrain(UEqn);
 
     solve
     (
-        UEqn()
+        UEqn
      ==
         fvc::reconstruct
         (

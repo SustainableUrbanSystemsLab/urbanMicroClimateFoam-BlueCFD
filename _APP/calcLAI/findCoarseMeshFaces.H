@@ -15,7 +15,7 @@
     (
       IOobject
       (
-          "Qr",
+          "qr",
           runTime.timeName(),
           vegMesh,
           IOobject::MUST_READ,
@@ -70,7 +70,7 @@
     const polyBoundaryMesh& vegPatches = vegMesh.boundaryMesh();
     const polyBoundaryMesh& vegCoarsePatches = vegCoarseMesh.boundaryMesh();
 
-    const volScalarField::GeometricBoundaryField& vegQrb = vegQr.boundaryField();
+    const volScalarField::Boundary& vegQrb = vegQr.boundaryField();
 
     labelList vegViewFactorsPatches(vegPatches.size());
     labelList vegHowManyCoarseFacesPerPatch(vegPatches.size());
@@ -154,14 +154,14 @@
             (
                 availablePoints,
                 upp.faceCentres().size()
-            ).assign(upp.faceCentres());
+            ) = upp.faceCentres();
 
             SubList<point>
             (
                 availablePoints,
                 upp.localPoints().size(),
                 upp.faceCentres().size()
-            ).assign(upp.localPoints());
+            ) = upp.localPoints();
 
             point cfo = cf;
             scalar dist = GREAT;

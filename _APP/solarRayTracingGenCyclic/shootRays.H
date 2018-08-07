@@ -2,7 +2,10 @@
 // Pre-size by assuming a certain percentage is visible.
 
 // Maximum length for dynamicList
-const label maxDynListLength = 10000;
+const label maxDynListLength
+(
+    viewFactorDict.lookupOrDefault<label>("maxDynListLength", 100000)
+);
 
 //for (label procI = 0; procI < Pstream::nProcs(); procI++)
 //{

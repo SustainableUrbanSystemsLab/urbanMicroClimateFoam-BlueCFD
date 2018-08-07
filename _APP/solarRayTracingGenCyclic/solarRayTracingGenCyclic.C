@@ -128,7 +128,7 @@ triSurface triangulate
         newPatchI++;
     }
 
-    triSurfaceToAgglom.resize(localTriFaceI-1);
+    triSurfaceToAgglom.resize(localTriFaceI);
 
     triangles.shrink();
 
@@ -162,89 +162,6 @@ triSurface triangulate
     return surface;
 }
 
-void writeRays
-(
-    const fileName& fName,
-    const pointField& compactCf,
-    const pointField& myFc,
-    const labelListList& visibleFaceFaces
-)
-{
-    OFstream str(fName);
-    label vertI = 0;
-
-    Pout<< "Dumping rays to " << str.name() << endl;
-
-    forAll(myFc, faceI)
-    {
-        const labelList visFaces = visibleFaceFaces[faceI];
-        forAll(visFaces, faceRemote)
-        {
-            label compactI = visFaces[faceRemote];
-            const point& remoteFc = compactCf[compactI];
-
-            meshTools::writeOBJ(str, myFc[faceI]);
-            vertI++;
-            meshTools::writeOBJ(str, remoteFc);
-            vertI++;
-            str << "l " << vertI-1 << ' ' << vertI << nl;
-        }
-    }
-    string cmd("objToVTK " + fName + " " + fName.lessExt() + ".vtk");
-    Pout<< "cmd:" << cmd << endl;
-    system(cmd);
-}
-
-
-scalar calculateViewFactorFij
-(
-    const vector& i,
-    const vector& j,
-    const vector& dAi,
-    const vector& dAj
-)
-{
-    vector r = i - j;
-    scalar rMag = mag(r);
-    scalar dAiMag = mag(dAi);
-    scalar dAjMag = mag(dAj);
-
-    vector ni = dAi/dAiMag;
-    vector nj = dAj/dAjMag;
-    scalar cosThetaJ = mag(nj & r)/rMag;
-    scalar cosThetaI = mag(ni & r)/rMag;
-
-    return
-    (
-        (cosThetaI*cosThetaJ*dAjMag*dAiMag)
-       /(sqr(rMag)*constant::mathematical::pi)
-    );
-}
-
-
-void insertMatrixElements
-(
-    const globalIndex& globalNumbering,
-    const label fromProcI,
-    const labelListList& globalFaceFaces,
-    const scalarListList& viewFactors,
-    scalarSquareMatrix& matrix
-)
-{
-    forAll(viewFactors, faceI)
-    {
-        const scalarList& vf = viewFactors[faceI];
-        const labelList& globalFaces = globalFaceFaces[faceI];
-
-        label globalI = globalNumbering.toGlobal(fromProcI, faceI);
-        forAll(globalFaces, i)
-        {
-            matrix[globalI][globalFaces[i]] = vf[i];
-        }
-    }
-}
-
-
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 int main(int argc, char *argv[])
@@ -266,12 +183,6 @@ int main(int argc, char *argv[])
             IOobject::NO_WRITE
        )
     );
-
-    const bool writeViewFactors =
-        viewFactorDict.lookupOrDefault<bool>("writeViewFactorMatrix", false);
-
-    const bool dumpRays =
-        viewFactorDict.lookupOrDefault<bool>("dumpRays", false);
         
     vector skyPos = viewFactorDict.lookup("skyPosVector");
 
@@ -281,7 +192,7 @@ int main(int argc, char *argv[])
        IOobject
        (
             "sunPosVector",
-            runTime.constant(),
+            runTime.caseConstant(),
             mesh,
             IOobject::MUST_READ,
             IOobject::NO_WRITE
@@ -292,7 +203,7 @@ int main(int argc, char *argv[])
        IOobject
        (
             "IDN",
-            runTime.constant(),
+            runTime.caseConstant(),
             mesh,
             IOobject::MUST_READ,
             IOobject::NO_WRITE
@@ -303,7 +214,7 @@ int main(int argc, char *argv[])
        IOobject
        (
             "Idif",
-            runTime.constant(),
+            runTime.caseConstant(),
             mesh,
             IOobject::MUST_READ,
             IOobject::NO_WRITE
@@ -312,11 +223,11 @@ int main(int argc, char *argv[])
 
     const label debug = viewFactorDict.lookupOrDefault<label>("debug", 0);
 
-    volScalarField Qr
+    volScalarField qr
     (
         IOobject
         (
-            "Qr",
+            "qr",
             runTime.timeName(),
             mesh,
             IOobject::MUST_READ,
@@ -351,7 +262,7 @@ int main(int argc, char *argv[])
     (
         IOobject
         (
-            mesh.name(),
+            "coarse:" + mesh.name(),
             runTime.timeName(),
             runTime,
             IOobject::NO_READ,
@@ -380,20 +291,20 @@ int main(int argc, char *argv[])
     labelList viewFactorsPatches(patches.size());
     labelList howManyCoarseFacesPerPatch(patches.size());
     DynamicList<label> sunskyMap_(nCoarseFaces);
-    const volScalarField::GeometricBoundaryField& Qrb = Qr.boundaryField();
+    const volScalarField::Boundary& qrb = qr.boundaryField();
 
     label count = 0;
     label countAll = 0;
     label countForMapping = 0;
-    forAll(Qrb, patchI)
+    forAll(qrb, patchI)
     {
         const polyPatch& pp = patches[patchI];
-        const fvPatchScalarField& QrpI = Qrb[patchI];
+        const fvPatchScalarField& qrpI = qrb[patchI];
 
         //if ((isA<fixedValueFvPatchScalarField>(QrpI)) && (pp.size() > 0))
         if ((isA<wallFvPatch>(mesh.boundary()[patchI])) && (pp.size() > 0))
         {
-            viewFactorsPatches[count] = QrpI.patch().index();
+            viewFactorsPatches[count] = qrpI.patch().index();
             nCoarseFaces += coarsePatches[patchI].size();
             nCoarseFacesAll += coarsePatches[patchI].size();
             nFineFaces += patches[patchI].size();
@@ -409,7 +320,7 @@ int main(int argc, char *argv[])
             }
             nFineFacesTotal += patches[patchI].size();             
         }
-        else if ((isA<fixedValueFvPatchScalarField>(QrpI)) && (pp.size() > 0))
+        else if ((isA<fixedValueFvPatchScalarField>(qrpI)) && (pp.size() > 0))
         {
             nCoarseFacesAll += coarsePatches[patchI].size();
             
@@ -432,7 +343,7 @@ int main(int argc, char *argv[])
         }
         countAll ++;
     }
-    viewFactorsPatches.resize(count--);
+    viewFactorsPatches.resize(count);
     Info << "howManyCoarseFacesPerPatch: " << howManyCoarseFacesPerPatch << endl;
 
     List<labelField> sunskyMap__(Pstream::nProcs());
@@ -535,14 +446,14 @@ int main(int argc, char *argv[])
             (
                 availablePoints,
                 upp.faceCentres().size()
-            ).assign(upp.faceCentres());
+            ) = upp.faceCentres();
 
             SubList<point>
             (
                 availablePoints,
                 upp.localPoints().size(),
                 upp.faceCentres().size()
-            ).assign(upp.localPoints());
+            ) = upp.localPoints();
 
             point cfo = cf;
             scalar dist = GREAT;

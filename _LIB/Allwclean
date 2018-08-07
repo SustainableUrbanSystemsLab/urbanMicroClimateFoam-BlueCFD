@@ -5,7 +5,7 @@ makeType=${1:-libso}
 set -x
 
 wclean buildingMaterialModel
-wclean simpleControlFluid
 wclean solarLoadModel
-wclean turbulenceModels/compressible/RAS
+wclean simpleControlFluid
+wclean turbulenceModels
 wclean vegetationModels

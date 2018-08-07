@@ -2,9 +2,11 @@ simpleControlFluid simpleControlFluid(fluidRegions[i]);
 
 simplifiedVegetationModel vegetation(U, thermo.T(), w, Tl); // Vegetation model
 
+TimeState pts(runTime); //store time state
+
 label fluidIteration = 1;
 
-while ((simpleControlFluid.loop() || fluidIteration <= minFluidIteration) && fluidIteration <= maxFluidIteration)
+while ((simpleControlFluid.run(runTime) || fluidIteration <= minFluidIteration) && fluidIteration <= maxFluidIteration)
 {
 //  Pressure-velocity SIMPLE corrector
     Info << "Internal iteration number: " << fluidIteration << endl;
@@ -34,3 +36,6 @@ Info << "Updating long-wave radiation heat transfer for region: " << fluidRegion
 rad.correct();
 Info << "Updating short-wave radiation heat transfer for region: " << fluidRegions[i].name() << endl;
 sol.correct();
+
+runTime.TimeState::operator=(pts); //restore time state
+

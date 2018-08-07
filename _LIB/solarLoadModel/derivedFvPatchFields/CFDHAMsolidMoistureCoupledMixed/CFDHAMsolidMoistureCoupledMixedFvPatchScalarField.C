@@ -83,22 +83,13 @@ CFDHAMsolidMoistureCoupledMixedFvPatchScalarField
 {
     if (!isA<mappedPatchBase>(this->patch().patch()))
     {
-        FatalErrorIn
-        (
-            "CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::"
-            "CFDHAMsolidMoistureCoupledMixedFvPatchScalarField\n"
-            "(\n"
-            "    const fvPatch& p,\n"
-            "    const DimensionedField<scalar, volMesh>& iF,\n"
-            "    const dictionary& dict\n"
-            ")\n"
-        )   << "\n    patch type '" << p.type()
+        FatalErrorInFunction
             << "' not type '" << mappedPatchBase::typeName << "'"
             << "\n    for patch " << p.name()
-            << " of field " << dimensionedInternalField().name()
-            << " in file " << dimensionedInternalField().objectPath()
+            << " of field " << internalField().name()
+            << " in file " << internalField().objectPath()
             << exit(FatalError);
-    }  
+    } 
 
     fvPatchScalarField::operator=(scalarField("value", dict, p.size()));
 
@@ -197,15 +188,15 @@ void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
 
     scalarField deltaCoeff_ = nbrPatch.deltaCoeffs(); 
         mpp.distribute(deltaCoeff_);
-    scalarField mutNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("mut");
-        mpp.distribute(mutNbr);
+    scalarField nutNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("nut");
+        mpp.distribute(nutNbr);
     
     scalarField pvsat_s = exp(6.58094e1-7.06627e3/Ts-5.976*log(Ts));
     scalarField pv_s = pvsat_s*exp((pcp)/(rhol*Rv*Ts));
 
     scalarField gl = ((gcrNbr*rhol)/(3600*1000));
 
-    scalarField vaporFlux = (rhoNbr*Dm + mutNbr/Sct) * (wcNbr-(0.62198*pv_s/1e5)) *deltaCoeff_; 
+    scalarField vaporFlux = rhoNbr*(Dm + nutNbr/Sct) * (wcNbr-(0.62198*pv_s/1e5)) *deltaCoeff_; 
 
     // term with temperature gradient:
     scalarField K_pt(pcp.size(), 0.0);

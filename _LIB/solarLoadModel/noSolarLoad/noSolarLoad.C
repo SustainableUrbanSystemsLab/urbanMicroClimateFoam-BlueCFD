@@ -105,12 +105,12 @@ Foam::tmp<Foam::volScalarField> Foam::solarLoad::noSolarLoad::Rp() const
 }
 
 
-Foam::tmp<Foam::DimensionedField<Foam::scalar, Foam::volMesh> >
+Foam::tmp<Foam::DimensionedField<Foam::scalar, Foam::volMesh>>
 Foam::solarLoad::noSolarLoad::Ru() const
 {
-    return tmp<DimensionedField<scalar, volMesh> >
+    return tmp<volScalarField::Internal>
     (
-        new DimensionedField<scalar, volMesh>
+        new volScalarField::Internal
         (
             IOobject
             (

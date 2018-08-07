@@ -46,7 +46,7 @@ SourceFiles
 #include "autoPtr.H"
 #include "runTimeSelectionTables.H"
 #include "addToRunTimeSelectionTable.H"
-#include "volFieldsFwd.H"
+#include "volFields.H"
 #include "DimensionedField.H"
 #include "fvMatricesFwd.H"
 #include "Switch.H"
@@ -56,7 +56,7 @@ SourceFiles
 namespace Foam
 {
 
-class fluidThermo;
+class basicThermo;
 class fvMesh;
 
 namespace solarLoad
@@ -219,10 +219,14 @@ public:
             virtual tmp<volScalarField> Rp() const = 0;
 
             //- Source term component (constant)
-            virtual tmp<DimensionedField<scalar, volMesh> > Ru() const = 0;
+            virtual tmp<volScalarField::Internal> Ru() const = 0;
 
             //- Energy source term
-            virtual tmp<fvScalarMatrix> Sh(fluidThermo& thermo) const;
+            virtual tmp<fvScalarMatrix> Sh
+            (
+                const basicThermo& thermo,
+                const volScalarField& he
+            ) const;
 
             //- Temperature source term
             virtual tmp<fvScalarMatrix> ST

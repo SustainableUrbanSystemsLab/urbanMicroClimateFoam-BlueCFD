@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2012 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -24,7 +24,6 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "simpleControlFluid.H"
-#include "Time.H"
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
@@ -34,81 +33,19 @@ namespace Foam
 }
 
 
-// * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
-
-void Foam::simpleControlFluid::read()
-{
-    solutionControl::read(true);
-}
-
-
-bool Foam::simpleControlFluid::criteriaSatisfied()
-{
-    if (residualControl_.empty())
-    {
-        return false;
-    }
-
-    bool achieved = true;
-    bool checked = false;    // safety that some checks were indeed performed
-
-    const dictionary& solverDict = mesh_.solverPerformanceDict();
-    forAllConstIter(dictionary, solverDict, iter)
-    {
-        const word& variableName = iter().keyword();
-        const label fieldI = applyToField(variableName);
-        if (fieldI != -1)
-        {
-            const List<solverPerformance> sp(iter().stream());
-            const scalar residual = sp.last().initialResidual();
-
-            checked = true;
-
-            bool absCheck = residual < residualControl_[fieldI].absTol;
-            achieved = achieved && absCheck;
-
-            if (debug)
-            {
-                Info<< algorithmName_ << " solution statistics:" << endl;
-
-                Info<< "    " << variableName << ": tolerance = " << residual
-                    << " (" << residualControl_[fieldI].absTol << ")"
-                    << endl;
-            }
-        }
-    }
-    return checked && achieved;
-}
-
-
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-Foam::simpleControlFluid::simpleControlFluid(fvMesh& mesh)
+Foam::simpleControlFluid::simpleControlFluid(fvMesh& mesh, const word& algorithmName)
 :
-    solutionControl(mesh, "SIMPLE"),
+    fluidSolutionControl(mesh, algorithmName),
+    singleRegionConvergenceControl
+    (
+        static_cast<singleRegionSolutionControl&>(*this)
+    ),
     initialised_(false)
 {
     read();
-
-    Info<< nl;
-
-    if (residualControl_.empty())
-    {
-        Info<< algorithmName_ << ": no convergence criteria found. "
-            << "Calculations will run for " << mesh_.time().endTime().value()
-            << " steps." << nl << endl;
-    }
-    else
-    {
-        Info<< algorithmName_ << ": convergence criteria" << nl;
-        forAll(residualControl_, i)
-        {
-            Info<< "    field " << residualControl_[i].name << token::TAB
-                << " tolerance " << residualControl_[i].absTol
-                << nl;
-        }
-        Info<< endl;
-    }
+    printResidualControls();
 }
 
 
@@ -118,29 +55,31 @@ Foam::simpleControlFluid::~simpleControlFluid()
 {}
 
 
-// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
+// * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 
-bool Foam::simpleControlFluid::loop()
+bool Foam::simpleControlFluid::read()
+{
+    return fluidSolutionControl::read() && readResidualControls();
+}
+
+
+bool Foam::simpleControlFluid::run(Time& time)
 {
     read();
-
-    //Time& time = const_cast<Time&>(mesh_.time());
 
     if (initialised_)
     {
         if (criteriaSatisfied())
         {
-            /*Info<< nl << algorithmName_ << " solution converged in "
-                << time.timeName() << " iterations" << nl << endl;*/
-
-            // Set to finalise calculation
-            //time.writeAndEnd();
             return false;
-
         }
         else
         {
             storePrevIterFields();
+            time.setDeltaT(1); //this is related to the calculation of timestep continuity error
+            time.setTime(time.value(),time.timeIndex()+1); //necessary for iter().stream() to get the correct iteration for convergence control
+            //time value must stay the same, otherwise wrong ambient value is read
+            return true;
         }
     }
     else
@@ -150,8 +89,6 @@ bool Foam::simpleControlFluid::loop()
     }
 
     return true;
-    //return time.loop();
 }
-
 
 // ************************************************************************* //

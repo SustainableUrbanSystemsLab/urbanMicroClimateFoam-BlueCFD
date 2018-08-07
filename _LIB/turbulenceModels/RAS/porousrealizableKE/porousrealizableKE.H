@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2012 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -22,35 +22,33 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::compressible::RASModels::porousrealizableKE
-
-Group
-    grpCmpRASTurbulence
+    Foam::RASModels::porousrealizableKE
 
 Description
-    Realizable k-epsilon turbulence model for compressible flows.
+    Realizable k-epsilon turbulence model for incompressible and compressible
+    flows.
 
-    Model described in the paper:
+    References:
     \verbatim
-        "A New k-epsilon Eddy Viscosity Model for High Reynolds Number
-        Turbulent Flows"
+        Shih, T. H., Liou, W. W., Shabbir, A., Yang, Z., & Zhu, J. (1994).
+        A new k-epsilon eddy viscosity model for high Reynolds number
+        turbulent flows: Model development and validation.
+        NASA STI/Recon Technical Report N, 95, 11442.
 
-        Tsan-Hsing Shih, William W. Liou, Aamir Shabbir, Zhigang Tang and
-        Jiang Zhu
-
-        Computers and Fluids Vol. 24, No. 3, pp. 227-238, 1995
+        Shih, T. H., Liou, W. W., Shabbir, A., Yang, Z., & Zhu, J. (1995).
+        A New k-epsilon Eddy Viscosity Model for High Reynolds Number
+        Turbulent Flows.
+        Computers and Fluids, 24(3), 227-238.
     \endverbatim
 
-    The default model coefficients correspond to the following:
+    The default model coefficients are
     \verbatim
         porousrealizableKECoeffs
         {
-            Cmu         0.09;
             A0          4.0;
             C2          1.9;
             sigmak      1.0;
             sigmaEps    1.2;
-            Prt         1.0;    // only for compressible
         }
     \endverbatim
 
@@ -63,12 +61,11 @@ SourceFiles
 #define porousrealizableKE_H
 
 #include "RASModel.H"
+#include "eddyViscosity.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
-{
-namespace compressible
 {
 namespace RASModels
 {
@@ -77,9 +74,10 @@ namespace RASModels
                         Class porousrealizableKE Declaration
 \*---------------------------------------------------------------------------*/
 
+template<class BasicTurbulenceModel>
 class porousrealizableKE
 :
-    public RASModel
+    public eddyViscosity<RASModel<BasicTurbulenceModel>>
 {
 
 protected:
@@ -88,16 +86,14 @@ protected:
 
         // Model coefficients
 
-            dimensionedScalar Cmu_;
             dimensionedScalar A0_;
             dimensionedScalar C2_;
             dimensionedScalar C4_;
-            dimensionedScalar C5_;            
+            dimensionedScalar C5_;  
             dimensionedScalar sigmak_;
             dimensionedScalar sigmaEps_;
-            dimensionedScalar Prt_;
             dimensionedScalar betaP_;
-            dimensionedScalar betaD_;            
+            dimensionedScalar betaD_;  
 
 
         // Fields
@@ -105,8 +101,6 @@ protected:
             volScalarField k_;
             volScalarField epsilon_;
             volScalarField Cf_;
-            volScalarField mut_;
-            volScalarField alphat_;
 
 
    // Protected Member Functions
@@ -118,10 +112,24 @@ protected:
             const volScalarField& magS
         );
 
-        tmp<volScalarField> rCmu(const volTensorField& gradU);
+        virtual void correctNut
+        (
+            const volTensorField& gradU,
+            const volScalarField& S2,
+            const volScalarField& magS
+        );
+
+        virtual void correctNut();
+        virtual tmp<fvScalarMatrix> kSource() const;
+        virtual tmp<fvScalarMatrix> epsilonSource() const;
 
 
 public:
+
+    typedef typename BasicTurbulenceModel::alphaField alphaField;
+    typedef typename BasicTurbulenceModel::rhoField rhoField;
+    typedef typename BasicTurbulenceModel::transportModel transportModel;
+
 
     //- Runtime type information
     TypeName("porousrealizableKE");
@@ -131,12 +139,14 @@ public:
         //- Construct from components
         porousrealizableKE
         (
-            const volScalarField& rho,
+            const alphaField& alpha,
+            const rhoField& rho,
             const volVectorField& U,
+            const surfaceScalarField& alphaRhoPhi,
             const surfaceScalarField& phi,
-            const fluidThermo& thermophysicalModel,
-            const word& turbulenceModelName = turbulenceModel::typeName,
-            const word& modelName = typeName
+            const transportModel& transport,
+            const word& propertiesName = turbulenceModel::propertiesName,
+            const word& type = typeName
         );
 
 
@@ -147,12 +157,19 @@ public:
 
     // Member Functions
 
+        //- Re-read model coefficients if they have changed
+        virtual bool read();
+
         //- Return the effective diffusivity for k
         tmp<volScalarField> DkEff() const
         {
             return tmp<volScalarField>
             (
-                new volScalarField("DkEff", mut_/sigmak_ + mu())
+                new volScalarField
+                (
+                    "DkEff",
+                    (this->nut_/sigmak_ + this->nu())
+                )
             );
         }
 
@@ -161,20 +178,12 @@ public:
         {
             return tmp<volScalarField>
             (
-                new volScalarField("DepsilonEff", mut_/sigmaEps_ + mu())
+                new volScalarField
+                (
+                    "DepsilonEff",
+                    (this->nut_/sigmaEps_ + this->nu())
+                )
             );
-        }
-
-        //- Return the turbulence viscosity
-        virtual tmp<volScalarField> mut() const
-        {
-            return mut_;
-        }
-
-        //- Return the turbulence thermal diffusivity
-        virtual tmp<volScalarField> alphat() const
-        {
-            return alphat_;
         }
 
         //- Return the turbulence kinetic energy
@@ -189,28 +198,21 @@ public:
             return epsilon_;
         }
 
-        //- Return the Reynolds stress tensor
-        virtual tmp<volSymmTensorField> R() const;
-
-        //- Return the effective stress tensor including the laminar stress
-        virtual tmp<volSymmTensorField> devRhoReff() const;
-
-        //- Return the source term for the momentum equation
-        virtual tmp<fvVectorMatrix> divDevRhoReff(volVectorField& U) const;
-
         //- Solve the turbulence equations and correct the turbulence viscosity
         virtual void correct();
-
-        //- Read RASProperties dictionary
-        virtual bool read();
 };
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 } // End namespace RASModels
-} // End namespace compressible
 } // End namespace Foam
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#ifdef NoRepository
+    #include "porousrealizableKE.C"
+#endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
