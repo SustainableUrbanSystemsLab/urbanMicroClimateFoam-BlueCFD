@@ -736,7 +736,7 @@ int main(int argc, char *argv[])
 
                 cosPhi = (localCoarseSf[faceNo] & sunPos)/(mag(localCoarseSf[faceNo])*mag(sunPos) + SMALL);                
                 sunViewCoeff[vectorId][k] = nVisibleFaceFacesList[vectorId][faceNo]*mag(cosPhi) * IDN[vectorId]; 
-                if (LAIboundaryList[vectorId][k]-0>SMALL) //if LAIboundary value is nonzero, update sunViewCoeff
+                if (LAIboundaryList[vectorId][k]-0>SMALL && cosPhi < 0) //if LAIboundary value is nonzero and if the surface is looking towards the sun, update sunViewCoeff
                 {
                     sunViewCoeff[vectorId][k] = mag(cosPhi) * IDN[vectorId] * Foam::exp(-beta*LAIboundaryList[vectorId][k]); // beer-lambert law
                 }
