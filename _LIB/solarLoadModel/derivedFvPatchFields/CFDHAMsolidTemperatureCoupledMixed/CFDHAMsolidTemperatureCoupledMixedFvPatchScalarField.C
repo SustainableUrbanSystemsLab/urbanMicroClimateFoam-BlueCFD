@@ -192,9 +192,9 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
     //const mappedPatchBase& mppVeg =
     //    refCast<const mappedPatchBase>(patch().patch(), vegiRegion, mpp.mode(), mpp.samplePatch(), mppVegDistance);
 
-		QsVegiNbr = vegiNbrPatch.lookupPatchField<volScalarField, scalar>("Qs");  
+		QsVegiNbr = vegiNbrPatch.lookupPatchField<volScalarField, scalar>("qs");  
 
-		QrVegiNbr = vegiNbrPatch.lookupPatchField<volScalarField, scalar>("Qr");
+		QrVegiNbr = vegiNbrPatch.lookupPatchField<volScalarField, scalar>("qr");
     //}
 
     mppVeg.distribute(QsVegiNbr); //Info << "QsVegiNbr: " << QsVegiNbr << endl;

@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
         IOobject
         (
             "LAIboundary",
-            runTime.caseConstant(),
+            runTime.constant(),
             mesh,
             IOobject::MUST_READ,
             IOobject::NO_WRITE
