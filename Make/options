@@ -2,6 +2,7 @@ EXE_INC = \
     -Ifluid \
     -Isolid \
     -I_LIB/solarLoadModel/lnInclude \
+    -I_LIB/grassModel/lnInclude \
     -I_LIB/buildingMaterialModel/lnInclude \
     -I_LIB/simpleControlFluid/lnInclude \
     -I$(LIB_SRC)/finiteVolume/lnInclude \
@@ -20,6 +21,7 @@ EXE_INC = \
 
 EXE_LIBS = \
     $(FOAM_USER_LIBBIN)/libsolarLoad.so \
+    $(FOAM_USER_LIBBIN)/libgrassModel.so \
     $(FOAM_USER_LIBBIN)/libbuildingMaterialModel.so \
     $(FOAM_USER_LIBBIN)/libsimpleControlFluid.so \
     -lfiniteVolume \

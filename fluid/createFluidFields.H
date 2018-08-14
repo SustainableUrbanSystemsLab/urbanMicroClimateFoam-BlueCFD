@@ -10,6 +10,7 @@ PtrList<volScalarField> ghFluid(fluidRegions.size());
 PtrList<surfaceScalarField> ghfFluid(fluidRegions.size());
 PtrList<radiation::radiationModel> radiation(fluidRegions.size());
 PtrList<solarLoad::solarLoadModel> solarLoad(fluidRegions.size());
+PtrList<grass::grassModel> grass(fluidRegions.size());
 PtrList<volScalarField> wFluid(fluidRegions.size());
 PtrList<volScalarField> gcrFluid(fluidRegions.size());
 
@@ -204,6 +205,12 @@ forAll(fluidRegions, i)
     (
         i,
         solarLoad::solarLoadModel::New(thermoFluid[i].T())
+    );
+
+    grass.set
+    (
+        i,
+        grass::grassModel::New(thermoFluid[i].T())
     );        
 
     initialMassFluid[i] = fvc::domainIntegrate(rhoFluid[i]).value();

@@ -39,6 +39,7 @@ Description
 #include "solidThermo.H"
 #include "radiationModel.H"
 #include "solarLoadModel.H"
+#include "grassModel.H"
 #include "simpleControlFluid.H"
 #include "fvOptions.H"
 

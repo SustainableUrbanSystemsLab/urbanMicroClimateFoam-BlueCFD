@@ -1,3 +1,5 @@
+gra.correct();
+
 simpleControlFluid simpleControlFluid(fluidRegions[i]);
 
 TimeState pts(runTime); //store time state
