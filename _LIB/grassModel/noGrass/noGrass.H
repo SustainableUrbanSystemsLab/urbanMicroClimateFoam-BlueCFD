@@ -73,9 +73,6 @@ public:
         //- Construct from components
         noGrass(const volScalarField& T);
 
-        //- Construct from components
-        noGrass(const dictionary& dict, const volScalarField& T);
-
 
     //- Destructor
     virtual ~noGrass();
@@ -86,10 +83,19 @@ public:
         // Edit
 
             //- Solve grass equation(s)
-            void calculate();
+            void calculate
+            (
+                const volScalarField& T_, 
+                const volScalarField& w_,
+                volScalarField& Sh_,
+                volScalarField& Sw_
+            );
 
             //- Read grassProperties dictionary
             bool read();
+
+            //- return leaf drag coefficient
+            virtual tmp<volScalarField> Cf() const;
 };
 
 

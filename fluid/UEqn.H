@@ -8,7 +8,8 @@
       + MRF.DDt(rho, U)
       + turb.divDevRhoReff(U)
      ==
-        fvOptions(rho, U)
+        fvm::SuSp(-gra.Cf()*rho*mag(U), U)
+      + fvOptions(rho, U)
     );
     fvVectorMatrix& UEqn = tUEqn.ref();
 

@@ -34,7 +34,6 @@ namespace Foam
     {
         defineTypeNameAndDebug(grassModel, 0);
         defineRunTimeSelectionTable(grassModel, T);
-        defineRunTimeSelectionTable(grassModel, dictionary);
     }
 }
 
@@ -100,7 +99,9 @@ Foam::grass::grassModel::grassModel(const volScalarField& T)
     coeffs_(dictionary::null),
     solverFreq_(0),
     firstIter_(true)
-{}
+{
+    initialise();
+}
 
 
 Foam::grass::grassModel::grassModel
@@ -123,36 +124,6 @@ Foam::grass::grassModel::grassModel
         grass_ = false;
     }
 
-    initialise();
-}
-
-
-Foam::grass::grassModel::grassModel
-(
-    const word& type,
-    const dictionary& dict,
-    const volScalarField& T
-)
-:
-    IOdictionary
-    (
-        IOobject
-        (
-            "grassProperties",
-            T.time().constant(),
-            T.mesh(),
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        dict
-    ),
-    mesh_(T.mesh()),
-    time_(T.time()),
-    T_(T),
-    grass_(lookupOrDefault("grass", true)),
-    coeffs_(subOrEmptyDict(type + "Coeffs")),
-    solverFreq_(1)
-{
     initialise();
 }
 
@@ -184,7 +155,13 @@ bool Foam::grass::grassModel::read()
 }
 
 
-void Foam::grass::grassModel::correct()
+void Foam::grass::grassModel::correct
+(
+    const volScalarField& T_, 
+    const volScalarField& w_,
+    volScalarField& Sh_,
+    volScalarField& Sw_
+)
 {
     if (!grass_)
     {
@@ -193,7 +170,7 @@ void Foam::grass::grassModel::correct()
 
     if (firstIter_ || (time_.timeIndex() % solverFreq_ == 0))
     {
-        calculate();
+        calculate(T_, w_, Sh_, Sw_);
         firstIter_ = false;
     }
 }

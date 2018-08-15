@@ -1,5 +1,3 @@
-gra.correct();
-
 simpleControlFluid simpleControlFluid(fluidRegions[i]);
 
 TimeState pts(runTime); //store time state
@@ -20,6 +18,7 @@ while ((simpleControlFluid.run(runTime) || fluidIteration <= minFluidIteration) 
         #include "wEqn.H"
     }
 
+    gra.correct(thermo.T(), w, Sh, Sw);
     turb.correct();
 
     Info << nl; 

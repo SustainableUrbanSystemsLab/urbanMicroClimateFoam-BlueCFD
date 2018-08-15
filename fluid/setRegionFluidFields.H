@@ -7,7 +7,10 @@
     volVectorField& U = UFluid[i];
     volScalarField& w = wFluid[i];    
     volScalarField& gcr = gcrFluid[i];  
-    surfaceScalarField& phi = phiFluid[i];
+    surfaceScalarField& phi = phiFluid[i]; 
+
+    volScalarField& Sh = ShFluid[i];
+    volScalarField& Sw = SwFluid[i];   
 
     compressible::turbulenceModel& turb = turbulence[i];
 

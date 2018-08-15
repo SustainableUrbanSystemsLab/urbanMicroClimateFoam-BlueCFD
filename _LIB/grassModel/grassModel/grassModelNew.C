@@ -76,34 +76,4 @@ Foam::grass::grassModel::New
 }
 
 
-Foam::autoPtr<Foam::grass::grassModel>
-Foam::grass::grassModel::New
-(
-    const dictionary& dict,
-    const volScalarField& T
-)
-{
-    const word modelType(dict.lookup("grassModel"));
-
-    Info<< "Selecting grassModel " << modelType << endl;
-
-    dictionaryConstructorTable::iterator cstrIter =
-        dictionaryConstructorTablePtr_->find(modelType);
-
-    if (cstrIter == dictionaryConstructorTablePtr_->end())
-    {
-        FatalErrorIn
-        (
-            "grassModel::New(const dictionary&, const volScalarField&)"
-        )   << "Unknown grassModel type "
-            << modelType << nl << nl
-            << "Valid grassModel types are:" << nl
-            << dictionaryConstructorTablePtr_->sortedToc()
-            << exit(FatalError);
-    }
-
-    return autoPtr<grassModel>(cstrIter()(dict, T));
-}
-
-
 // ************************************************************************* //

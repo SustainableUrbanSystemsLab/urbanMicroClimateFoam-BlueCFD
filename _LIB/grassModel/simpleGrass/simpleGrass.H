@@ -61,27 +61,22 @@ class simpleGrass
 {
     // Private data
 
-        //- grass temperature [K]
-        volScalarField Tg_;
-
-        //- air temperature [K]
-        volScalarField T;
-
-        //- air humidity ratio [kg/kg]
-        volScalarField w;
-
-        //- net solar radiative flux [W/m2]
-        volScalarField qs;
-
-        //- net thermal radiative flux [W/m2]
-        volScalarField qr;
+        //- leaf temperature [K]
+        volScalarField Tl_;
 
         //- Selected patches
         labelList selectedPatches_;
 
-        scalar LAI_; //- leaf area index
+        scalar LAI_; // leaf area index
+        scalar LAD_; // leaf area density
+        dimensionedScalar Cf_; // leaf drag coefficient
         scalar nEvapSides_; // number of sides, leaf evaporates from
         scalar beta_; // extinction coefficient for short-wave radiation
+		scalar p_; // air pressure - Pa
+		scalar rhoa; // density of air - kg/m3
+		scalar cpa; // specific heat of air at constant pressure - J/(kgK)
+		scalar rs; //stomatal resistance - s/m
+		scalar ra; //aerodynamic resistance - s/m
 
         //- Grass patch ID
         label grassPatchID;
@@ -109,9 +104,6 @@ public:
         //- Construct from components
         simpleGrass(const volScalarField& T);
 
-        //- Construct from components
-        simpleGrass(const dictionary& dict, const volScalarField& T);
-
 
     //- Destructor
     virtual ~simpleGrass();
@@ -122,15 +114,22 @@ public:
         // Edit
 
             //- Solve grass equation(s)
-            void calculate();
+            void calculate
+            (
+                const volScalarField& T_, 
+                const volScalarField& w_,
+                volScalarField& Sh_,
+                volScalarField& Sw_
+            );
 
             //- calculate leaf temperature
             void calc_leafTemp
 			(
 				scalarField& leafTemp, 
+                scalarField& transpiration,
           	    const scalarField& Ts,  
-				scalarField& Qs, 
-				scalarField& Qr,
+				const scalarField& Qs, 
+				const scalarField& Qr,
 				const scalarField& Tc,
 				const scalarField& wc
 			);
@@ -138,8 +137,9 @@ public:
             //- Read grass properties dictionary
             bool read();
 
+            //- return leaf drag coefficient
+            virtual tmp<volScalarField> Cf() const;
 };
-
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

@@ -132,18 +132,6 @@ public:
             (T)
         );
 
-        declareRunTimeSelectionTable
-        (
-            autoPtr,
-            grassModel,
-            dictionary,
-            (
-                const dictionary& dict,
-                const volScalarField& T
-            ),
-            (dict, T)
-        );
-
 
     // Constructors
 
@@ -153,26 +141,11 @@ public:
         //- Construct from components
         grassModel(const word& type, const volScalarField& T);
 
-        //- Construct from components
-        grassModel
-        (
-            const word& type,
-            const dictionary& dict,
-            const volScalarField& T
-        );
-
 
     // Selectors
 
         //- Return a reference to the selected grass model
         static autoPtr<grassModel> New(const volScalarField& T);
-
-        //- Return a reference to the selected grass model
-        static autoPtr<grassModel> New
-        (
-            const dictionary& dict,
-            const volScalarField& T
-        );
 
 
     //- Destructor
@@ -184,13 +157,28 @@ public:
         // Edit
 
             //- Main update/correction routine
-            virtual void correct();
+            virtual void correct
+            (
+                const volScalarField& T_, 
+                const volScalarField& w_,
+                volScalarField& Sh_,
+                volScalarField& Sw_
+            );
 
             //- Solve grass equation(s)
-            virtual void calculate() = 0;
+            virtual void calculate
+            (
+                const volScalarField& T_, 
+                const volScalarField& w_,
+                volScalarField& Sh_,
+                volScalarField& Sw_
+            ) = 0;
 
             //- Read grassProperties dictionary
             virtual bool read() = 0;
+
+            //- return leaf drag coefficient
+            virtual tmp<volScalarField> Cf() const = 0;
 
 
         // Access
@@ -206,13 +194,6 @@ public:
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #define addToGrassRunTimeSelectionTables(model)                           \
-                                                                              \
-    addToRunTimeSelectionTable                                                \
-    (                                                                         \
-        grassModel,                                                       \
-        model,                                                                \
-        dictionary                                                            \
-    );                                                                        \
                                                                               \
     addToRunTimeSelectionTable                                                \
     (                                                                         \

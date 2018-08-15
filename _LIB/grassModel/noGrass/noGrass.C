@@ -50,16 +50,6 @@ Foam::grass::noGrass::noGrass(const volScalarField& T)
 {}
 
 
-Foam::grass::noGrass::noGrass
-(
-    const dictionary& dict,
-    const volScalarField& T
-)
-:
-    grassModel(T)
-{}
-
-
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
 Foam::grass::noGrass::~noGrass()
@@ -74,9 +64,41 @@ bool Foam::grass::noGrass::read()
 }
 
 
-void Foam::grass::noGrass::calculate()
+void Foam::grass::noGrass::calculate
+(
+    const volScalarField& T_, 
+    const volScalarField& w_,
+    volScalarField& Sh_,
+    volScalarField& Sw_
+)
 {
     // Do nothing
+}
+
+Foam::tmp<Foam::volScalarField> Foam::grass::noGrass::Cf() const
+{
+    return tmp<volScalarField>
+    (
+        new volScalarField
+        (
+            IOobject
+            (
+                "Cf",
+                mesh_.time().timeName(),
+                mesh_,
+                IOobject::NO_READ,
+                IOobject::NO_WRITE,
+                false
+            ),
+            mesh_,
+            dimensionedScalar
+            (
+                "zero",
+                dimless/dimLength,
+                0.0
+            )
+        )
+    );
 }
 
 

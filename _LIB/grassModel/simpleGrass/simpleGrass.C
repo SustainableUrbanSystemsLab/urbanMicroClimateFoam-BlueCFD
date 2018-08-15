@@ -48,11 +48,18 @@ namespace Foam
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
 
 void Foam::grass::simpleGrass::initialise()
-{
-    List<word> grassPatches(coeffs_.lookup("grassPatches"));   
-    LAI_ = coeffs_.lookupOrDefault("LAI", 2);
-    nEvapSides_ = coeffs_.lookupOrDefault("nEvapSides", 1);
-    beta_ = coeffs_.lookupOrDefault("beta", 0.78);
+{  
+    nEvapSides_ = coeffs_.lookupOrDefault("nEvapSides_", 1);
+    beta_ = coeffs_.lookupOrDefault("beta_", 0.78);
+    LAI_ = coeffs_.lookupOrDefault("LAI_", 2);
+    LAD_ = coeffs_.lookupOrDefault("LAD_", 20);
+    p_ = coeffs_.lookupOrDefault("p_", 101325);
+    rhoa = coeffs_.lookupOrDefault("rhoa", 1.225);
+    cpa = coeffs_.lookupOrDefault("cpa", 1003.5);
+    rs = coeffs_.lookupOrDefault("rs", 200);
+    ra = coeffs_.lookupOrDefault("ra", 100);
+
+    List<word> grassPatches(coeffs_.lookup("grassPatches"));  
 
     label count = 0;
     forAll(grassPatches, i)
@@ -78,140 +85,20 @@ void Foam::grass::simpleGrass::initialise()
 Foam::grass::simpleGrass::simpleGrass(const volScalarField& T)
 :
     grassModel(typeName, T),
-    Tg_
+    Tl_
     (
         IOobject
         (
-            "Tg",
+            "Tl",
             mesh_.time().timeName(),
             mesh_,
             IOobject::READ_IF_PRESENT,
             IOobject::AUTO_WRITE
         ),
-        mesh_,
-        dimensionedScalar("Tg", dimTemperature, 300),
-		T.boundaryField().types()
+        -pos(T)
     ),
-    T
-    (
-        IOobject
-        (
-            "T",
-            mesh_.time().timeName(),
-            mesh_,
-            IOobject::MUST_READ,
-            IOobject::NO_WRITE
-        ),
-        mesh_
-    ),
-    w
-    (
-        IOobject
-        (
-            "w",
-            mesh_.time().timeName(),
-            mesh_,
-            IOobject::MUST_READ,
-            IOobject::NO_WRITE
-        ),
-        mesh_
-    ),
-    qs
-    (
-        IOobject
-        (
-            "qs",
-            mesh_.time().timeName(),
-            mesh_,
-            IOobject::MUST_READ,
-            IOobject::NO_WRITE
-        ),
-        mesh_
-    ),
-    qr
-    (
-        IOobject
-        (
-            "qr",
-            mesh_.time().timeName(),
-            mesh_,
-            IOobject::MUST_READ,
-            IOobject::NO_WRITE
-        ),
-        mesh_
-    ),
-    selectedPatches_(mesh_.boundary().size(), -1)
-{
-    initialise();
-}
-
-
-Foam::grass::simpleGrass::simpleGrass(const dictionary& dict, const volScalarField& T)
-:
-    grassModel(typeName, dict, T),
-    Tg_
-    (
-        IOobject
-        (
-            "Tg",
-            mesh_.time().timeName(),
-            mesh_,
-            IOobject::READ_IF_PRESENT,
-            IOobject::AUTO_WRITE
-        ),
-        mesh_,
-        dimensionedScalar("Tg", dimTemperature, 300),
-		T.boundaryField().types()
-    ),
-    T
-    (
-        IOobject
-        (
-            "T",
-            mesh_.time().timeName(),
-            mesh_,
-            IOobject::MUST_READ,
-            IOobject::NO_WRITE
-        ),
-        mesh_
-    ),
-    w
-    (
-        IOobject
-        (
-            "w",
-            mesh_.time().timeName(),
-            mesh_,
-            IOobject::MUST_READ,
-            IOobject::NO_WRITE
-        ),
-        mesh_
-    ),
-    qs
-    (
-        IOobject
-        (
-            "qs",
-            mesh_.time().timeName(),
-            mesh_,
-            IOobject::MUST_READ,
-            IOobject::NO_WRITE
-        ),
-        mesh_
-    ),
-    qr
-    (
-        IOobject
-        (
-            "qr",
-            mesh_.time().timeName(),
-            mesh_,
-            IOobject::MUST_READ,
-            IOobject::NO_WRITE
-        ),
-        mesh_
-    ),
-    selectedPatches_(mesh_.boundary().size(), -1)
+    selectedPatches_(mesh_.boundary().size(), -1),
+    Cf_(coeffs_.lookup("Cf"))
 {
     initialise();
 }
@@ -240,7 +127,13 @@ bool Foam::grass::simpleGrass::read()
 }
 
 
-void Foam::grass::simpleGrass::calculate()
+void Foam::grass::simpleGrass::calculate
+(
+    const volScalarField& T_, 
+    const volScalarField& w_,
+    volScalarField& Sh_,
+    volScalarField& Sw_
+)
 {	
 
 	forAll(selectedPatches_, i)
@@ -248,41 +141,51 @@ void Foam::grass::simpleGrass::calculate()
 		label patchID = selectedPatches_[i];
 		const fvPatch& thisPatch = mesh_.boundary()[patchID];
 
-        volScalarField::Boundary& TgBf = Tg_.boundaryFieldRef();
-        scalarField& TgPatch = TgBf[patchID];
-        volScalarField::Boundary& qsBf = qs.boundaryFieldRef();
-        scalarField& qsPatch = qsBf[patchID];
-        volScalarField::Boundary& qrBf = qr.boundaryFieldRef();
-        scalarField& qrPatch = qrBf[patchID];
+        const labelUList& patchInternalLabels = thisPatch.faceCells();
+        scalarField leafTemp = thisPatch.patchInternalField(Tl_);
+        scalarField TPatchInternal = thisPatch.patchInternalField(T_);
+        scalarField wPatchInternal = thisPatch.patchInternalField(w_);
 
-        scalarField TPatchInternal = thisPatch.patchInternalField(T);
-        scalarField wPatchInternal = thisPatch.patchInternalField(w);
         scalarField TPatch = thisPatch.lookupPatchField<volScalarField, scalar>("T");
+        scalarField qsPatch = thisPatch.lookupPatchField<volScalarField, scalar>("qs");
+        scalarField qrPatch = thisPatch.lookupPatchField<volScalarField, scalar>("qr");
 
-		calc_leafTemp(TgPatch, TPatch, qsPatch, qrPatch, TPatchInternal, wPatchInternal);
+        scalarField transpiration(scalarField(mesh_.nCells(),0.0));
+
+        if (gMin(leafTemp) < 0)
+        {
+            leafTemp = TPatchInternal; //initialize if necessary
+        }      
+
+		calc_leafTemp(leafTemp, transpiration, TPatch, qsPatch, qrPatch, TPatchInternal, wPatchInternal);
+
+        scalarField& Tl_Internal = Tl_.ref();
+        forAll(patchInternalLabels, i)
+        {
+            Tl_Internal[patchInternalLabels[i]] = leafTemp[i];
+            Sh_[patchInternalLabels[i]] = 2.0*rhoa*cpa*LAD_*(leafTemp[i]-TPatchInternal[i])/ra;
+            Sw_[patchInternalLabels[i]] = transpiration[i]*(LAD_/LAI_);
+        }
+
 	}
 }
 
 void Foam::grass::simpleGrass::calc_leafTemp
 (
 	scalarField& leafTemp,
+	scalarField& E,
 	const scalarField& Ts,  
-	scalarField& Qs, 
-	scalarField& Qr,
+	const scalarField& Qs, 
+	const scalarField& Qr,
 	const scalarField& Tc,
 	const scalarField& wc
 )
 {
-	const scalar p_ = 101325; // air pressure - Pa
-	const scalar rhoa = 1.225; // density of air - kg/m3
-	const scalar cpa = 1003.5; // specific heat of air at constant pressure - J/(kgK)
-	scalar rs = 200; //stomatal resistance - s/m
-	scalar ra = 100; //aerodynamic resistance - s/m
 
     scalarField Qs_abs = Qs - Qs*exp(beta_*LAI_);
-    Qs = Qs*exp(beta_*LAI_);
+//    Qs = Qs*exp(beta_*LAI_);
     scalarField Qr_abs = Qr;
-    Qr = 0;
+//    Qr = 0;
 
 	label maxIter = 500;
 	for (label i=1; i<=maxIter; i++)
@@ -294,23 +197,21 @@ void Foam::grass::simpleGrass::calc_leafTemp
 	                - 1.4452093e-8*pow(leafTemp,3)
 	                + 6.5459673*log(leafTemp) );
 
-		scalarField rhosat = evsat / (461.5*leafTemp); // saturated density of water vapour
-
 		scalarField wsat = 0.621945*(evsat/(p_-evsat)); // saturated specific humidity, ASHRAE 1, eq.23
 
 		///////////calculate transpiration rate
-		scalarField E = pos(Qs-SMALL)*nEvapSides_*LAI_*rhoa*(wsat-wc)/(rs+ra);
+		E = pos(Qs-SMALL)*nEvapSides_*LAI_*rhoa*(wsat-wc)/(rs+ra);
 		//no transpiration at night when Qs is not >0
 		//////////////////////////////////////
 
-		scalar lambda = 2500000; // latent heat of vaporization of water J/Kg
+		scalar lambda = 2500000; // latent heat of vaporization of water J/kg
 		scalarField Qlat = lambda*E; //latent heat flux
 
         scalarField Qr_Surface = 6*(Ts-leafTemp); //thermal radiation between grass and surface - Malys et al 2014
 		scalarField leafTemp_new = Tc + (Qr_abs + Qr_Surface + Qs_abs - Qlat)*(ra/(rhoa*cpa*2*LAI_));
 
         // info
-        Info << " max leaf temp tl=" << gMax(leafTemp_new)
+        Info << " max leaf temp Tl=" << gMax(leafTemp_new)
              << " K, iteration i="   << i << endl;
 
         // Check rel. L-infinity error
@@ -328,5 +229,24 @@ void Foam::grass::simpleGrass::calc_leafTemp
 	}
 }
 
+Foam::tmp<Foam::volScalarField> Foam::grass::simpleGrass::Cf() const
+{
+    return tmp<volScalarField>
+    (
+        new volScalarField
+        (
+            IOobject
+            (
+                "Cf",
+                mesh_.time().timeName(),
+                mesh_,
+                IOobject::NO_READ,
+                IOobject::NO_WRITE,
+                false
+            ),
+            Cf_*pos(Tl_)
+        )
+    );
+}
 
 // ************************************************************************* //

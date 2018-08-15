@@ -6,9 +6,9 @@
     (
         fvm::ddt(rho,w)
       + fvm::div(phi, w)
-//      - fvm::laplacian(turb.alphaEff(), w) //In reactingParcelFimFoam, they use alphaEff, but in others Mass Diffusivity = muEff/Sct      
       - fvm::laplacian(rho*Dm + turb.mut()/Sct, w)
-//      - fvm::laplacian(rho*Dm, w)      
+     ==
+        Sw
     );
     wEqn.relax();
 
