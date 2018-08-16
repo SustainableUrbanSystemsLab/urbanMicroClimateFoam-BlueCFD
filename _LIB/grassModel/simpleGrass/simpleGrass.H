@@ -69,7 +69,7 @@ class simpleGrass
 
         scalar LAI_; // leaf area index
         scalar LAD_; // leaf area density
-        dimensionedScalar Cf_; // leaf drag coefficient
+        scalar Cd_; // leaf drag coefficient
         scalar nEvapSides_; // number of sides, leaf evaporates from
         scalar beta_; // extinction coefficient for short-wave radiation
 		scalar p_; // air pressure - Pa

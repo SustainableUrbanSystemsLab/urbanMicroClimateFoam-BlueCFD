@@ -50,6 +50,7 @@ namespace Foam
 void Foam::grass::simpleGrass::initialise()
 {  
     nEvapSides_ = coeffs_.lookupOrDefault("nEvapSides", 1);
+    Cd_ = coeffs_.lookupOrDefault("Cd", 0.2);
     beta_ = coeffs_.lookupOrDefault("beta", 0.78);
     LAI_ = coeffs_.lookupOrDefault("LAI", 2);
     LAD_ = coeffs_.lookupOrDefault("LAD", 20);
@@ -97,8 +98,7 @@ Foam::grass::simpleGrass::simpleGrass(const volScalarField& T)
         ),
         -pos(T)
     ),
-    selectedPatches_(mesh_.boundary().size(), -1),
-    Cf_(coeffs_.lookup("Cf"))
+    selectedPatches_(mesh_.boundary().size(), -1)
 {
     initialise();
 }
@@ -248,7 +248,7 @@ Foam::tmp<Foam::volScalarField> Foam::grass::simpleGrass::Cf() const
                 IOobject::NO_WRITE,
                 false
             ),
-            Cf_*pos(Tl_)
+            dimensionedScalar("Cf", dimless/dimLength, Cd_*LAD_)*pos(Tl_)
         )
     );
 }
