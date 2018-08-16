@@ -265,6 +265,40 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
         mpp.distribute(qsNbr);
     }   
 
+    //-- Grass adjustments --//
+    IOdictionary grassProperties
+    (
+		IOobject
+		(
+		    "grassProperties",
+		    nbrMesh.time().constant(),
+		    nbrMesh,
+		    IOobject::MUST_READ,
+		    IOobject::NO_WRITE
+        )
+    );
+
+    if (grassProperties.typeHeaderOk<IOdictionary>(true))
+    {
+        word grassModel(grassProperties.lookup("grassModel"));
+        if (grassModel != "none")
+        {
+            scalarField TlNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("Tl");
+                mpp.distribute(TlNbr);
+
+            if (gMin(TlNbr) > 0) //if patch is covered with grass
+            {
+                const dictionary& coeffs = grassProperties.subDict(grassModel + "Coeffs");
+                scalar LAI = coeffs.lookupOrDefault("LAI", 2);
+                scalar beta = coeffs.lookupOrDefault("beta", 0.78); Info << "maxqr: " << max(qrNbr) << " maxqs: " << max(qsNbr) << endl;
+                qrNbr = 6*(TlNbr-Tp); //thermal radiation between grass and surface - Malys et al 2014
+                                      //assuming external thermal radiation is fully absorbed with grass layer
+                qsNbr = qsNbr*exp(-beta*LAI); //solar radiation transmitted through grass layer
+            }
+        }
+    }
+    ///////////////////////////
+
     //-- Gravity-enthalpy flux --//
     //lookup gravity vector
     uniformDimensionedVectorField g = db().lookupObject<uniformDimensionedVectorField>("g");

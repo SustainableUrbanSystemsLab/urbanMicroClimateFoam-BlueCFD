@@ -49,11 +49,11 @@ namespace Foam
 
 void Foam::grass::simpleGrass::initialise()
 {  
-    nEvapSides_ = coeffs_.lookupOrDefault("nEvapSides_", 1);
-    beta_ = coeffs_.lookupOrDefault("beta_", 0.78);
-    LAI_ = coeffs_.lookupOrDefault("LAI_", 2);
-    LAD_ = coeffs_.lookupOrDefault("LAD_", 20);
-    p_ = coeffs_.lookupOrDefault("p_", 101325);
+    nEvapSides_ = coeffs_.lookupOrDefault("nEvapSides", 1);
+    beta_ = coeffs_.lookupOrDefault("beta", 0.78);
+    LAI_ = coeffs_.lookupOrDefault("LAI", 2);
+    LAD_ = coeffs_.lookupOrDefault("LAD", 20);
+    p_ = coeffs_.lookupOrDefault("p", 101325);
     rhoa = coeffs_.lookupOrDefault("rhoa", 1.225);
     cpa = coeffs_.lookupOrDefault("cpa", 1003.5);
     rs = coeffs_.lookupOrDefault("rs", 200);
@@ -136,9 +136,9 @@ void Foam::grass::simpleGrass::calculate
 )
 {	
 
-	forAll(selectedPatches_, i)
+	forAll(selectedPatches_, patchi)
     {
-		label patchID = selectedPatches_[i];
+		label patchID = selectedPatches_[patchi];
 		const fvPatch& thisPatch = mesh_.boundary()[patchID];
 
         const labelUList& patchInternalLabels = thisPatch.faceCells();
@@ -160,9 +160,13 @@ void Foam::grass::simpleGrass::calculate
 		calc_leafTemp(leafTemp, transpiration, TPatch, qsPatch, qrPatch, TPatchInternal, wPatchInternal);
 
         scalarField& Tl_Internal = Tl_.ref();
+        volScalarField::Boundary& Tl_Bf = Tl_.boundaryFieldRef();
+        scalarField& Tl_p = Tl_Bf[patchID];
+
         forAll(patchInternalLabels, i)
         {
             Tl_Internal[patchInternalLabels[i]] = leafTemp[i];
+            Tl_p[i] = leafTemp[i];
             Sh_[patchInternalLabels[i]] = 2.0*rhoa*cpa*LAD_*(leafTemp[i]-TPatchInternal[i])/ra;
             Sw_[patchInternalLabels[i]] = transpiration[i]*(LAD_/LAI_);
         }
@@ -182,8 +186,8 @@ void Foam::grass::simpleGrass::calc_leafTemp
 )
 {
 
-    scalarField Qs_abs = Qs - Qs*exp(beta_*LAI_);
-//    Qs = Qs*exp(beta_*LAI_);
+    scalarField Qs_abs = Qs - Qs*exp(-beta_*LAI_);
+//    Qs = Qs*exp(-beta_*LAI_);
     scalarField Qr_abs = Qr;
 //    Qr = 0;
 
