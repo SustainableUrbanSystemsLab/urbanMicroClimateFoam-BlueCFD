@@ -290,7 +290,7 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
             {
                 const dictionary& coeffs = grassProperties.subDict(grassModel + "Coeffs");
                 scalar LAI = coeffs.lookupOrDefault("LAI", 2);
-                scalar beta = coeffs.lookupOrDefault("beta", 0.78); Info << "maxqr: " << max(qrNbr) << " maxqs: " << max(qsNbr) << endl;
+                scalar beta = coeffs.lookupOrDefault("beta", 0.78);
                 qrNbr = 6*(TlNbr-Tp); //thermal radiation between grass and surface - Malys et al 2014
                                       //assuming external thermal radiation is fully absorbed with grass layer
                 qsNbr = qsNbr*exp(-beta*LAI); //solar radiation transmitted through grass layer
