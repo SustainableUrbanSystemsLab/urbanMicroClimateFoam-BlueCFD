@@ -168,7 +168,7 @@ void Foam::grass::simpleGrass::calculate
             Tl_Internal[patchInternalLabels[i]] = leafTemp[i];
             Tl_p[i] = leafTemp[i];
             Sh_[patchInternalLabels[i]] = 2.0*rhoa*cpa*LAD_*(leafTemp[i]-TPatchInternal[i])/ra;
-            Sw_[patchInternalLabels[i]] = transpiration[i]*(LAD_/LAI_);
+            Sw_[patchInternalLabels[i]] = transpiration[i]*LAD_;
         }
 
 	}
@@ -204,12 +204,12 @@ void Foam::grass::simpleGrass::calc_leafTemp
 		scalarField wsat = 0.621945*(evsat/(p_-evsat)); // saturated specific humidity, ASHRAE 1, eq.23
 
 		///////////calculate transpiration rate
-		E = pos(Qs-SMALL)*nEvapSides_*LAI_*rhoa*(wsat-wc)/(rs+ra);
+		E = pos(Qs-SMALL)*nEvapSides_*rhoa*(wsat-wc)/(rs+ra);
 		//no transpiration at night when Qs is not >0
 		//////////////////////////////////////
 
 		scalar lambda = 2500000; // latent heat of vaporization of water J/kg
-		scalarField Qlat = lambda*E; //latent heat flux
+		scalarField Qlat = lambda*E*LAI_; //latent heat flux
 
         scalarField Qr_Surface = 6*(Ts-leafTemp); //thermal radiation between grass and surface - Malys et al 2014
 		scalarField leafTemp_new = Tc + (Qr_abs + Qr_Surface + Qs_abs - Qlat)*(ra/(rhoa*cpa*2*LAI_));
