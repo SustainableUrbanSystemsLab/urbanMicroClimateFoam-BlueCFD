@@ -68,6 +68,7 @@ void Foam::grass::noGrass::calculate
 (
     const volScalarField& T_, 
     const volScalarField& w_,
+    const volVectorField& U_,
     volScalarField& Sh_,
     volScalarField& Sw_
 )

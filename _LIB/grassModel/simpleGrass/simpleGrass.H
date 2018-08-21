@@ -76,7 +76,7 @@ class simpleGrass
 		scalar rhoa; // density of air - kg/m3
 		scalar cpa; // specific heat of air at constant pressure - J/(kgK)
 		scalar rs; //stomatal resistance - s/m
-		scalar ra; //aerodynamic resistance - s/m
+		scalarField ra; //aerodynamic resistance - s/m
 
         //- Grass patch ID
         label grassPatchID;
@@ -118,6 +118,7 @@ public:
             (
                 const volScalarField& T_, 
                 const volScalarField& w_,
+                const volVectorField& U_,
                 volScalarField& Sh_,
                 volScalarField& Sw_
             );

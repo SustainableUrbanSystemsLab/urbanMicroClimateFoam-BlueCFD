@@ -58,7 +58,7 @@ void Foam::grass::simpleGrass::initialise()
     rhoa = coeffs_.lookupOrDefault("rhoa", 1.225);
     cpa = coeffs_.lookupOrDefault("cpa", 1003.5);
     rs = coeffs_.lookupOrDefault("rs", 200);
-    ra = coeffs_.lookupOrDefault("ra", 100);
+//    ra = coeffs_.lookupOrDefault("ra", 100);
 
     List<word> grassPatches(coeffs_.lookup("grassPatches"));  
 
@@ -131,6 +131,7 @@ void Foam::grass::simpleGrass::calculate
 (
     const volScalarField& T_, 
     const volScalarField& w_,
+    const volVectorField& U_,
     volScalarField& Sh_,
     volScalarField& Sw_
 )
@@ -145,12 +146,19 @@ void Foam::grass::simpleGrass::calculate
         scalarField leafTemp = thisPatch.patchInternalField(Tl_);
         scalarField TPatchInternal = thisPatch.patchInternalField(T_);
         scalarField wPatchInternal = thisPatch.patchInternalField(w_);
+        vectorField UPatchInternal = thisPatch.patchInternalField(U_);
 
         scalarField TPatch = thisPatch.lookupPatchField<volScalarField, scalar>("T");
         scalarField qsPatch = thisPatch.lookupPatchField<volScalarField, scalar>("qs");
         scalarField qrPatch = thisPatch.lookupPatchField<volScalarField, scalar>("qr");
 
         scalarField transpiration(scalarField(mesh_.nCells(),0.0));
+
+        scalar C_ = 131.035; // proportionality factor
+        scalar l_ = 0.1; // characteristic length of leaf
+        scalarField magU = mag(UPatchInternal);
+        magU = max(magU, SMALL);
+        ra = C_*pow(l_/magU, 0.5);
 
         if (gMin(leafTemp) < 0)
         {
@@ -167,7 +175,7 @@ void Foam::grass::simpleGrass::calculate
         {
             Tl_Internal[patchInternalLabels[i]] = leafTemp[i];
             Tl_p[i] = leafTemp[i];
-            Sh_[patchInternalLabels[i]] = 2.0*rhoa*cpa*LAD_*(leafTemp[i]-TPatchInternal[i])/ra;
+            Sh_[patchInternalLabels[i]] = 2.0*rhoa*cpa*LAD_*(leafTemp[i]-TPatchInternal[i])/ra[i];
             Sw_[patchInternalLabels[i]] = transpiration[i]*LAD_;
         }
 
@@ -254,3 +262,4 @@ Foam::tmp<Foam::volScalarField> Foam::grass::simpleGrass::Cf() const
 }
 
 // ************************************************************************* //
+

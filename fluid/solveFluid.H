@@ -9,7 +9,7 @@ while ((simpleControlFluid.run(runTime) || fluidIteration <= minFluidIteration) 
 //  Pressure-velocity SIMPLE corrector
     Info << "Internal iteration number: " << fluidIteration << endl;
 
-    gra.correct(thermo.T(), w, Sh, Sw);
+    gra.correct(thermo.T(), w, U, Sh, Sw);
 
     p_rgh.storePrevIter();
     rho.storePrevIter();
