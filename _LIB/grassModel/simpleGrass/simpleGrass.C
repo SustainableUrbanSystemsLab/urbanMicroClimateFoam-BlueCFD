@@ -205,7 +205,7 @@ void Foam::grass::simpleGrass::calculate
             scalarField Qlat = lambda*E; //latent heat flux
 
             scalarField Qr_Surface = 6*(Ts-Tl); //thermal radiation between grass and surface - Malys et al 2014
-            scalarField Tl_new = Tc + (Qr_abs + Qr_Surface + Qs_abs - Qlat)*(ra/(rhoa*cpa*2));
+            scalarField Tl_new = Tc + (Qr_abs + Qr_Surface + Qs_abs - Qlat)/ h_ch;
 
             // info
             Info << " max leaf temp Tl=" << gMax(Tl_new)
