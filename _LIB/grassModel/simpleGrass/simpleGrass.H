@@ -67,16 +67,23 @@ class simpleGrass
         //- Selected patches
         labelList selectedPatches_;
 
+        scalar nEvapSides_; // number of sides, leaf evaporates from
+        scalar Cd_; // leaf drag coefficient
+        scalar beta_; // extinction coefficient for short-wave radiation
         scalar LAI_; // leaf area index
         scalar LAD_; // leaf area density
-        scalar Cd_; // leaf drag coefficient
-        scalar nEvapSides_; // number of sides, leaf evaporates from
-        scalar beta_; // extinction coefficient for short-wave radiation
+
 		scalar p_; // air pressure - Pa
 		scalar rhoa; // density of air - kg/m3
 		scalar cpa; // specific heat of air at constant pressure - J/(kgK)
+        scalar Ra; //gas constant for air
+        scalar Rv; //gas constant for vapour
+
 		scalar rs; //stomatal resistance - s/m
 		scalarField ra; //aerodynamic resistance - s/m
+
+        //- debug switch
+        bool debug_;
 
         //- Grass patch ID
         label grassPatchID;
@@ -85,6 +92,9 @@ class simpleGrass
 
         //- Initialise
         void initialise();
+
+        //- calculate saturation vapour poressure
+        scalarField calc_pvsat(const scalarField& T_);
 
         //- Disallow default bitwise copy construct
         simpleGrass(const simpleGrass&);
@@ -122,18 +132,6 @@ public:
                 volScalarField& Sh_,
                 volScalarField& Sw_
             );
-
-            //- calculate leaf temperature
-            void calc_leafTemp
-			(
-				scalarField& leafTemp, 
-                scalarField& transpiration,
-          	    const scalarField& Ts,  
-				const scalarField& Qs, 
-				const scalarField& Qr,
-				const scalarField& Tc,
-				const scalarField& wc
-			);
 
             //- Read grass properties dictionary
             bool read();

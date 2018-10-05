@@ -54,11 +54,16 @@ void Foam::grass::simpleGrass::initialise()
     beta_ = coeffs_.lookupOrDefault("beta", 0.78);
     LAI_ = coeffs_.lookupOrDefault("LAI", 2);
     LAD_ = coeffs_.lookupOrDefault("LAD", 20);
-    p_ = coeffs_.lookupOrDefault("p", 101325);
-    rhoa = coeffs_.lookupOrDefault("rhoa", 1.225);
-    cpa = coeffs_.lookupOrDefault("cpa", 1003.5);
+
+    p_ = 101325;
+    rhoa = 1.225;
+    cpa = 1003.5;
+    Ra = 287.042;
+    Rv = 461.524;
+
     rs = coeffs_.lookupOrDefault("rs", 200);
 //    ra = coeffs_.lookupOrDefault("ra", 100);
+    debug_ = coeffs_.lookupOrDefault("debug", 0);
 
     List<word> grassPatches(coeffs_.lookup("grassPatches"));  
 
@@ -79,6 +84,17 @@ void Foam::grass::simpleGrass::initialise()
         }
     }
     selectedPatches_.resize(count--);
+}
+
+Foam::scalarField Foam::grass::simpleGrass::calc_pvsat(const scalarField& T_)
+{
+     scalarField pvsat_ = exp( - 5.8002206e3/T_ // saturated vapor pressure pws - ASHRAE 1.2
+            + 1.3914993
+            - 4.8640239e-2*T_
+            + 4.1764768e-5*pow(T_,2)
+            - 1.4452093e-8*pow(T_,3)
+            + 6.5459673*log(T_) );
+     return pvsat_;
 }
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
@@ -135,110 +151,93 @@ void Foam::grass::simpleGrass::calculate
     volScalarField& Sh_,
     volScalarField& Sw_
 )
-{	
+{    
 
-	forAll(selectedPatches_, patchi)
+    forAll(selectedPatches_, patchi)
     {
-		label patchID = selectedPatches_[patchi];
-		const fvPatch& thisPatch = mesh_.boundary()[patchID];
+        label patchID = selectedPatches_[patchi];
+        const fvPatch& thisPatch = mesh_.boundary()[patchID];
 
         const labelUList& patchInternalLabels = thisPatch.faceCells();
-        scalarField leafTemp = thisPatch.patchInternalField(Tl_);
-        scalarField TPatchInternal = thisPatch.patchInternalField(T_);
-        scalarField wPatchInternal = thisPatch.patchInternalField(w_);
-        vectorField UPatchInternal = thisPatch.patchInternalField(U_);
+        scalarField Tl = thisPatch.patchInternalField(Tl_);
+        scalarField Tc = thisPatch.patchInternalField(T_);
+        scalarField wc = thisPatch.patchInternalField(w_);
+        vectorField Uc = thisPatch.patchInternalField(U_);
 
-        scalarField TPatch = thisPatch.lookupPatchField<volScalarField, scalar>("T");
-        scalarField qsPatch = thisPatch.lookupPatchField<volScalarField, scalar>("qs");
-        scalarField qrPatch = thisPatch.lookupPatchField<volScalarField, scalar>("qr");
-
-        scalarField transpiration(scalarField(mesh_.nCells(),0.0));
+        scalarField Ts = thisPatch.lookupPatchField<volScalarField, scalar>("T");
+        scalarField qs = thisPatch.lookupPatchField<volScalarField, scalar>("qs");
+        scalarField qr = thisPatch.lookupPatchField<volScalarField, scalar>("qr");
 
         scalar C_ = 131.035; // proportionality factor
         scalar l_ = 0.1; // characteristic length of leaf
-        scalarField magU = mag(UPatchInternal);
+        scalarField magU = mag(Uc);
         magU = max(magU, SMALL);
-        ra = C_*pow(l_/magU, 0.5);
+        ra = C_*pow(l_/magU, 0.5); //aerodynamic resistance
 
-        if (gMin(leafTemp) < 0)
+        scalarField h_ch = (2.0*rhoa*cpa)/ra; //convective heat transfer coefficient
+        scalarField h_cm = (rhoa*Ra)/(p_*Rv*(ra+rs)); //convective mass transfer coefficient
+
+        //scalarField wsat = 0.621945*(pvsat/(p_-pvsat)); // saturated specific humidity, ASHRAE 1, eq.23
+        scalarField pv = p_ * wc / (Ra/Rv + wc); // vapour pressure
+
+        if (gMin(Tl) < 0)
         {
-            leafTemp = TPatchInternal; //initialize if necessary
-        }      
+            Tl = Tc; //initialize if necessary
+        }
 
-		calc_leafTemp(leafTemp, transpiration, TPatch, qsPatch, qrPatch, TPatchInternal, wPatchInternal);
+        scalarField Qs_abs = qs - qs*exp(-beta_*LAI_);
+//        Qs = Qs*exp(-beta_*LAI_);
+        scalarField Qr_abs = qr;
+//        Qr = 0;
 
+        scalarField E(scalarField(mesh_.nCells(),0.0));
+
+        ////calculate leaf temperature///////////
+        label maxIter = 500;
+        for (label i=1; i<=maxIter; i++)
+        {
+            scalarField pvsat = calc_pvsat(Tl); //saturation vapour pressure
+            E = pos(Qs_abs-SMALL)*nEvapSides_*h_cm*(pvsat-pv); //initialize transpiration rate [kg/(m2s)]
+            //scalarField E = pos(Qs-SMALL)*nEvapSides_*rhoa*(wsat-wc)/(rs+ra);
+            //no transpiration at night when Qs_abs is not >0
+
+            scalar lambda = 2500000; // latent heat of vaporization of water J/kg
+            scalarField Qlat = lambda*E; //latent heat flux
+
+            scalarField Qr_Surface = 6*(Ts-Tl); //thermal radiation between grass and surface - Malys et al 2014
+            scalarField Tl_new = Tc + (Qr_abs + Qr_Surface + Qs_abs - Qlat)*(ra/(rhoa*cpa*2));
+
+            // info
+            Info << " max leaf temp Tl=" << gMax(Tl_new)
+                 << " K, iteration i="   << i << endl;
+
+            // Check rel. L-infinity error
+            scalar maxError = gMax(mag(Tl_new-Tl));
+            scalar maxRelError = maxError/gMax(mag(Tl_new));  
+
+            // convergence check
+            if ((maxRelError < 1e-8) && (maxError < 1e-8))
+                 break; 
+            else
+                Tl = 0.5*Tl+0.5*Tl_new; // update leaf temp. 
+                    
+        }
+        /////////////////////////////////////////
+
+        ////update fields////////////////////////
         scalarField& Tl_Internal = Tl_.ref();
         volScalarField::Boundary& Tl_Bf = Tl_.boundaryFieldRef();
         scalarField& Tl_p = Tl_Bf[patchID];
 
         forAll(patchInternalLabels, i)
         {
-            Tl_Internal[patchInternalLabels[i]] = leafTemp[i];
-            Tl_p[i] = leafTemp[i];
-            Sh_[patchInternalLabels[i]] = 2.0*rhoa*cpa*LAD_*(leafTemp[i]-TPatchInternal[i])/ra[i];
-            Sw_[patchInternalLabels[i]] = transpiration[i]*LAD_;
+            Tl_Internal[patchInternalLabels[i]] = Tl[i];
+            Tl_p[i] = Tl[i];
+            Sh_[patchInternalLabels[i]] = LAD_*h_ch[i]*(Tl[i]-Tc[i]);
+            Sw_[patchInternalLabels[i]] = LAD_*E[i];
         }
-
-	}
-}
-
-void Foam::grass::simpleGrass::calc_leafTemp
-(
-	scalarField& leafTemp,
-	scalarField& E,
-	const scalarField& Ts,  
-	const scalarField& Qs, 
-	const scalarField& Qr,
-	const scalarField& Tc,
-	const scalarField& wc
-)
-{
-
-    scalarField Qs_abs = Qs - Qs*exp(-beta_*LAI_);
-//    Qs = Qs*exp(-beta_*LAI_);
-    scalarField Qr_abs = Qr;
-//    Qr = 0;
-
-	label maxIter = 500;
-	for (label i=1; i<=maxIter; i++)
-	{
-		scalarField evsat = exp( - 5.8002206e3/leafTemp // saturated vapor pressure pws - ASHRAE 1.2
-	                + 1.3914993
-	                - 4.8640239e-2*leafTemp
-	                + 4.1764768e-5*pow(leafTemp,2)
-	                - 1.4452093e-8*pow(leafTemp,3)
-	                + 6.5459673*log(leafTemp) );
-
-		scalarField wsat = 0.621945*(evsat/(p_-evsat)); // saturated specific humidity, ASHRAE 1, eq.23
-
-		///////////calculate transpiration rate
-		E = pos(Qs-SMALL)*nEvapSides_*rhoa*(wsat-wc)/(rs+ra);
-		//no transpiration at night when Qs is not >0
-		//////////////////////////////////////
-
-		scalar lambda = 2500000; // latent heat of vaporization of water J/kg
-		scalarField Qlat = lambda*E*LAI_; //latent heat flux
-
-        scalarField Qr_Surface = 6*(Ts-leafTemp); //thermal radiation between grass and surface - Malys et al 2014
-		scalarField leafTemp_new = Tc + (Qr_abs + Qr_Surface + Qs_abs - Qlat)*(ra/(rhoa*cpa*2*LAI_));
-
-        // info
-        Info << " max leaf temp Tl=" << gMax(leafTemp_new)
-             << " K, iteration i="   << i << endl;
-
-        // Check rel. L-infinity error
-        scalar maxError = gMax(mag(leafTemp_new-leafTemp));
-        scalar maxRelError = maxError/gMax(mag(leafTemp_new));  
-
-        // update leaf temp.
-        //Tl_.internalField() = new_Tl.internalField();
-        //Tl_.boundaryField() = new_Tl.boundaryField();
-        leafTemp = 0.5*leafTemp+0.5*leafTemp_new;  
-
-        // convergence check
-        if (maxRelError < 1e-8)
-             break;                 
-	}
+        /////////////////////////////////////////
+    }
 }
 
 Foam::tmp<Foam::volScalarField> Foam::grass::simpleGrass::Cf() const
