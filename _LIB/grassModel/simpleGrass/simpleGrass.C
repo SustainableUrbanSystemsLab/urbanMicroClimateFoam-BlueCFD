@@ -164,7 +164,18 @@ void Foam::grass::simpleGrass::calculate
         scalarField wc = thisPatch.patchInternalField(w_);
         vectorField Uc = thisPatch.patchInternalField(U_);
 
-        scalarField Ts = thisPatch.lookupPatchField<volScalarField, scalar>("T");
+        // Get the coupling information from the mappedPatchBase
+        const mappedPatchBase& mpp =
+            refCast<const mappedPatchBase>(thisPatch.patch());
+        const polyMesh& nbrMesh = mpp.sampleMesh();
+        const label samplePatchI = mpp.samplePolyPatch().index();
+        const fvPatch& nbrPatch =
+            refCast<const fvMesh>(nbrMesh).boundary()[samplePatchI];
+        scalarField Ts = nbrPatch.lookupPatchField<volScalarField, scalar>("Ts");
+            mpp.distribute(Ts);
+// read Ts from solid domain instead
+//        scalarField Ts = thisPatch.lookupPatchField<volScalarField, scalar>("T");
+
         scalarField qs = thisPatch.lookupPatchField<volScalarField, scalar>("qs");
         scalarField qr = thisPatch.lookupPatchField<volScalarField, scalar>("qr");
 
