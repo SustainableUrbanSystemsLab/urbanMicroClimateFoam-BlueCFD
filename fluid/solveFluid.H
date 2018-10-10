@@ -11,16 +11,18 @@ while ((simpleControlFluid.run(runTime) || fluidIteration <= minFluidIteration) 
 
     gra.correct(thermo.T(), w, U, Sh, Sw);
 
-    p_rgh.storePrevIter();
-    rho.storePrevIter();
+    if(!simple.lookupOrDefault<bool>("frozenFlow", 0))
     {
-        #include "UEqn.H"
-        #include "EEqn.H"
-        #include "pEqn.H"
-        #include "wEqn.H"
-    }
-
+        p_rgh.storePrevIter();
+        rho.storePrevIter();
+        {
+            #include "UEqn.H"
+            #include "EEqn.H"
+            #include "pEqn.H"
+            #include "wEqn.H"
+        }
     turb.correct();
+    }
 
     Info << nl; 
     fluidIteration++;
