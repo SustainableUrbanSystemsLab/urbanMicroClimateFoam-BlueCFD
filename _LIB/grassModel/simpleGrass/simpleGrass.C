@@ -228,10 +228,20 @@ void Foam::grass::simpleGrass::calculate
 
             // convergence check
             if ((maxRelError < 1e-8) && (maxError < 1e-8))
-                 break; 
+            {
+                if(debug_)
+                {
+                    Info << "Qr_abs: " << Qr_abs << endl;
+                    Info << "Qr_Surface: " << Qr_Surface << endl;
+                    Info << "Qs_abs: " << Qs_abs << endl;
+                    Info << "Qlat: " << Qlat << endl;
+                }
+                break; 
+            }
             else
+            {
                 Tl = 0.5*Tl+0.5*Tl_new; // update leaf temp. 
-                    
+            }                    
         }
         /////////////////////////////////////////
 
