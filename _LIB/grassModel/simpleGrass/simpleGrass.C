@@ -52,8 +52,8 @@ void Foam::grass::simpleGrass::initialise()
     nEvapSides_ = coeffs_.lookupOrDefault("nEvapSides", 1);
     Cd_ = coeffs_.lookupOrDefault("Cd", 0.2);
     beta_ = coeffs_.lookupOrDefault("beta", 0.78);
-    LAI_ = coeffs_.lookupOrDefault("LAI", 2);
-    LAD_ = coeffs_.lookupOrDefault("LAD", 20);
+    LAI_ = coeffs_.lookupOrDefault("LAI", 2.0);
+    LAD_ = coeffs_.lookupOrDefault("LAD", 20.0);
 
     p_ = 101325;
     rhoa = 1.225;
