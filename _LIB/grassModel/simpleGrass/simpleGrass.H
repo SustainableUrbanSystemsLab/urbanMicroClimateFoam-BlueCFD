@@ -70,8 +70,11 @@ class simpleGrass
         scalar nEvapSides_; // number of sides, leaf evaporates from
         scalar Cd_; // leaf drag coefficient
         scalar beta_; // extinction coefficient for short-wave radiation
+        scalar betaLW_; // extinction coefficient for long-wave radiation
         scalar LAI_; // leaf area index
         scalar LAD_; // leaf area density
+        scalar albedoSoil_; // short-wave reflectivity for soil
+        scalar emissivitySoil_; // long-wave reflectivity for soil
 
 		scalar p_; // air pressure - Pa
 		scalar rhoa; // density of air - kg/m3

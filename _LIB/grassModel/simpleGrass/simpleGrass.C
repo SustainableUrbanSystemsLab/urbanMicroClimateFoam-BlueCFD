@@ -52,8 +52,11 @@ void Foam::grass::simpleGrass::initialise()
     nEvapSides_ = coeffs_.lookupOrDefault("nEvapSides", 1);
     Cd_ = coeffs_.lookupOrDefault("Cd", 0.2);
     beta_ = coeffs_.lookupOrDefault("beta", 0.78);
+    betaLW_ = coeffs_.lookupOrDefault("betaLW", 0.83);
     LAI_ = coeffs_.lookupOrDefault("LAI", 2.0);
     LAD_ = coeffs_.lookupOrDefault("LAD", 20.0);
+    albedoSoil_ = coeffs_.lookupOrDefault("albedoSoil", 0.2366);
+    emissivitySoil_ = coeffs_.lookupOrDefault("emissivitySoil", 0.95);
 
     p_ = 101325;
     rhoa = 1.225;
@@ -185,7 +188,7 @@ void Foam::grass::simpleGrass::calculate
         magU = max(magU, SMALL);
         ra = C_*pow(l_/magU, 0.5); //aerodynamic resistance
 
-        scalarField h_ch = (2.0*rhoa*cpa)/ra; //convective heat transfer coefficient
+        scalarField h_ch = (2*rhoa*cpa)/ra; //convective heat transfer coefficient
         scalarField h_cm = (rhoa*Ra)/(p_*Rv*(ra+rs)); //convective mass transfer coefficient
 
         //scalarField wsat = 0.621945*(pvsat/(p_-pvsat)); // saturated specific humidity, ASHRAE 1, eq.23
@@ -196,10 +199,7 @@ void Foam::grass::simpleGrass::calculate
             Tl = Tc; //initialize if necessary
         }
 
-        scalarField Qs_abs = qs - qs*exp(-beta_*LAI_);
-//        Qs = Qs*exp(-beta_*LAI_);
-        scalarField Qr_abs = qr;
-//        Qr = 0;
+        scalarField Qs_abs = qs*(1-exp(-beta_*LAI_))*(1+exp(-beta_*LAI_)*albedoSoil_);
 
         scalarField E(scalarField(mesh_.nCells(),0.0));
 
@@ -213,10 +213,12 @@ void Foam::grass::simpleGrass::calculate
             //no transpiration at night when Qs_abs is not >0
 
             scalar lambda = 2500000; // latent heat of vaporization of water J/kg
-            scalarField Qlat = lambda*E; //latent heat flux
+            scalarField Qlat = lambda*E*LAI_; //latent heat flux
 
-            scalarField Qr_Surface = 6*(Ts-Tl); //thermal radiation between grass and surface - Malys et al 2014
-            scalarField Tl_new = Tc + (Qr_abs + Qr_Surface + Qs_abs - Qlat)/ h_ch;
+            scalarField Qr2sky = (1-exp(-betaLW_*LAI_))*5.67E-8*(pow(273.15+15,4)-pow(Tl,4));
+            scalarField Qr2substrate = (1-exp(-betaLW_*LAI_))*5.67E-8*(pow(Ts,4)-pow(Tl,4));
+
+            scalarField Tl_new = Tc + (Qr2sky + Qr2substrate + Qs_abs - Qlat)/ (h_ch*LAI_);
 
             // info
             Info << " max leaf temp Tl=" << gMax(Tl_new)
@@ -231,10 +233,10 @@ void Foam::grass::simpleGrass::calculate
             {
                 if(debug_)
                 {
-                    Info << "Qr_abs: " << Qr_abs << endl;
-                    Info << "Qr_Surface: " << Qr_Surface << endl;
                     Info << "Qs_abs: " << Qs_abs << endl;
                     Info << "Qlat: " << Qlat << endl;
+                    Info << "Qr2sky: " << Qr2sky << endl;
+                    Info << "Qr2substrate: " << Qr2substrate << endl;
                 }
                 break; 
             }
