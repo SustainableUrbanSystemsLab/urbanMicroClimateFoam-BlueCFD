@@ -201,7 +201,7 @@ void Foam::grass::simpleGrass::calculate
 
         scalarField Qs_abs = qs*(1-exp(-beta_*LAI_))*(1+exp(-beta_*LAI_)*albedoSoil_);
 
-        scalarField E(scalarField(mesh_.nCells(),0.0));
+        scalarField E(scalarField(Qs_abs.size(),0.0));
 
         ////calculate leaf temperature///////////
         label maxIter = 500;
@@ -233,10 +233,12 @@ void Foam::grass::simpleGrass::calculate
             {
                 if(debug_)
                 {
-                    Info << "Qs_abs: " << Qs_abs << endl;
-                    Info << "Qlat: " << Qlat << endl;
-                    Info << "Qr2sky: " << Qr2sky << endl;
-                    Info << "Qr2substrate: " << Qr2substrate << endl;
+                    scalarField Qsen = h_ch*(Tc-Tl)*LAI_;
+                    Info << " Qs_abs: " << gSum(thisPatch.magSf()*Qs_abs)/gSum(thisPatch.magSf()) << endl;
+                    Info << " Qlat: " << gSum(thisPatch.magSf()*-Qlat)/gSum(thisPatch.magSf()) << endl;
+                    Info << " Qsen: " << gSum(thisPatch.magSf()*Qsen)/gSum(thisPatch.magSf()) << endl;
+                    Info << " Qr2sky: " << gSum(thisPatch.magSf()*Qr2sky)/gSum(thisPatch.magSf()) << endl;
+                    Info << " Qr2substrate: " << gSum(thisPatch.magSf()*Qr2substrate)/gSum(thisPatch.magSf()) << endl;
                 }
                 break; 
             }
