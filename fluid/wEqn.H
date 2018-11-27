@@ -8,7 +8,7 @@
       + fvm::div(phi, w)
       - fvm::laplacian(rho*Dm + turb.mut()/Sct, w)
       ==
-        vegetation.Sq() // vegetation energy source term
+        veg.Sq() // vegetation energy source term
     );
     wEqn.relax();
 

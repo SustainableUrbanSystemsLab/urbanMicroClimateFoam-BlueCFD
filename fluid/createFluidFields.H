@@ -10,10 +10,9 @@ PtrList<volScalarField> ghFluid(fluidRegions.size());
 PtrList<surfaceScalarField> ghfFluid(fluidRegions.size());
 PtrList<radiation::radiationModel> radiation(fluidRegions.size());
 PtrList<solarLoad::solarLoadModel> solarLoad(fluidRegions.size());
+PtrList<vegetation::vegetationModel> vegetation(fluidRegions.size());
 PtrList<volScalarField> wFluid(fluidRegions.size());
 PtrList<volScalarField> gcrFluid(fluidRegions.size());
-
-PtrList<volScalarField> TlFluid(fluidRegions.size());    
 
 List<scalar> initialMassFluid(fluidRegions.size());
 List<label> pRefCellFluid(fluidRegions.size(),0);
@@ -70,6 +69,13 @@ forAll(fluidRegions, i)
         solarLoad::solarLoadModel::New(thermoFluid[i].T())
     );
 
+    vegetation.set
+    (
+        i,
+        vegetation::vegetationModel::New(thermoFluid[i].T())
+    );  
+
+
     if (fluidRegions[i].name() != "vegetation")             
     {
         Info<< "    Adding to UFluid\n" << endl;
@@ -124,25 +130,7 @@ forAll(fluidRegions, i)
                 ),
                 fluidRegions[i]
             )
-        );    
-
-		Info<< "    Adding to TlFluid\n" << endl;
-		TlFluid.set
-		(
-			i,
-			new volScalarField
-			(
-				IOobject
-				(
-					"Tl",
-					runTime.timeName(),
-					fluidRegions[i],
-					IOobject::MUST_READ,
-					IOobject::AUTO_WRITE
-				),
-				fluidRegions[i]
-			)
-		);                      
+        );                         
 
         Info<< "    Adding to phiFluid\n" << endl;
         phiFluid.set

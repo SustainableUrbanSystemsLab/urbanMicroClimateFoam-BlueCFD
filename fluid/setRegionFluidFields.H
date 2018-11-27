@@ -7,7 +7,6 @@
     volVectorField& U = UFluid[i];
     volScalarField& w = wFluid[i];    
     volScalarField& gcr = gcrFluid[i];  
-	volScalarField& Tl = TlFluid[i];      
     surfaceScalarField& phi = phiFluid[i];
 
     compressible::turbulenceModel& turb = turbulence[i];
@@ -27,6 +26,7 @@
 
     radiation::radiationModel& rad = radiation[i];
     solarLoad::solarLoadModel& sol = solarLoad[i];
+    vegetation::vegetationModel& veg = vegetation[i];
 
     const label pRefCell = pRefCellFluid[i];
     const scalar pRefValue = pRefValueFluid[i];

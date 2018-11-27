@@ -1,7 +1,5 @@
 simpleControlFluid simpleControlFluid(fluidRegions[i]);
 
-simplifiedVegetationModel vegetation(U, thermo.T(), w, Tl); // Vegetation model
-
 TimeState pts(runTime); //store time state
 
 label fluidIteration = 1;
@@ -21,7 +19,7 @@ while ((simpleControlFluid.run(runTime) || fluidIteration <= minFluidIteration) 
     }
 
     // Solve vegetation energy balance
-    vegetation.solve(U, thermo.T(), w, Tl);
+    veg.correct(U, thermo.T(), w);
 
     turb.correct();
 

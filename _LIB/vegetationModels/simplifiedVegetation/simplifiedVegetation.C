@@ -27,97 +27,80 @@ Vegetation model implemented by L. Manickathan, Empa, February 2017
 
 \*---------------------------------------------------------------------------*/
 
-#include "simplifiedVegetationModel.H"
+#include "simplifiedVegetation.H"
+#include "addToRunTimeSelectionTable.H"
 
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+// * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
-namespace Foam {
+namespace Foam
+{
+    namespace vegetation
+    {
+        defineTypeNameAndDebug(simplifiedVegetation, 0);
+        addToVegetationRunTimeSelectionTables(simplifiedVegetation);
+    }
+}
 
-defineTypeNameAndDebug(simplifiedVegetationModel, 0);
+// * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
+
+void Foam::vegetation::simplifiedVegetation::initialise()
+{  
+    rhoa_ = dimensionedScalar("rhoa",dimensionSet(1,-3,0,0,0,0,0),1.225); // density of air
+    cpa_ = dimensionedScalar("cpa",dimensionSet(0,2,-2,-1,0,0,0),1003.5); // specific heat of air at constant pressure
+    lambda_ = dimensionedScalar("lambda",dimensionSet(0,2,-2,0,0,0,0),2500000); // latent heat of vaporization of water J/Kg
+}
+
+Foam::scalar Foam::vegetation::simplifiedVegetation::calc_evsat(double& T)
+{
+    // saturated vapor pressure pws - ASHRAE 1.2
+    return exp( - 5.8002206e3/T
+                + 1.3914993
+                - 4.8640239e-2*T
+                + 4.1764768e-5*pow(T,2)
+                - 1.4452093e-8*pow(T,3)
+                + 6.5459673*log(T) );
+}
+
+// calc saturated density of water vapour
+Foam::scalar Foam::vegetation::simplifiedVegetation::calc_rhosat(double& T)
+{
+    return calc_evsat(T)/(461.5*T);
+}
+
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
-simplifiedVegetationModel::simplifiedVegetationModel
+
+Foam::vegetation::simplifiedVegetation::simplifiedVegetation
 (
-    const volVectorField& U,
-    const volScalarField& T,
-    const volScalarField& q,
-	volScalarField& Tl_
+    const volScalarField& T
 ):
-    IOdictionary
+    vegetationModel(typeName, T),
+    a1_(coeffs_.lookup("a1")),
+    a2_(coeffs_.lookup("a2")),
+    a3_(coeffs_.lookup("a3")),
+    C_(coeffs_.lookup("C")),
+    D0_(coeffs_.lookup("D0")),
+    nEvapSides_(coeffs_.lookup("nEvapSides")),
+    H_(coeffs_.lookup("H")),
+    kc_(coeffs_.lookup("kc")),
+    l_(coeffs_.lookup("l")),
+    Rg0_(coeffs_.lookup("Rg0")),
+    Rl0_(coeffs_.lookup("Rl0")),
+    rsMin_(coeffs_.lookup("rsMin")),
+    TlMin_("TlMin", dimTemperature, SMALL),
+    UMin_("UMin", dimVelocity, SMALL),
+    Cd_(coeffs_.lookupOrDefault("Cd", 0.2)),
+    Tl_
     (
         IOobject
         (
-            "vegetationProperties",
-            U.time().constant(),
-            U.db(),
-            IOobject::MUST_READ_IF_MODIFIED,
-            IOobject::NO_WRITE
-        )
-    ),
-    vegetationProperties_(*this),
-    runTime_(U.time()),
-    mesh_(U.mesh()),
-    a1_
-    (
-        vegetationProperties_.lookup("a1")
-    ),
-    a2_
-    (
-        vegetationProperties_.lookup("a2")
-    ),
-    a3_
-    (
-        vegetationProperties_.lookup("a3")
-    ),
-    cpa_
-    (
-        vegetationProperties_.lookup("cpa")
-    ),
-    C_
-    (
-        vegetationProperties_.lookup("C")
-    ),
-    D0_
-    (
-        vegetationProperties_.lookup("D0")
-    ),
-    nEvapSides_
-    (
-        vegetationProperties_.lookup("nEvapSides")
-    ),
-    H_
-    (
-        vegetationProperties_.lookup("H")
-    ),
-    kc_
-    (
-        vegetationProperties_.lookup("kc")
-    ),
-    l_
-    (
-        vegetationProperties_.lookup("l")
-    ),
-    Rg0_
-    (
-        vegetationProperties_.lookup("Rg0")
-    ),
-    Rl0_
-    (
-        vegetationProperties_.lookup("Rl0")
-    ),
-    rhoa_
-    (
-        vegetationProperties_.lookup("rhoa")
-    ),
-    rsMin_
-    (
-        vegetationProperties_.lookup("rsMin")
-    ),
-    TlMin_("TlMin", dimTemperature, SMALL),
-    UMin_("UMin", dimVelocity, SMALL),
-    lambda_
-    (
-        vegetationProperties_.lookup("lambda")
+            "Tl",
+            mesh_.time().timeName(),
+            mesh_,
+            IOobject::READ_IF_PRESENT,
+            IOobject::AUTO_WRITE
+        ),
+        -pos(T)
     ),
     divqrsw
     (
@@ -131,24 +114,12 @@ simplifiedVegetationModel::simplifiedVegetationModel
             false
         )
     ),
-    Cf_
-    (
-        IOobject
-        (
-            "Cf",
-            "0",//runTime_.timeName(),
-            mesh_,
-            IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
-        ),
-        mesh_
-    ),
     E_
     (
         IOobject
         (
             "E",
-            runTime_.timeName(),
+            mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
             IOobject::AUTO_WRITE
@@ -161,7 +132,7 @@ simplifiedVegetationModel::simplifiedVegetationModel
         IOobject
         (
             "ev",
-            runTime_.timeName(),
+            mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
             IOobject::AUTO_WRITE
@@ -174,7 +145,7 @@ simplifiedVegetationModel::simplifiedVegetationModel
         IOobject
         (
             "evsat",
-            runTime_.timeName(),
+            mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
             IOobject::AUTO_WRITE
@@ -194,24 +165,12 @@ simplifiedVegetationModel::simplifiedVegetationModel
         ),
         mesh_
     ),
-    LAI_
-    (
-        IOobject
-        (
-            "LAI",
-            "0",//runTime_.timeName(),
-            mesh_,
-            IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
-        ),
-        mesh_
-    ),
     qsat_
     (
         IOobject
         (
             "qsat",
-            runTime_.timeName(),
+            mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
             IOobject::AUTO_WRITE
@@ -224,7 +183,7 @@ simplifiedVegetationModel::simplifiedVegetationModel
         IOobject
         (
             "Qlat",
-            runTime_.timeName(),
+            mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
             IOobject::AUTO_WRITE
@@ -237,7 +196,7 @@ simplifiedVegetationModel::simplifiedVegetationModel
         IOobject
         (
             "Qsen",
-            runTime_.timeName(),
+            mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
             IOobject::AUTO_WRITE
@@ -250,7 +209,7 @@ simplifiedVegetationModel::simplifiedVegetationModel
         IOobject
         (
             "ra",
-            runTime_.timeName(),
+            mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
             IOobject::AUTO_WRITE
@@ -263,7 +222,7 @@ simplifiedVegetationModel::simplifiedVegetationModel
         IOobject
         (
             "rs",
-            runTime_.timeName(),
+            mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
             IOobject::AUTO_WRITE
@@ -276,7 +235,7 @@ simplifiedVegetationModel::simplifiedVegetationModel
         IOobject
         (
             "rhosat",
-            runTime_.timeName(),
+            mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
             IOobject::AUTO_WRITE
@@ -289,7 +248,7 @@ simplifiedVegetationModel::simplifiedVegetationModel
         IOobject
         (
             "Rg",
-            runTime_.timeName(),
+            mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
             IOobject::AUTO_WRITE
@@ -302,59 +261,20 @@ simplifiedVegetationModel::simplifiedVegetationModel
         IOobject
         (
             "Rn",
-            runTime_.timeName(),
+            mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
             IOobject::AUTO_WRITE
         ),
         mesh_,
         dimensionedScalar("0", dimensionSet(1,-1,-3,0,0,0,0), 0.0)
-    ),
-    Sh_
-    (
-        IOobject
-        (
-            "Sh",
-            runTime_.timeName(),
-            mesh_,
-            IOobject::NO_READ,
-            IOobject::AUTO_WRITE
-        ),
-        mesh_,
-        dimensionedScalar("0", dimensionSet(1,-1,-3,0,0,0,0), 0.0)
-    ),
-    Sq_
-    (
-        IOobject
-        (
-            "Sq",
-            runTime_.timeName(),
-            mesh_,
-            IOobject::NO_READ,
-            IOobject::AUTO_WRITE
-        ),
-        mesh_,
-        dimensionedScalar("0", dimensionSet(1,-3,-1,0,0,0,0), 0.0)
-    ),
-    Su_
-    (
-        IOobject
-        (
-            "Su",
-            runTime_.timeName(),
-            mesh_,
-            IOobject::NO_READ,
-            IOobject::AUTO_WRITE
-        ),
-        mesh_,
-        dimensionedVector("0", dimensionSet(0,1,-2,0,0,0,0), vector::zero)
     ),
     VPD_
     (
         IOobject
         (
             "VPD",
-            runTime_.timeName(),
+            mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
             IOobject::AUTO_WRITE
@@ -365,31 +285,20 @@ simplifiedVegetationModel::simplifiedVegetationModel
     {
         // Bounding parameters
 		//bound(Tl_, TlMin_);
-
-        Info << " Defined custom vegetation model" << endl;
+        initialise();
+        Info << " Defined simplifiedVegetation model" << endl;
     }
+
+// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
+
+Foam::vegetation::simplifiedVegetation::~simplifiedVegetation()
+{}
+
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-double simplifiedVegetationModel::calc_evsat(double& T)
-{
-    // saturated vapor pressure pws - ASHRAE 1.2
-    return exp( - 5.8002206e3/T
-                + 1.3914993
-                - 4.8640239e-2*T
-                + 4.1764768e-5*pow(T,2)
-                - 1.4452093e-8*pow(T,3)
-                + 6.5459673*log(T) );
-}
-
-// calc saturated density of water vapour
-double simplifiedVegetationModel::calc_rhosat(double& T)
-{
-    return calc_evsat(T)/(461.5*T);
-}
-
 // solve radiation
-void simplifiedVegetationModel::radiation()
+void Foam::vegetation::simplifiedVegetation::radiation()
 {
     const fvMesh& vegiMesh =
 	    	mesh_.time().lookupObject<fvMesh>("vegetation");
@@ -405,7 +314,7 @@ void simplifiedVegetationModel::radiation()
 
 	Info << "test: integrateQr: " << integrateQr << endl;
  	Info << "test: integrateQs: " << integrateQs << endl;
-    scalar vegiVolume = gSum(pos(Cf_.primitiveField() - 10*SMALL)*mesh_.V().field());
+    scalar vegiVolume = gSum(pos(LAD_.primitiveField() - 10*SMALL)*mesh_.V().field());
 	Info << "test: vegiVolume: " << vegiVolume << endl;
 
     label timestepsInADay_ = divqrsw.size(); //readLabel(coeffs_.lookup("timestepsInADay"));
@@ -423,8 +332,8 @@ void simplifiedVegetationModel::radiation()
     scalarList divqrswi =  divqrsw[timestep];
 
     // radiation density inside vegetation
-    forAll(Cf_, cellI)
-        if (Cf_[cellI] > 10*SMALL)
+    forAll(LAD_, cellI)
+        if (LAD_[cellI] > 10*SMALL)
           Rn_[cellI] = -divqrswi[cellI] + (integrateQr)/(vegiVolume);
     //Rn_[cellI] = (integrateQr + integrateQs)/(vegiVolume);
     Rn_.correctBoundaryConditions();
@@ -451,14 +360,14 @@ void simplifiedVegetationModel::radiation()
 }
 
 // solve aerodynamic resistance
-void simplifiedVegetationModel::resistance(volScalarField& magU, volScalarField& T, volScalarField& q, volScalarField& Tl_)
+void Foam::vegetation::simplifiedVegetation::resistance(volScalarField& magU, volScalarField& T, volScalarField& q, volScalarField& Tl_)
 {
     const double p_ = 101325;
 
     // Calculate magnitude of velocity and bounding above Umin
-    forAll(Cf_, cellI)
+    forAll(LAD_, cellI)
     {
-        if (Cf_[cellI] > 10*SMALL)
+        if (LAD_[cellI] > 10*SMALL)
         {
             //Aerodynamic resistance
             // ra_[cellI] = C_.value()*pow(l_.value()/magU[cellI], 0.5);
@@ -506,7 +415,7 @@ void simplifiedVegetationModel::resistance(volScalarField& magU, volScalarField&
 }
 
 // solve vegetation model
-void simplifiedVegetationModel::solve(volVectorField& U, volScalarField& T, volScalarField& q, volScalarField& Tl_)
+void Foam::vegetation::simplifiedVegetation::calculate(volVectorField& U, volScalarField& T, volScalarField& q)
 {
     // solve radiation within vegetation
     radiation();
@@ -666,33 +575,86 @@ void simplifiedVegetationModel::solve(volVectorField& U, volScalarField& T, volS
 // -----------------------------------------------------------------------------
 
 // return energy source term
-tmp<volScalarField> simplifiedVegetationModel::Sh()
+Foam::tmp<Foam::volScalarField> Foam::vegetation::simplifiedVegetation::Sh() const
 {
-    Sh_ = Qsen_;
-    Sh_.correctBoundaryConditions();
-    return Sh_;
+    return tmp<volScalarField>
+    (
+        new volScalarField
+        (
+            IOobject
+            (
+                "Sh",
+                mesh_.time().timeName(),
+                mesh_,
+                IOobject::NO_READ,
+                IOobject::NO_WRITE,
+                false
+            ),
+            Qsen_
+        )
+    );
 }
 
 // solve & return momentum source term (explicit)
-tmp<fvVectorMatrix> simplifiedVegetationModel::Su(volScalarField& rho, volVectorField& U)
+Foam::tmp<Foam::volScalarField> Foam::vegetation::simplifiedVegetation::Cf() const
 {
-    return fvm::SuSp(-Cf_*rho*mag(U), U);
+    return tmp<volScalarField>
+    (
+        new volScalarField
+        (
+            IOobject
+            (
+                "Cf",
+                mesh_.time().timeName(),
+                mesh_,
+                IOobject::NO_READ,
+                IOobject::NO_WRITE,
+                false
+            ),
+            Cd_*LAD_
+        )
+    );
 }
 
+
 // return specific humidity source term
-tmp<volScalarField> simplifiedVegetationModel::Sq()
+Foam::tmp<Foam::volScalarField> Foam::vegetation::simplifiedVegetation::Sq() const
 {
-    Sq_ = E_;
-    Sq_.correctBoundaryConditions();
-    return Sq_;
+    return tmp<volScalarField>
+    (
+        new volScalarField
+        (
+            IOobject
+            (
+                "Sq",
+                mesh_.time().timeName(),
+                mesh_,
+                IOobject::NO_READ,
+                IOobject::NO_WRITE,
+                false
+            ),
+            E_
+        )
+    );
 }
+
 
 // -----------------------------------------------------------------------------
 
-bool simplifiedVegetationModel::read()
+bool Foam::vegetation::simplifiedVegetation::read()
 {
-    return true;
+    if (vegetationModel::read())
+    {
+        // nothing to read
+
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-} // end namespace Foam
+
+// ************************************************************************* //
+

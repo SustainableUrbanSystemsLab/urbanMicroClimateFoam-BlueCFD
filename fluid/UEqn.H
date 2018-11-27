@@ -9,7 +9,7 @@
       + turb.divDevRhoReff(U)
      ==
         fvOptions(rho, U)
-      + vegetation.Su(rho, U) // vegetation momentum source
+      - fvm::SuSp(veg.Cf()*rho*mag(U), U) // vegetation momentum source
     );
     fvVectorMatrix& UEqn = tUEqn.ref();
 

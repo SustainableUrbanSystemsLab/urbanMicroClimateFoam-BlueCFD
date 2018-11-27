@@ -1,3 +1,6 @@
-simplifiedVegetationModel/simplifiedVegetationModel.C
+vegetationModel/vegetationModel.C
+vegetationModel/vegetationModelNew.C
+noVegetation/noVegetation.C
+simplifiedVegetation/simplifiedVegetation.C
 
 LIB=$(FOAM_USER_LIBBIN)/libvegetationModels

@@ -42,7 +42,7 @@ Description
 #include "simpleControlFluid.H"
 #include "fvOptions.H"
 
-#include "simplifiedVegetationModel.H"  // vegetation model by Lento added    
+#include "vegetationModel.H"  // vegetation model by Lento added    
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
