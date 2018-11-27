@@ -166,41 +166,6 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
     //scalarField Tc(patchInternalField());
     scalarField& Tp = *this;
 
-    //Access vegetation region and populate QsVegiNbr if necessary
-    scalarField QsVegiNbr(Tp.size(), 0.0);
-    scalarField QrVegiNbr(Tp.size(), 0.0);
-
-// NEED TO ORGANIZE THIS PART - AYTAC
-//Info << "ha: " << vegetationExists_ << endl;
-
-    const word& vegiRegion = "vegetation";
-    const scalar mppVegDistance = 0;
-
-    //if (vegetationExists_ == true)
-    //{
-	    const polyMesh& vegiMesh =
-	    	patch().boundaryMesh().mesh().time().lookupObject<polyMesh>("vegetation");
-
-	    const word& nbrPatchName = nbrPatch.name();
-
-	    const label patchi = vegiMesh.boundaryMesh().findPatchID(nbrPatchName);
-	    
-	    const fvPatch& vegiNbrPatch =
-	        refCast<const fvMesh>(vegiMesh).boundary()[patchi];
-
-    const mappedPatchBase& mppVeg = mappedPatchBase(patch().patch(), vegiRegion, mpp.mode(), mpp.samplePatch(), mppVegDistance);
-    //const mappedPatchBase& mppVeg =
-    //    refCast<const mappedPatchBase>(patch().patch(), vegiRegion, mpp.mode(), mpp.samplePatch(), mppVegDistance);
-
-		QsVegiNbr = vegiNbrPatch.lookupPatchField<volScalarField, scalar>("qs");  
-
-		QrVegiNbr = vegiNbrPatch.lookupPatchField<volScalarField, scalar>("qr");
-    //}
-
-    mppVeg.distribute(QsVegiNbr); //Info << "QsVegiNbr: " << QsVegiNbr << endl;
-    mppVeg.distribute(QrVegiNbr); //Info << "QrVegiNbr: " << QrVegiNbr << endl;
-    //////////////////////////    
-
     const mixedFvPatchScalarField& //CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField&
         nbrField = refCast
             <const mixedFvPatchScalarField>
@@ -288,7 +253,7 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
     scalar relhum = airVaporPressure/saturationPressure*100;
     scalar dewPointTemp = Tambient(time.value()) - (100-relhum)/5;
     scalar rainTemp = Tambient(time.value()) - (Tambient(time.value())-dewPointTemp)/3;
-    //////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////// 
 
     scalarField qrNbr(Tp.size(), 0.0);
     if (qrNbrName_ != "none")
@@ -303,6 +268,53 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
         qsNbr = nbrPatch.lookupPatchField<volScalarField, scalar>(qsNbrName_);
         mpp.distribute(qsNbr);
     }   
+
+    //Access vegetation region and populate QsVegiNbr if necessary
+    //-- if vegetation exists --//
+    IOdictionary vegetationProperties
+    (
+		IOobject
+		(
+		    "vegetationProperties",
+		    nbrMesh.time().constant(),
+		    nbrMesh,
+		    IOobject::MUST_READ,
+		    IOobject::NO_WRITE
+        )
+    );
+
+    if (vegetationProperties.typeHeaderOk<IOdictionary>(true))
+    {
+        word vegetationModel(vegetationProperties.lookup("vegetationModel"));
+        if (vegetationModel != "none")
+        {
+            const word& vegiRegion = "vegetation";
+            const scalar mppVegDistance = 0;
+
+	        const polyMesh& vegiMesh =
+	        	patch().boundaryMesh().mesh().time().lookupObject<polyMesh>("vegetation");
+
+	        const word& nbrPatchName = nbrPatch.name();
+
+	        const label patchi = vegiMesh.boundaryMesh().findPatchID(nbrPatchName);
+	    
+	        const fvPatch& vegiNbrPatch =
+	            refCast<const fvMesh>(vegiMesh).boundary()[patchi];
+
+            const mappedPatchBase& mppVeg = mappedPatchBase(patch().patch(), vegiRegion, mpp.mode(), mpp.samplePatch(), mppVegDistance);
+            //const mappedPatchBase& mppVeg =
+            //    refCast<const mappedPatchBase>(patch().patch(), vegiRegion, mpp.mode(), mpp.samplePatch(), mppVegDistance);
+
+	    	qsNbr = vegiNbrPatch.lookupPatchField<volScalarField, scalar>("qs");  
+
+	    	qrNbr = vegiNbrPatch.lookupPatchField<volScalarField, scalar>("qr");
+
+            mppVeg.distribute(qsNbr); //Info << "QsVegiNbr: " << QsVegiNbr << endl;
+            mppVeg.distribute(qrNbr); //Info << "QrVegiNbr: " << QrVegiNbr << endl;
+        }
+    }
+    //////////////////////////////
+
 
     //-- Gravity-enthalpy flux --//
     //lookup gravity vector
@@ -321,14 +333,14 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
     {
         valueFraction() = 0;//pos(fieldpc.patchInternalField()+1E3); 
         refValue() = 0;//rainTemp;
-        refGrad() = (heatFlux + LE + qrNbr + qsNbr + QsVegiNbr + QrVegiNbr + CR + phiGT -X)/(lambda_m+K_pt);
+        refGrad() = (heatFlux + LE + qrNbr + qsNbr + CR + phiGT -X)/(lambda_m+K_pt);
 //        refGrad() = (heatFlux + LE + qrNbr + qsNbr + QsVegiNbr + QrVegiNbr + CR -X)/(lambda_m+K_pt);
     }
     else
     {
         valueFraction() = 0;
         refValue() = 0;
-        refGrad() = (heatFlux + qrNbr + qsNbr + QsVegiNbr + QrVegiNbr)/(lambda_m);
+        refGrad() = (heatFlux + qrNbr + qsNbr)/(lambda_m);
     }
 //Info << "111: " << heatFlux << " " << LE << " " << -X << " " << K_pt << " " << refGrad() << endl;
     mixedFvPatchScalarField::updateCoeffs(); 
