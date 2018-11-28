@@ -71,7 +71,6 @@ class simplifiedVegetation
 		dimensionedScalar a1_;     // stomatal resistance specific model parameters
 		dimensionedScalar a2_;     // stomatal resistance specific model parameters
 		dimensionedScalar a3_;     // stomatal resistance specific model parameters
-		dimensionedScalar cpa_;     // specific heat of air at constant pressure
 		dimensionedScalar C_;       // proportionality factor of ra
 		dimensionedScalar D0_;      // vapour pressure corresponding to minimal resistance
 		dimensionedScalar nEvapSides_; // number of sides, leaf evaporates from
@@ -80,11 +79,12 @@ class simplifiedVegetation
 		dimensionedScalar l_;       // characteristic length of leaf
 		dimensionedScalar Rg0_;     // global radiation at top of canopy
 		dimensionedScalar Rl0_;     // long-wave radiation at top of canopy
-		dimensionedScalar rhoa_;    // denisty of air
 		dimensionedScalar rsMin_;   // minimum stomatal resistance
 		dimensionedScalar TlMin_;   // lower limit of T
 		dimensionedScalar UMin_;    // lower limit of U
         scalar Cd_;
+		dimensionedScalar rhoa_;    // denisty of air
+		dimensionedScalar cpa_;     // specific heat of air at constant pressure
 		dimensionedScalar lambda_;  // latent heat of vaporization
 
         //- leaf temperature [K]

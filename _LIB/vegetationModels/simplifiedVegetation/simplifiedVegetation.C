@@ -45,9 +45,7 @@ namespace Foam
 
 void Foam::vegetation::simplifiedVegetation::initialise()
 {  
-    rhoa_ = dimensionedScalar("rhoa",dimensionSet(1,-3,0,0,0,0,0),1.225); // density of air
-    cpa_ = dimensionedScalar("cpa",dimensionSet(0,2,-2,-1,0,0,0),1003.5); // specific heat of air at constant pressure
-    lambda_ = dimensionedScalar("lambda",dimensionSet(0,2,-2,0,0,0,0),2500000); // latent heat of vaporization of water J/Kg
+// do nothing
 }
 
 Foam::scalar Foam::vegetation::simplifiedVegetation::calc_evsat(double& T)
@@ -90,6 +88,18 @@ Foam::vegetation::simplifiedVegetation::simplifiedVegetation
     TlMin_("TlMin", dimTemperature, SMALL),
     UMin_("UMin", dimVelocity, SMALL),
     Cd_(coeffs_.lookupOrDefault("Cd", 0.2)),
+    rhoa_(dimensionedScalar(
+        "rhoa",
+        dimensionSet(1, -3, 0, 0, 0, 0, 0),
+        1.225)),
+    cpa_(dimensionedScalar(
+        "cpa",
+        dimensionSet(0,2,-2,-1,0,0,0),
+        1003.5)),
+    lambda_(dimensionedScalar(
+        "lambda",
+        dimensionSet(0,2,-2,0,0,0,0),
+        2500000)),
     Tl_
     (
         IOobject
