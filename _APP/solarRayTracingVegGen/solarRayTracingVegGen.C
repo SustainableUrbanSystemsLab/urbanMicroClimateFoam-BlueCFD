@@ -219,33 +219,17 @@ int main(int argc, char *argv[])
        )
     );      
 
-    scalarListIOList LAIboundaryList
+    scalarListIOList kcLAIboundaryList
     (
         IOobject
         (
-            "LAIboundary",
+            "kcLAIboundary",
             runTime.constant(),
             mesh,
             IOobject::MUST_READ,
             IOobject::NO_WRITE
         )
     );
-
-     IOdictionary vegetationProperties
-     (
-         IOobject
-         (
-             "vegetationProperties",
-             runTime.constant(),
-             mesh,
-             IOobject::MUST_READ,
-             IOobject::NO_WRITE
-         )
-     );
-
-     scalar beta = vegetationProperties.lookupOrDefault("beta", 0.5);//(0-90)*(PI/180);
-
-     Info << "beta " << beta << endl;
 
     const label debug = viewFactorDict.lookupOrDefault<label>("debug", 0);
 
@@ -736,9 +720,9 @@ int main(int argc, char *argv[])
 
                 cosPhi = (localCoarseSf[faceNo] & sunPos)/(mag(localCoarseSf[faceNo])*mag(sunPos) + SMALL);                
                 sunViewCoeff[vectorId][k] = nVisibleFaceFacesList[vectorId][faceNo]*mag(cosPhi) * IDN[vectorId]; 
-                if (LAIboundaryList[vectorId][k]-0>SMALL && cosPhi < 0) //if LAIboundary value is nonzero and if the surface is looking towards the sun, update sunViewCoeff
+                if (kcLAIboundaryList[vectorId][k]-0>SMALL && cosPhi < 0) //if LAIboundary value is nonzero and if the surface is looking towards the sun, update sunViewCoeff
                 {
-                    sunViewCoeff[vectorId][k] = mag(cosPhi) * IDN[vectorId] * Foam::exp(-beta*LAIboundaryList[vectorId][k]); // beer-lambert law
+                    sunViewCoeff[vectorId][k] = mag(cosPhi) * IDN[vectorId] * Foam::exp(-kcLAIboundaryList[vectorId][k]); // beer-lambert law
                 }
                 
                 cosPhi = (localCoarseSf[faceNo] & skyPos)/(mag(localCoarseSf[faceNo])*mag(skyPos) + SMALL);

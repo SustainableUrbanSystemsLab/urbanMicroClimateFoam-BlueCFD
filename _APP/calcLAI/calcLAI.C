@@ -728,7 +728,7 @@ int main(int argc, char *argv[])
          )
      );
 
-    scalar beta = vegetationProperties.lookupOrDefault("beta", 0.5);//(0-90)*(PI/180);
+    scalar kc = vegetationProperties.lookupOrDefault("kc", 0.5);//(0-90)*(PI/180);
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -822,13 +822,13 @@ int main(int argc, char *argv[])
 
         // Reference
         scalarList &LAI = LAIList[vectorID];
-        scalarList &LAIboundary = LAIboundaryList[vectorID];
+        scalarList &kcLAIboundary = kcLAIboundaryList[vectorID];
         vectorList &qrsw = qrswList[vectorID];
         scalarList &divqrsw = divqrswList[vectorID];
 
         // Initialize LAI
         LAI = zeroList_nMeshCells;
-        LAIboundary = zeroList_nCoarseFacesAll;
+        kcLAIboundary = zeroList_nCoarseFacesAll;
         qrsw = zeroListVectors_nMeshCells;
         divqrsw = zeroList_nMeshCells;
 
@@ -882,7 +882,7 @@ int main(int argc, char *argv[])
             ////////////////////////////////////////////////////////////////////
             // Calculated short-wave radiation intensity
 
-            scalarField qrswInterpRot = IDN[vectorID]*Foam::exp(-beta*LAIInterpRot);
+            scalarField qrswInterpRot = IDN[vectorID]*Foam::exp(-kc*LAIInterpRot);
 
             // Info << "qrswInterpRot: gMin: " << gMin(qrswInterpRot) << endl;
             // Info << "qrswInterpRot: gMax: " << gMax(qrswInterpRot) << endl;
@@ -1003,8 +1003,8 @@ int main(int argc, char *argv[])
             {
                 if (!pHitListCells[cellI].hit())
                 {
-                    //qrsw[cellI] = -n2*IDN[vectorID];//*Foam::exp(-beta*LAI[cellI]);
-                    qrsw[cellI] = -n2*IDN[vectorID]*Foam::exp(-beta*LAI[cellI]);
+                    //qrsw[cellI] = -n2*IDN[vectorID];//*Foam::exp(-kc*LAI[cellI]);
+                    qrsw[cellI] = -n2*IDN[vectorID]*Foam::exp(-kc*LAI[cellI]);
                 }
             }
 
@@ -1139,12 +1139,12 @@ int main(int argc, char *argv[])
                         if (!vegCoarseFacePHitList[insideFaceI].hit())
                         {
                             ptemp = transform(T, vegLocalCoarseCf[faceNo]);
-                            LAIboundary[k] = interp3D(ptemp, pInterpRot, LAIInterpRot, nxRot, nyRot);
+                            kcLAIboundary[k] = kc*interp3D(ptemp, pInterpRot, LAIInterpRot, nxRot, nyRot);
                             //Info << "k = " << k << ", faceNo = " << faceNo << ", insideFaceNo = " << insideFaceNo << endl;
                         }
                         else
                         {
-                            LAIboundary[k] = 1000;
+                            kcLAIboundary[k] = 1000;
                         }
                         insideFaceI++;
                     }
@@ -1247,8 +1247,8 @@ int main(int argc, char *argv[])
     Info << "\nWriting fields: LAI " << endl;
     LAIList.write();
 
-    Info << "\nWriting fields: LAI boundary" << endl;
-    LAIboundaryList.write();
+    Info << "\nWriting fields: kcLAI boundary" << endl;
+    kcLAIboundaryList.write();
 
     Info << "\nWriting fields: qrsw" << endl;
     qrswList.write();

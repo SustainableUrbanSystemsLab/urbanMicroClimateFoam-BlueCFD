@@ -24,11 +24,11 @@
       vegMesh
     );
 
-    scalarListIOList LAIboundaryList
+    scalarListIOList kcLAIboundaryList
     (
         IOobject
         (
-            "LAIboundary",
+            "kcLAIboundary",
             vegMesh.facesInstance(),
             vegMesh,
             IOobject::NO_READ,
