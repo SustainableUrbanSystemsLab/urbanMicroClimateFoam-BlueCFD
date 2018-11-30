@@ -82,13 +82,11 @@ class simplifiedVegetation
 		dimensionedScalar rsMin_;   // minimum stomatal resistance
 		dimensionedScalar TlMin_;   // lower limit of T
 		dimensionedScalar UMin_;    // lower limit of U
-        scalar Cd_;
+                scalar Cd_;
 		dimensionedScalar rhoa_;    // denisty of air
 		dimensionedScalar cpa_;     // specific heat of air at constant pressure
 		dimensionedScalar lambda_;  // latent heat of vaporization
 
-        //- leaf temperature [K]
-        volScalarField Tl_;
 
 		scalarListIOList divqrsw;
 		// -----------------------------------------------
@@ -97,6 +95,7 @@ class simplifiedVegetation
 		volScalarField ev_;     // water vapor pressure
 		volScalarField evsat_;  // saturated water vapor pressure
 		volScalarField LAD_;    // leaf area density
+                volScalarField Tl_;     // leaf temperature
 		volScalarField qsat_;   // saturated specific humidity
 		volScalarField Qlat_;     // latent heat flux
 		volScalarField Qsen_;     // sensible heat flux

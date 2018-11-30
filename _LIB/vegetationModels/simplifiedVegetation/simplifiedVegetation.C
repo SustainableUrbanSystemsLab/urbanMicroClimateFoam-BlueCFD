@@ -100,18 +100,6 @@ Foam::vegetation::simplifiedVegetation::simplifiedVegetation
         "lambda",
         dimensionSet(0,2,-2,0,0,0,0),
         2500000)),
-    Tl_
-    (
-        IOobject
-        (
-            "Tl",
-            mesh_.time().timeName(),
-            mesh_,
-            IOobject::READ_IF_PRESENT,
-            IOobject::AUTO_WRITE
-        ),
-        -pos(T)
-    ),
     divqrsw
     (
         IOobject
@@ -132,7 +120,7 @@ Foam::vegetation::simplifiedVegetation::simplifiedVegetation
             mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         mesh_,
         dimensionedScalar("0", dimensionSet(1,-3,-1,0,0,0,0), 0.0)
@@ -145,7 +133,7 @@ Foam::vegetation::simplifiedVegetation::simplifiedVegetation
             mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         mesh_,
         dimensionedScalar("0", dimensionSet(1,-1,-2,0,0,0,0), 0.0)
@@ -158,7 +146,7 @@ Foam::vegetation::simplifiedVegetation::simplifiedVegetation
             mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         mesh_,
         dimensionedScalar("0", dimensionSet(1,-1,-2,0,0,0,0), 0.0)
@@ -171,9 +159,21 @@ Foam::vegetation::simplifiedVegetation::simplifiedVegetation
             "0",//runTime_.timeName(),
             mesh_,
             IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         mesh_
+    ),
+    Tl_
+    (
+        IOobject
+        (
+            "Tl",
+            mesh_.time().timeName(),
+            mesh_,
+            IOobject::READ_IF_PRESENT,
+            IOobject::AUTO_WRITE
+        ),
+        T*pos(LAD_)
     ),
     qsat_
     (
@@ -183,7 +183,7 @@ Foam::vegetation::simplifiedVegetation::simplifiedVegetation
             mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         mesh_,
         dimensionedScalar("0", dimensionSet(0,0,0,0,0,0,0), 0.0)
@@ -196,7 +196,7 @@ Foam::vegetation::simplifiedVegetation::simplifiedVegetation
             mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         mesh_,
         dimensionedScalar("0", dimensionSet(1,-1,-3,0,0,0,0), 0.0)
@@ -209,7 +209,7 @@ Foam::vegetation::simplifiedVegetation::simplifiedVegetation
             mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         mesh_,
         dimensionedScalar("0", dimensionSet(1,-1,-3,0,0,0,0), 0.0)
@@ -222,7 +222,7 @@ Foam::vegetation::simplifiedVegetation::simplifiedVegetation
             mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         mesh_,
         dimensionedScalar("0", dimensionSet(0,-1,1,0,0,0,0), 0.0)
@@ -235,7 +235,7 @@ Foam::vegetation::simplifiedVegetation::simplifiedVegetation
             mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         mesh_,
         dimensionedScalar("0", dimensionSet(0,-1,1,0,0,0,0), 0.0)
@@ -248,7 +248,7 @@ Foam::vegetation::simplifiedVegetation::simplifiedVegetation
             mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         mesh_,
         dimensionedScalar("0", dimensionSet(1,-3,0,0,0,0,0), 0.0)
@@ -261,7 +261,7 @@ Foam::vegetation::simplifiedVegetation::simplifiedVegetation
             mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         mesh_,
         dimensionedVector("0", dimensionSet(1,0,-3,0,0,0,0), vector::zero)
@@ -274,7 +274,7 @@ Foam::vegetation::simplifiedVegetation::simplifiedVegetation
             mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         mesh_,
         dimensionedScalar("0", dimensionSet(1,-1,-3,0,0,0,0), 0.0)
@@ -287,7 +287,7 @@ Foam::vegetation::simplifiedVegetation::simplifiedVegetation
             mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
-            IOobject::AUTO_WRITE
+            IOobject::NO_WRITE
         ),
         mesh_,
         dimensionedScalar("0", dimensionSet(1,-1,-2,0,0,0,0), 0.0)
@@ -310,34 +310,23 @@ Foam::vegetation::simplifiedVegetation::~simplifiedVegetation()
 // solve radiation
 void Foam::vegetation::simplifiedVegetation::radiation()
 {
-    const fvMesh& vegiMesh =
-	    	mesh_.time().lookupObject<fvMesh>("vegetation");
-
+    const fvMesh& vegiMesh = mesh_.time().lookupObject<fvMesh>("vegetation");
     const label patchi = vegiMesh.boundaryMesh().findPatchID("air_to_vegetation");
-
     const fvPatch& vegiPatch = vegiMesh.boundary()[patchi];
 
     scalarField vegiPatchQr = vegiPatch.lookupPatchField<volScalarField, scalar>("qr");
-    scalarField vegiPatchQs = vegiPatch.lookupPatchField<volScalarField, scalar>("qs");
     scalar integrateQr = gSum(vegiPatch.magSf() * vegiPatchQr);
-    scalar integrateQs = gSum(vegiPatch.magSf() * vegiPatchQs);
 
-	Info << "test: integrateQr: " << integrateQr << endl;
- 	Info << "test: integrateQs: " << integrateQs << endl;
     scalar vegiVolume = gSum(pos(LAD_.primitiveField() - 10*SMALL)*mesh_.V().field());
-	Info << "test: vegiVolume: " << vegiVolume << endl;
 
     label timestepsInADay_ = divqrsw.size(); //readLabel(coeffs_.lookup("timestepsInADay"));
 
     Time& time = const_cast<Time&>(mesh_.time());
-    Info << "time.value(): " << time.value();
 
     label timestep = ceil( (time.value()/(86400/timestepsInADay_))-0.5 );
-    Info << ", 1 timestep: " << timestep;
+    //Info << ", 1 timestep: " << timestep;
     timestep = timestep % timestepsInADay_;
-    Info << ", 2 timestep: " << timestep << endl;
-
-    //vector sunPos = sunPosVector[timestep];
+    //Info << ", 2 timestep: " << timestep << endl;
 
     scalarList divqrswi =  divqrsw[timestep];
 
@@ -345,27 +334,9 @@ void Foam::vegetation::simplifiedVegetation::radiation()
     forAll(LAD_, cellI)
         if (LAD_[cellI] > 10*SMALL)
           Rn_[cellI] = -divqrswi[cellI] + (integrateQr)/(vegiVolume);
-    //Rn_[cellI] = (integrateQr + integrateQs)/(vegiVolume);
+
     Rn_.correctBoundaryConditions();
     //Rn_.write();
-
-	//Info << vegiPatch.Cf() << endl;
-	// Now I have the face centres for air_to_vegetation boundary.
-
-	/*forAll(Cf_, cellI)
-	{
-        if (Cf_[cellI] > 10*SMALL)
-        {
-        	Info << "Cf_[cellI]: " << Cf_[cellI];
-        	forAll(vegiPatch, faceI)
-        	{
-		        if (Cf_[cellI] > 10*SMALL)
-        		{
-					check normal vectors at each vegipatch face and see if they are pos or neg to understand if top boundary or bottom, or left or right
-        		}
-        	}
-        }
-	}*/
 
 }
 
@@ -380,15 +351,12 @@ void Foam::vegetation::simplifiedVegetation::resistance(volScalarField& magU, vo
         if (LAD_[cellI] > 10*SMALL)
         {
             //Aerodynamic resistance
-            // ra_[cellI] = C_.value()*pow(l_.value()/magU[cellI], 0.5);
             ra_[cellI] = C_.value()*pow(l_.value()/magU[cellI], 0.5);
 
             // Calculate vapor pressure of air
-            //ev_[cellI] = q[cellI]*rhoa_.value()*T[cellI]*461.5;
             ev_[cellI] = p_*q[cellI]/(0.621945+q[cellI]);
 
             // Calculate sat. vapor pressure of air
-            //evsat_[cellI] = calc_evsat(T[cellI]); // TODO bug
             evsat_[cellI] = calc_evsat(T[cellI]);
 
             // Vapor pressure deficit - kPa
@@ -437,14 +405,17 @@ void Foam::vegetation::simplifiedVegetation::calculate(volVectorField& U, volSca
     // Bounding velocity
     bound(magU, UMin_);
 
-    // solve aerodynamic, stomatal resistance
-    //resistance(U,T);
     volScalarField new_Tl("new_Tl", Tl_);
 
     // info
     Info << "    max leaf temp tl=" << max(T.internalField())
          << "k, iteration i=0" << endl;
 
+    const fvMesh& vegiMesh = mesh_.time().lookupObject<fvMesh>("vegetation");
+    const label patchi = vegiMesh.boundaryMesh().findPatchID("air_to_vegetation");
+    const fvPatch& vegiPatch = vegiMesh.boundary()[patchi];
+    scalarField vegiPatchQs = vegiPatch.lookupPatchField<volScalarField, scalar>("qs");
+    scalar integrateQs = gSum(vegiPatch.magSf() * vegiPatchQs);
 
     scalar maxError, maxRelError;
     int i;
@@ -466,30 +437,17 @@ void Foam::vegetation::simplifiedVegetation::calculate(volVectorField& U, volSca
 
                 // Calculate saturated density, specific humidity
                 rhosat_[cellI] = calc_rhosat(Tl_[cellI]);
-                //qsat_[cellI]   = rhosat_[cellI]/rhoa_.value();
                 evsat_[cellI] = calc_evsat(Tl_[cellI]);
                 qsat_[cellI] = 0.621945*(evsat_[cellI]/(p_-evsat_[cellI])); // ASHRAE 1, eq.23
 
                 // Calculate transpiration rate
-                // E_[cellI] = LAD_[cellI]*rhoa_.value()*(qsat_[cellI]-q[cellI])/(ra_[cellI]+rs_.value());
-                // E_[cellI] = 2.0*LAD_[cellI]*rhoa_.value()*(qsat_[cellI]-q[cellI])/(ra_[cellI]+rs_[cellI]);
-
-				// if (runTime_.value() >= 16800 && runTime_.value() <= 72600) //timesteps are hardcoded - ayk
-				// {
-                	E_[cellI] = nEvapSides_.value()*LAD_[cellI]*rhoa_.value()*(qsat_[cellI]-q[cellI])/(ra_[cellI]+rs_[cellI]);
-                // }
-                // else
-                // {
-                // 	E_[cellI] = 0.0; // No evapotranspiration
-                // }
-                //E_[cellI] = 0.0; // No evapotranspiration
+                //no transpiration at night when solar radiation is not >0
+             	E_[cellI] = pos(integrateQs-SMALL)*nEvapSides_.value()*LAD_[cellI]*rhoa_.value()*(qsat_[cellI]-q[cellI])/(ra_[cellI]+rs_[cellI]);
 
                 // Calculate latent heat flux
-                //Qlat_[cellI] = lambda_.value()*E_[cellI];
                 Qlat_[cellI] = lambda_.value()*E_[cellI];
 
                 // Calculate new leaf temperature
-                //new_Tl[cellI] = T[cellI] + (Rn_[cellI] - Qlat_[cellI])*(ra_[cellI]/(2.0*rhoa_.value()*cpa_.value()*LAD_[cellI]));
                 new_Tl[cellI] = T[cellI] + (Rn_[cellI] - Qlat_[cellI])*(ra_[cellI]/(2.0*rhoa_.value()*cpa_.value()*LAD_[cellI]));
 
             }
@@ -508,8 +466,6 @@ void Foam::vegetation::simplifiedVegetation::calculate(volVectorField& U, volSca
         scalar Tl_relax = relaxationDict.lookupOrDefault<scalar>("Tl", 0.5);
 
         // update leaf temp.
-        //Tl_.internalField() = new_Tl.internalField();
-        //Tl_.boundaryField() = new_Tl.boundaryField();
         forAll(Tl_, cellI)
             Tl_[cellI] = (1-Tl_relax)*Tl_[cellI]+(Tl_relax)*new_Tl[cellI];
 
@@ -518,7 +474,6 @@ void Foam::vegetation::simplifiedVegetation::calculate(volVectorField& U, volSca
              break;
     }
     Tl_.correctBoundaryConditions();
-    //Tl_.write();
 
     // Iteration info
     Info << "Vegetation model:  Solving for Tl, Final residual = " << maxError
@@ -541,25 +496,11 @@ void Foam::vegetation::simplifiedVegetation::calculate(volVectorField& U, volSca
         {
             // Calculate saturated density, specific humidity
             rhosat_[cellI] = calc_rhosat(Tl_[cellI]);
-            // qsat_[cellI] = rhosat_[cellI]/rhoa_.value();
             evsat_[cellI] = calc_evsat(Tl_[cellI]);
             qsat_[cellI] = 0.621945*(evsat_[cellI]/(p_-evsat_[cellI])); // ASHRAE 1, eq.23
 
             // Calculate transpiration rate
-            // E_[cellI] = LAD_[cellI]*rhoa_.value()*(qsat_[cellI]-q[cellI])/(ra_[cellI]+rs_.value());
-            // E_[cellI] = 2.0*LAD_[cellI]*rhoa_.value()*(qsat_[cellI]-q[cellI])/(ra_[cellI]+rs_[cellI]);
-
-				// if (runTime_.value() >= 16800 && runTime_.value() <= 72600) //timesteps are hardcoded - ayk
-				// {
-                	E_[cellI] = nEvapSides_.value()*LAD_[cellI]*rhoa_.value()*(qsat_[cellI]-q[cellI])/(ra_[cellI]+rs_[cellI]); // todo: implement switch for double or single side
-                // }
-                // else
-                // {
-                // 	E_[cellI] = 0.0; // No evapotranspiration
-                // }
-
-            //E_[cellI] = 0.0; // no evapotranspiration
-            // TODO: flag for no transpiration, one side, both side
+            E_[cellI] = pos(integrateQs-SMALL)*nEvapSides_.value()*LAD_[cellI]*rhoa_.value()*(qsat_[cellI]-q[cellI])/(ra_[cellI]+rs_[cellI]); // todo: implement switch for double or single side
 
             // Calculate latent heat flux
             Qlat_[cellI] = lambda_.value()*E_[cellI];
