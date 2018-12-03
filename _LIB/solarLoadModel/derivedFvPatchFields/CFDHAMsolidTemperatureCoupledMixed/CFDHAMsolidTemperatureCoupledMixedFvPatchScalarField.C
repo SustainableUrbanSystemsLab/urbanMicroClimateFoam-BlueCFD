@@ -273,7 +273,7 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
 		    "grassProperties",
 		    nbrMesh.time().constant(),
 		    nbrMesh,
-		    IOobject::MUST_READ,
+		    IOobject::READ_IF_PRESENT,
 		    IOobject::NO_WRITE
         )
     );

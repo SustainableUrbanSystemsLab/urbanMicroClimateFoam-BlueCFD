@@ -30,6 +30,9 @@ License
 #include "typeInfo.H"
 #include "addToRunTimeSelectionTable.H"
 
+#include "wallFvPatch.H"
+#include "interpolationTable.H"
+
 using namespace Foam::constant;
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
@@ -406,16 +409,43 @@ void Foam::radiation::viewFactorSky::calculate()
     DynamicList<scalar> localCoarseT4ave(nLocalCoarseFaces_);
     DynamicList<scalar> localCoarseEave(nLocalCoarseFaces_);
     DynamicList<scalar> localCoarseHoave(nLocalCoarseFaces_);
-    
-    // added by aytac
-        label inletPatchID = mesh_.boundaryMesh().findPatchID("inlet");
-        label outletPatchID = mesh_.boundaryMesh().findPatchID("outlet");
-        label topPatchID = mesh_.boundaryMesh().findPatchID("top");        
-        label side1PatchID = mesh_.boundaryMesh().findPatchID("side1");
-        label side2PatchID = mesh_.boundaryMesh().findPatchID("side2");
-    //
 
     volScalarField::Boundary& qrBf = qr_.boundaryFieldRef();
+
+    //////////////////////////////////////////////////////////////////////////
+    //obtain Tambient to calculate Tsky - can find a better way to import Tambient?
+    Time& time = const_cast<Time&>(mesh_.time()); Info << "time: " << time.value() << endl;
+    //label timestep = ceil( (time.value()/3600)-1E-6 ); timestep = timestep%24;
+
+    interpolationTable<scalar> Tambient
+    (
+        "$FOAM_CASE/0/air/Tambient"
+    ); 
+    //////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////
+    //is grass model activated?
+    bool grassActive = false;
+    IOdictionary grassProperties
+    (
+		IOobject
+		(
+		    "grassProperties",
+		    mesh_.time().constant(),
+		    mesh_,
+		    IOobject::READ_IF_PRESENT,
+		    IOobject::NO_WRITE
+        )
+    );
+    if (grassProperties.typeHeaderOk<IOdictionary>(true))
+    {
+        word grassModel(grassProperties.lookup("grassModel"));
+        if (grassModel != "none")
+        {
+            grassActive = true;
+        }
+    }
+    //////////////////////////////////////////////////////////////////////////
 
     forAll(selectedPatches_, i)
     {
@@ -464,16 +494,24 @@ void Foam::radiation::viewFactorSky::calculate()
                 forAll(fineFaces, j)
                 {
                     label faceI = fineFaces[j];
-                    if (patchID == inletPatchID || patchID == outletPatchID || patchID == topPatchID || patchID == side1PatchID || patchID == side2PatchID) // added by aytac to take into account sky temperature
+                    if (!isA<wallFvPatch>(mesh_.boundary()[patchID])) // added by aytac to take into account sky temperature
                     {
                         scalar cc = 0; //cloud cover
-                        scalar ec = (1-0.84*cc)*(0.527 + 0.161*Foam::exp(8.45*(1-273/Tp[faceI]))) +0.84*cc; //cloud emissivity
-                        scalar Tsky = pow(9.365574E-6*(1-cc)*pow(Tp[faceI],6) + pow(Tp[faceI],4)*cc*ec ,0.25); // Swinbank model (1963, Cole 1976)
+                        scalar ec = (1-0.84*cc)*(0.527 + 0.161*Foam::exp(8.45*(1-273/Tambient(time.value())))) +0.84*cc; //cloud emissivity
+                        scalar Tsky = pow(9.365574E-6*(1-cc)*pow(Tambient(time.value()),6) + pow(Tambient(time.value()),4)*cc*ec ,0.25); // Swinbank model (1963, Cole 1976)
                         T4ave[coarseI] += (pow4(Tsky)*sf[faceI])/area;
                     }
                     else
                     {
-                        T4ave[coarseI] += (pow4(Tp[faceI])*sf[faceI])/area; 
+                        T4ave[coarseI] += (pow4(Tp[faceI])*sf[faceI])/area;
+                        if (grassActive == true)//overwrite if patch is covered with grass
+                        {
+                            scalarField Tl = mesh_.boundary()[patchID].lookupPatchField<volScalarField, scalar>("Tl");
+                            if (gMin(Tl) > 0)
+                            {
+                                T4ave[coarseI] += (pow4(Tl[faceI])*sf[faceI])/area;
+                            }
+                        }
                     }
                     Eave[coarseI] += (eb[faceI]*sf[faceI])/area;
                     Hoiave[coarseI] += (Hoi[faceI]*sf[faceI])/area;
