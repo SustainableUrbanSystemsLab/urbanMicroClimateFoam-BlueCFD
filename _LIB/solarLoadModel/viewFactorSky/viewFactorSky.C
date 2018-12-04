@@ -32,6 +32,7 @@ License
 
 #include "wallFvPatch.H"
 #include "interpolationTable.H"
+#include "hashedWordList.H"
 
 using namespace Foam::constant;
 
@@ -414,7 +415,7 @@ void Foam::radiation::viewFactorSky::calculate()
 
     //////////////////////////////////////////////////////////////////////////
     //obtain Tambient to calculate Tsky - can find a better way to import Tambient?
-    Time& time = const_cast<Time&>(mesh_.time()); Info << "time: " << time.value() << endl;
+    Time& time = const_cast<Time&>(mesh_.time());
     //label timestep = ceil( (time.value()/3600)-1E-6 ); timestep = timestep%24;
 
     interpolationTable<scalar> Tambient
@@ -425,7 +426,7 @@ void Foam::radiation::viewFactorSky::calculate()
 
     //////////////////////////////////////////////////////////////////////////
     //is grass model activated?
-    bool grassActive = false;
+    hashedWordList grassPatches;
     IOdictionary grassProperties
     (
 		IOobject
@@ -442,7 +443,8 @@ void Foam::radiation::viewFactorSky::calculate()
         word grassModel(grassProperties.lookup("grassModel"));
         if (grassModel != "none")
         {
-            grassActive = true;
+            const dictionary& modelCoeffs = grassProperties.subDict(grassModel + "Coeffs");
+            grassPatches = modelCoeffs.lookup("grassPatches");
         }
     }
     //////////////////////////////////////////////////////////////////////////
@@ -453,6 +455,11 @@ void Foam::radiation::viewFactorSky::calculate()
 
         const scalarField& Tp = T_.boundaryField()[patchID];
         const scalarField& sf = mesh_.magSf().boundaryField()[patchID];
+        scalarField Tl_(T_.size(), -1.0);
+        if (grassPatches.contains(mesh_.boundary()[patchID].name()))
+        {
+            Tl_ = mesh_.boundary()[patchID].lookupPatchField<volScalarField, scalar>("Tl");
+        }
 
         fvPatchScalarField& qrPatch = qrBf[patchID];
 
@@ -503,14 +510,13 @@ void Foam::radiation::viewFactorSky::calculate()
                     }
                     else
                     {
-                        T4ave[coarseI] += (pow4(Tp[faceI])*sf[faceI])/area;
-                        if (grassActive == true)//overwrite if patch is covered with grass
+                        if (grassPatches.contains(mesh_.boundary()[patchID].name()))//use Tl if patch is covered with grass
                         {
-                            scalarField Tl = mesh_.boundary()[patchID].lookupPatchField<volScalarField, scalar>("Tl");
-                            if (gMin(Tl) > 0)
-                            {
-                                T4ave[coarseI] += (pow4(Tl[faceI])*sf[faceI])/area;
-                            }
+                            T4ave[coarseI] += (pow4(Tl_[faceI])*sf[faceI])/area;
+                        }    
+                        else//otherwise use T wall temperature
+                        {
+                            T4ave[coarseI] += (pow4(Tp[faceI])*sf[faceI])/area;
                         }
                     }
                     Eave[coarseI] += (eb[faceI]*sf[faceI])/area;

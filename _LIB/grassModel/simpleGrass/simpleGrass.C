@@ -215,10 +215,10 @@ void Foam::grass::simpleGrass::calculate
             scalar lambda = 2500000; // latent heat of vaporization of water J/kg
             scalarField Qlat = lambda*E*LAI_; //latent heat flux
 
-            scalarField Qr2sky = (1-exp(-betaLW_*LAI_))*5.67E-8*(pow(273.15+15,4)-pow(Tl,4));
-            scalarField Qr2substrate = (1-exp(-betaLW_*LAI_))*5.67E-8*(pow(Ts,4)-pow(Tl,4));
+            scalarField Qr2surrounding = qr;
+            scalarField Qr2substrate = 6*(Ts-Tl); //thermal radiation between grass and surface - Malys et al 2014
 
-            scalarField Tl_new = Tc + (Qr2sky + Qr2substrate + Qs_abs - Qlat)/ (h_ch*LAI_);
+            scalarField Tl_new = Tc + (Qr2surrounding + Qr2substrate + Qs_abs - Qlat)/ (h_ch*LAI_);
 
             // info
             Info << " max leaf temp Tl=" << gMax(Tl_new)
@@ -237,7 +237,7 @@ void Foam::grass::simpleGrass::calculate
                     Info << " Qs_abs: " << gSum(thisPatch.magSf()*Qs_abs)/gSum(thisPatch.magSf()) << endl;
                     Info << " Qlat: " << gSum(thisPatch.magSf()*-Qlat)/gSum(thisPatch.magSf()) << endl;
                     Info << " Qsen: " << gSum(thisPatch.magSf()*Qsen)/gSum(thisPatch.magSf()) << endl;
-                    Info << " Qr2sky: " << gSum(thisPatch.magSf()*Qr2sky)/gSum(thisPatch.magSf()) << endl;
+                    Info << " Qr2surrounding: " << gSum(thisPatch.magSf()*Qr2surrounding)/gSum(thisPatch.magSf()) << endl;
                     Info << " Qr2substrate: " << gSum(thisPatch.magSf()*Qr2substrate)/gSum(thisPatch.magSf()) << endl;
                 }
                 break; 

@@ -32,6 +32,8 @@ License
 #include "interpolationTable.H"
 #include "uniformDimensionedFields.H"
 
+#include "hashedWordList.H"
+
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
@@ -283,11 +285,14 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
         word grassModel(grassProperties.lookup("grassModel"));
         if (grassModel != "none")
         {
-            scalarField TlNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("Tl");
-                mpp.distribute(TlNbr);
+            const dictionary& modelCoeffs = grassProperties.subDict(grassModel + "Coeffs");
+            hashedWordList grassPatches = modelCoeffs.lookup("grassPatches");
 
-            if (gMin(TlNbr) > 0) //if patch is covered with grass
+            if (grassPatches.contains(nbrPatch.name()))//if patch is covered with grass
             {
+                scalarField TlNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("Tl");
+                    mpp.distribute(TlNbr);
+
                 const dictionary& coeffs = grassProperties.subDict(grassModel + "Coeffs");
                 scalar LAI = coeffs.lookupOrDefault("LAI", 2);
                 scalar beta = coeffs.lookupOrDefault("beta", 0.78);
