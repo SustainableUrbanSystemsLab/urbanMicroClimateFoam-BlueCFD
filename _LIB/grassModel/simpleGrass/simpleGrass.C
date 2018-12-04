@@ -226,7 +226,11 @@ void Foam::grass::simpleGrass::calculate
 
             // Check rel. L-infinity error
             scalar maxError = gMax(mag(Tl_new-Tl));
-            scalar maxRelError = maxError/gMax(mag(Tl_new));  
+            scalar maxRelError = maxError/gMax(mag(Tl_new));
+
+            // read relaxation factor for Tl - aytac
+            dictionary relaxationDict = mesh_.solutionDict().subDict("relaxationFactors");
+            scalar Tl_relax = relaxationDict.lookupOrDefault<scalar>("Tl", 0.5);
 
             // convergence check
             if ((maxRelError < 1e-8) && (maxError < 1e-8))
@@ -244,7 +248,7 @@ void Foam::grass::simpleGrass::calculate
             }
             else
             {
-                Tl = 0.5*Tl+0.5*Tl_new; // update leaf temp. 
+                Tl = (1-Tl_relax)*Tl+(Tl_relax)*Tl_new;// update leaf temp. 
             }                    
         }
         /////////////////////////////////////////
