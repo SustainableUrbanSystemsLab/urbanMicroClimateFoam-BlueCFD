@@ -161,7 +161,8 @@ void Foam::grass::grassModel::correct
     const volScalarField& w_,
     const volVectorField& U_,
     volScalarField& Sh_,
-    volScalarField& Sw_
+    volScalarField& Sw_,
+    volScalarField& Cf_
 )
 {
     if (!grass_)
@@ -171,7 +172,7 @@ void Foam::grass::grassModel::correct
 
     if (firstIter_ || (time_.timeIndex() % solverFreq_ == 0))
     {
-        calculate(T_, w_, U_, Sh_, Sw_);
+        calculate(T_, w_, U_, Sh_, Sw_, Cf_);
         firstIter_ = false;
     }
 }

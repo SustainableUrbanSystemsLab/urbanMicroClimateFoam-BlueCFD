@@ -70,36 +70,11 @@ void Foam::grass::noGrass::calculate
     const volScalarField& w_,
     const volVectorField& U_,
     volScalarField& Sh_,
-    volScalarField& Sw_
+    volScalarField& Sw_,
+    volScalarField& Cf_
 )
 {
     // Do nothing
-}
-
-Foam::tmp<Foam::volScalarField> Foam::grass::noGrass::Cf() const
-{
-    return tmp<volScalarField>
-    (
-        new volScalarField
-        (
-            IOobject
-            (
-                "Cf",
-                mesh_.time().timeName(),
-                mesh_,
-                IOobject::NO_READ,
-                IOobject::NO_WRITE,
-                false
-            ),
-            mesh_,
-            dimensionedScalar
-            (
-                "zero",
-                dimless/dimLength,
-                0.0
-            )
-        )
-    );
 }
 
 

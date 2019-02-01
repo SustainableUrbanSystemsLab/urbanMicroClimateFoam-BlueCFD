@@ -152,7 +152,8 @@ void Foam::grass::simpleGrass::calculate
     const volScalarField& w_,
     const volVectorField& U_,
     volScalarField& Sh_,
-    volScalarField& Sw_
+    volScalarField& Sw_,
+    volScalarField& Cf_
 )
 {    
 
@@ -166,6 +167,7 @@ void Foam::grass::simpleGrass::calculate
         scalarField Tc = thisPatch.patchInternalField(T_);
         scalarField wc = thisPatch.patchInternalField(w_);
         vectorField Uc = thisPatch.patchInternalField(U_);
+        scalarField deltaCoeffs = thisPatch.deltaCoeffs();
 
         // Get the coupling information from the mappedPatchBase
         const mappedPatchBase& mpp =
@@ -262,31 +264,12 @@ void Foam::grass::simpleGrass::calculate
         {
             Tl_Internal[patchInternalLabels[i]] = Tl[i];
             Tl_p[i] = Tl[i];
-            Sh_[patchInternalLabels[i]] = LAD_*h_ch[i]*(Tl[i]-Tc[i]);
-            Sw_[patchInternalLabels[i]] = LAD_*E[i];
+            Sh_[patchInternalLabels[i]] = h_ch[i]*(Tl[i]-Tc[i])*(LAI_*(deltaCoeffs[i]/2));
+            Sw_[patchInternalLabels[i]] = E[i]*(LAI_*(deltaCoeffs[i]/2));
+            Cf_[patchInternalLabels[i]] = Cd_*(LAI_*(deltaCoeffs[i]/2));
         }
         /////////////////////////////////////////
     }
-}
-
-Foam::tmp<Foam::volScalarField> Foam::grass::simpleGrass::Cf() const
-{
-    return tmp<volScalarField>
-    (
-        new volScalarField
-        (
-            IOobject
-            (
-                "Cf",
-                mesh_.time().timeName(),
-                mesh_,
-                IOobject::NO_READ,
-                IOobject::NO_WRITE,
-                false
-            ),
-            dimensionedScalar("Cf", dimless/dimLength, Cd_*LAD_)*pos(Tl_)
-        )
-    );
 }
 
 // ************************************************************************* //

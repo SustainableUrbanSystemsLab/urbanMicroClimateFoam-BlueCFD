@@ -89,14 +89,12 @@ public:
                 const volScalarField& w_,
                 const volVectorField& U_,
                 volScalarField& Sh_,
-                volScalarField& Sw_
+                volScalarField& Sw_,
+                volScalarField& Cf_
             );
 
             //- Read grassProperties dictionary
             bool read();
-
-            //- return leaf drag coefficient
-            virtual tmp<volScalarField> Cf() const;
 };
 
 

@@ -16,6 +16,7 @@ PtrList<volScalarField> gcrFluid(fluidRegions.size());
 
 PtrList<volScalarField> ShFluid(fluidRegions.size());
 PtrList<volScalarField> SwFluid(fluidRegions.size());
+PtrList<volScalarField> CfFluid(fluidRegions.size());
 
 List<scalar> initialMassFluid(fluidRegions.size());
 List<label> pRefCellFluid(fluidRegions.size(),0);
@@ -148,6 +149,25 @@ forAll(fluidRegions, i)
             ),
             fluidRegions[i],
             dimensionedScalar("0", dimensionSet(1,-3,-1,0,0,0,0), 0.0)
+        )
+    );  
+
+    Info<< "    Adding to CfFluid\n" << endl;
+    CfFluid.set
+    (
+        i,
+        new volScalarField
+        (
+            IOobject
+            (
+                "Cf",
+                runTime.timeName(),
+                fluidRegions[i],
+                IOobject::NO_READ,
+                IOobject::NO_WRITE
+            ),
+            fluidRegions[i],
+            dimensionedScalar("0", dimensionSet(0,-1,0,0,0,0,0), 0.0)
         )
     );  
 

@@ -11,6 +11,7 @@
 
     volScalarField& Sh = ShFluid[i];
     volScalarField& Sw = SwFluid[i];   
+    volScalarField& Cf = CfFluid[i]; 
 
     compressible::turbulenceModel& turb = turbulence[i];
 

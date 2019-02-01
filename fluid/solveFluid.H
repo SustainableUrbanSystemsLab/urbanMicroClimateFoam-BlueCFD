@@ -9,7 +9,7 @@ while ((simpleControlFluid.run(runTime) || fluidIteration <= minFluidIteration) 
 //  Pressure-velocity SIMPLE corrector
     Info << "Internal iteration number: " << fluidIteration << endl;
 
-    gra.correct(thermo.T(), w, U, Sh, Sw);
+    gra.correct(thermo.T(), w, U, Sh, Sw, Cf);
 
     if(!simple.lookupOrDefault<bool>("frozenFlow", 0))
     {
