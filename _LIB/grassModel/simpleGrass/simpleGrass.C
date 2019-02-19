@@ -201,7 +201,7 @@ void Foam::grass::simpleGrass::calculate
             Tl = Tc; //initialize if necessary
         }
 
-        scalarField Qs_abs = qs*(1-exp(-beta_*LAI_))*(1+exp(-beta_*LAI_)*albedoSoil_);
+        scalarField Qs_abs = qs*(1-exp(-beta_*LAI_)+albedoSoil_*exp(-beta_*LAI_));
 
         scalarField E(scalarField(Qs_abs.size(),0.0));
 
