@@ -54,7 +54,7 @@ void Foam::grass::simpleGrass::initialise()
     beta_ = coeffs_.lookupOrDefault("beta", 0.78);
     betaLW_ = coeffs_.lookupOrDefault("betaLW", 0.83);
     LAI_ = coeffs_.lookupOrDefault("LAI", 2.0);
-    LAD_ = coeffs_.lookupOrDefault("LAD", 20.0);
+    l_ = coeffs_.lookupOrDefault("l", 0.1);
     albedoSoil_ = coeffs_.lookupOrDefault("albedoSoil", 0.2366);
     emissivitySoil_ = coeffs_.lookupOrDefault("emissivitySoil", 0.95);
 
@@ -65,7 +65,7 @@ void Foam::grass::simpleGrass::initialise()
     Rv = 461.524;
 
     rs = coeffs_.lookupOrDefault("rs", 200);
-//    ra = coeffs_.lookupOrDefault("ra", 100);
+    ra = coeffs_.lookupOrDefault("ra", -1); //if set to -1, it will be calculated below
     debug_ = coeffs_.lookupOrDefault("debug", 0);
 
     List<word> grassPatches(coeffs_.lookup("grassPatches"));  
@@ -165,8 +165,7 @@ void Foam::grass::simpleGrass::calculate
         const labelUList& patchInternalLabels = thisPatch.faceCells();
         scalarField Tl = thisPatch.patchInternalField(Tl_);
         scalarField Tc = thisPatch.patchInternalField(T_);
-        scalarField wc = thisPatch.patchInternalField(w_);
-        vectorField Uc = thisPatch.patchInternalField(U_);
+        scalarField wc = thisPatch.patchInternalField(w_);        
         scalarField deltaCoeffs = thisPatch.deltaCoeffs();
 
         // Get the coupling information from the mappedPatchBase
@@ -183,15 +182,19 @@ void Foam::grass::simpleGrass::calculate
 
         scalarField qs = thisPatch.lookupPatchField<volScalarField, scalar>("qs");
         scalarField qr = thisPatch.lookupPatchField<volScalarField, scalar>("qr");
+        scalarField ra_(thisPatch.size(),ra);
 
-        scalar C_ = 131.035; // proportionality factor
-        scalar l_ = 0.1; // characteristic length of leaf
-        scalarField magU = mag(Uc);
-        magU = max(magU, SMALL);
-        ra = C_*pow(l_/magU, 0.5); //aerodynamic resistance
+        if(ra < 0) //calculate ra if it is not given in grassProperties
+        {
+            vectorField Uc = thisPatch.patchInternalField(U_);
+            scalar C_ = 131.035; // proportionality factor
+            scalarField magU = mag(Uc);
+            magU = max(magU, SMALL);
+            ra_ = C_*pow(l_/magU, 0.5); //aerodynamic resistance
+        }    
 
-        scalarField h_ch = (2*rhoa*cpa)/ra; //convective heat transfer coefficient
-        scalarField h_cm = (rhoa*Ra)/(p_*Rv*(ra+rs)); //convective mass transfer coefficient
+        scalarField h_ch = (2*rhoa*cpa)/ra_; //convective heat transfer coefficient
+        scalarField h_cm = (rhoa*Ra)/(p_*Rv*(ra_+rs)); //convective mass transfer coefficient
 
         //scalarField wsat = 0.621945*(pvsat/(p_-pvsat)); // saturated specific humidity, ASHRAE 1, eq.23
         scalarField pv = p_ * wc / (Ra/Rv + wc); // vapour pressure

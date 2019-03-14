@@ -72,7 +72,7 @@ class simpleGrass
         scalar beta_; // extinction coefficient for short-wave radiation
         scalar betaLW_; // extinction coefficient for long-wave radiation
         scalar LAI_; // leaf area index
-        scalar LAD_; // leaf area density
+        scalar l_; // characteristic leaf size
         scalar albedoSoil_; // short-wave reflectivity for soil
         scalar emissivitySoil_; // long-wave reflectivity for soil
 
@@ -83,7 +83,7 @@ class simpleGrass
         scalar Rv; //gas constant for vapour
 
 		scalar rs; //stomatal resistance - s/m
-		scalarField ra; //aerodynamic resistance - s/m
+		scalar ra; //aerodynamic resistance - s/m
 
         //- debug switch
         bool debug_;
