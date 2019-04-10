@@ -39,6 +39,7 @@
                     Info << "This is going to crash (pc)! Decreasing timestep and reverting fields..." << endl;
                     Info << "Error: gMax(pc): " << gMax(pc) << ", gMax(pc.boundaryField()): " << gMax(pc.boundaryField()) << endl;
                     timeStepDecrease = true;
+                    #include "setSolidRegionDeltaT.H"
                     #include "revertValues.H"    
                     break;
                 }
@@ -52,6 +53,7 @@
                 {           
                     Info << "This is going to crash (Ts)! Decreasing timestep and reverting fields..." << endl;
                     timeStepDecrease = true;
+                    #include "setSolidRegionDeltaT.H"
                     #include "revertValues.H"  
                     break;                      
                 }
@@ -75,6 +77,7 @@
                     Ts_n = Ts; Ts_n.boundaryFieldRef().updateCoeffs();
                     Info << "Total internal iterations: " << nInternalIter << endl;
                     timeStepDecrease = false;
+                    #include "setSolidRegionDeltaT.H" 
                     break;
                 }
                 else if (nInternalIter == nInternalIterMax) //nonlinear iteration reached maximum
@@ -85,7 +88,8 @@
                        << "maxChangews: " << maxChangews << endl
                        << "maxChangeT: " << maxChangeTs << endl
                        << "Total internal iterations: " << nInternalIter << endl;
-                    timeStepDecrease = true;                    
+                    timeStepDecrease = true;
+                    #include "setSolidRegionDeltaT.H"                    
                     #include "revertValues.H"
                 }   
                 else //not converged nor reached the maximum iteration yet, continue
@@ -114,7 +118,7 @@
 
         if (timeToOutput > 0.0)
         {
-            #include "setSolidRegionDeltaT.H"
+//            #include "setSolidRegionDeltaT.H"
 
             //update thermal radiation fluxes
             forAll(fluidRegions, i)
