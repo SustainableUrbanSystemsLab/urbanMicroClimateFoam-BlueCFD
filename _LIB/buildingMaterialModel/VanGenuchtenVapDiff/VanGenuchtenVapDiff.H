@@ -1,3 +1,4 @@
+
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
@@ -55,6 +56,9 @@ Description
          -muDry: vapor resistance factor of dry material [-]
          -A:     coefficient [-]
 
+         -minCrel: minimum  Crel value (if not specified it takes VSMALL)
+
+
     Author: Andrea Ferrari
 
 SourceFiles
@@ -93,6 +97,7 @@ class VanGenuchtenVapDiff
         scalar muDry_;
         scalar A_;
         scalar wr_;
+        scalar minCrel_;
 
         bool vaporDiffusion_;
     // Private Member Functions
