@@ -77,7 +77,6 @@
                     Ts_n = Ts; Ts_n.boundaryFieldRef().updateCoeffs();
                     Info << "Total internal iterations: " << nInternalIter << endl;
                     timeStepDecrease = false;
-                    #include "setSolidRegionDeltaT.H" 
                     break;
                 }
                 else if (nInternalIter == nInternalIterMax) //nonlinear iteration reached maximum
@@ -114,12 +113,11 @@
                 runTime.setTime(runTime.value()+runTime.deltaT().value(),runTime.timeIndex()+1);
                 //runTime++;  //using this creates problems when writeInterval != 1
             }
+            #include "setSolidRegionDeltaT.H"
         }
 
         if (timeToOutput > 0.0)
         {
-//            #include "setSolidRegionDeltaT.H"
-
             //update thermal radiation fluxes
             forAll(fluidRegions, i)
             {
