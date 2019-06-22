@@ -56,4 +56,7 @@ scalar PicardToleranceTs =
 word pcEqnForm =
     runTime.controlDict().lookupOrDefault<word>("pcEqnForm", "pc-based"); 
 
+scalar minCrel =
+    runTime.controlDict().lookupOrDefault<scalar>("minCrel", VSMALL); 
+
 // ************************************************************************* //

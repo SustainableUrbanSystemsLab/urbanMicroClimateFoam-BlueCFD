@@ -44,6 +44,8 @@ forAll(Materials, MaterialsI)
         buildingMaterial->update_Kpt_cell(pc,ws,Ts,K_pt,celli);
     }
 }
+dimensionedScalar minCrel_("minCrel_", dimensionSet(0, -2, 2, 0, 0, 0, 0), minCrel);
+Crel = max(Crel, minCrel_);
 
 ws.correctBoundaryConditions();
 Crel.correctBoundaryConditions();
