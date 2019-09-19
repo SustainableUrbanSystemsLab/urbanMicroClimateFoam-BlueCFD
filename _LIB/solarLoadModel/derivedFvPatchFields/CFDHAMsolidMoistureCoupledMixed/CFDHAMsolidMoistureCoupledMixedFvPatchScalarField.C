@@ -155,17 +155,24 @@ void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
             (
                 patch().lookupPatchField<volScalarField, scalar>("Ts")
             );
-    scalarField Ts(pcp.size(), 0.0);
-        Ts = patch().lookupPatchField<volScalarField, scalar>("Ts"); 
-    scalarField TNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("T");
-        mpp.distribute(TNbr); 
-
+    const fvPatchScalarField&
+        fieldpc = refCast
+            <const fvPatchScalarField>
+            (
+                patch().lookupPatchField<volScalarField, scalar>("pc")
+            );  
     const mixedFvPatchScalarField&
         nbrFieldw = refCast
             <const mixedFvPatchScalarField>
             (
                 nbrPatch.lookupPatchField<volScalarField, scalar>("w")
-            );
+            );            
+                        
+    scalarField Ts(pcp.size(), 0.0);
+        Ts = patch().lookupPatchField<volScalarField, scalar>("Ts"); 
+    scalarField TNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("T");
+        mpp.distribute(TNbr); 
+
     scalarField wcNbr(nbrFieldw.patchInternalField());
         mpp.distribute(wcNbr);
     scalarField wNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("w");
@@ -195,13 +202,14 @@ void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
     scalarField pv_s = pvsat_s*exp((pcp)/(rhol*Rv*Ts));
 
     scalarField gl = ((gcrNbr*rhol)/(3600*1000));
-
-    scalarField vaporFlux = rhoNbr*(Dm + nutNbr/Sct) * (wcNbr-(0.62198*pv_s/1e5)) *deltaCoeff_; 
-
+    scalarField g_conv = rhoNbr*(Dm + nutNbr/Sct) * (wcNbr-(0.62198*pv_s/1e5)) *deltaCoeff_; 
+    scalarField g_cond = (Krel+K_v)*fieldpc.snGrad();  
+    
     // term with temperature gradient:
     scalarField K_pt(pcp.size(), 0.0);
-    K_pt = patch().lookupPatchField<volScalarField, scalar>("K_pt");                 
+        K_pt = patch().lookupPatchField<volScalarField, scalar>("K_pt");                 
     scalarField X = K_pt*fieldTs.snGrad();
+    //////////////////////////////////
 
     //-- Gravity flux --//
     //lookup gravity vector
@@ -213,14 +221,20 @@ void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
 
     if(impermeable_ == false)
     {
-        refGrad() = (vaporFlux + gl + phiG - X)/(Krel + K_v);
-//      refGrad() = (vaporFlux + gl - X)/(Krel + K_v);
-        forAll(refValue(),faceI)
-        {
-            if(gl[faceI]>0){refValue()[faceI]=-1001;}
-            else{refValue()[faceI]=pc_o[faceI];}
+        valueFraction() = 0.0;
+        if(gMax(gl) > 0)
+        {     
+            forAll(valueFraction(),faceI)
+            {  
+                if(pcp[faceI] > -100.0 && (gl[faceI] > g_cond[faceI] - g_conv[faceI] - phiG[faceI] + X[faceI]) )    
+                {
+                    valueFraction()[faceI] = 1.0;
+                }
+            }
         }
-        valueFraction() = pos(patchInternalField()+refGrad()/patch().deltaCoeffs()+1E3 );
+       
+        refGrad() = (g_conv + gl + phiG - X)/(Krel + K_v);
+        refValue() =  -100.0 + 1.0;
     }
     else 
     {
@@ -228,9 +242,6 @@ void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
         refValue() = 0;
         valueFraction() = 0;        
     }
-    
-//    Pout << "valueFraction:" << valueFraction() << endl;
-//    Pout << "pcp:" << pcp << endl;
 
     mixedFvPatchScalarField::updateCoeffs(); 
 
