@@ -38,3 +38,4 @@ sol.correct();
 
 runTime.TimeState::operator=(pts); //restore time state
 
+gcr.correctBoundaryConditions();
