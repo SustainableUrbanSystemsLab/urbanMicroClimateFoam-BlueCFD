@@ -653,7 +653,8 @@ void Foam::solarLoad::directAndDiffuse::calculate()
     {
         Time& time = const_cast<Time&>(mesh_.time());
         //Info << "time.value(): " << time.value() << endl;
-        label timestep = ceil( (time.value()/(86400/timestepsInADay_))-0.5 ); 
+        Info << "AAA: " << time.deltaT().value() << endl;
+        label timestep = ceil( (time.value()/time.deltaT().value())-0.5 ); 
         timestep = timestep%timestepsInADay_; 
         //Info << ", timestep: " << timestep << endl;
 

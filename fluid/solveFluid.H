@@ -31,11 +31,11 @@ while ((simpleControlFluid.run(runTime) || fluidIteration <= minFluidIteration) 
 Info<< nl << fluidRegions[i].name() << " region solution converged in "
     << fluidIteration-1 << " iterations" << nl << endl;
 
+runTime.TimeState::operator=(pts); //restore time state
+
 Info << "Updating long-wave radiation heat transfer for region: " << fluidRegions[i].name() << endl;
 rad.correct();
 Info << "Updating short-wave radiation heat transfer for region: " << fluidRegions[i].name() << endl;
 sol.correct();
-
-runTime.TimeState::operator=(pts); //restore time state
 
 gcr.correctBoundaryConditions();
