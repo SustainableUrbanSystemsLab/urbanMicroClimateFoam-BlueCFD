@@ -234,26 +234,47 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
 
     scalarField gl = ((gcrNbr*rhol)/(3600*1000));
 
-    // Calculate rain temperature - approximation for wet-bulb temp///////////
-    //obtain Tambient - can find a better way to import this value?
+    // Set rain temperature //////////////////////////////////////////////////
     Time& time = const_cast<Time&>(nbrMesh.time());
     //label timestep = ceil( (time.value()/3600)-1E-6 ); timestep = timestep%24;
 
-    interpolationTable<scalar> Tambient
+    fileName rainTempFile
     (
-        "$FOAM_CASE/0/air/Tambient"
-    ); 
-    
-    interpolationTable<scalar> wambient
-    (
-        "$FOAM_CASE/0/air/wambient"
-    );     
-    ///////////
-    scalar saturationPressure = 133.322*pow(10,(8.07131-(1730.63/(233.426+Tambient(time.value())))));
-    scalar airVaporPressure = wambient(time.value())*1e5/0.621945;
-    scalar relhum = airVaporPressure/saturationPressure*100;
-    scalar dewPointTemp = Tambient(time.value()) - (100-relhum)/5;
-    scalar rainTemp = Tambient(time.value()) - (Tambient(time.value())-dewPointTemp)/3;
+       nbrMesh.time().rootPath()
+       /nbrMesh.time().globalCaseName()
+       /"0/air/rainTemp"
+    );
+    scalar rainTemp = 293.15;
+    if(isFile(rainTempFile))
+    {
+//        Info << "Found rainTemp file..." << endl;
+        interpolationTable<scalar> rT
+        (
+            rainTempFile
+        );
+        rainTemp = rT(time.value());
+    }
+    else
+    {
+//        Info << "Calculating rainTemp..." << endl;
+        // Calculate rain temperature - approximation for wet-bulb temp///////////
+        //obtain Tambient - can find a better way to import this value?
+        interpolationTable<scalar> Tambient
+        (
+            "$FOAM_CASE/0/air/Tambient"
+        ); 
+        
+        interpolationTable<scalar> wambient
+        (
+            "$FOAM_CASE/0/air/wambient"
+        );     
+        ///////////
+        scalar saturationPressure = 133.322*pow(10,(8.07131-(1730.63/(233.426+Tambient(time.value())-273.15))));
+        scalar airVaporPressure = wambient(time.value())*1e5/0.621945;
+        scalar relhum = airVaporPressure/saturationPressure*100;
+        scalar dewPointTemp = Tambient(time.value()) - (100-relhum)/5;
+        rainTemp = Tambient(time.value()) - (Tambient(time.value())-dewPointTemp)/3;
+    }
     //////////////////////////////////////////////////////////////////////////
 
     scalarField qrNbr(Tp.size(), 0.0);
