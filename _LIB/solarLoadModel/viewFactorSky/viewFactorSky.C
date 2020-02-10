@@ -423,6 +423,27 @@ void Foam::radiation::viewFactorSky::calculate()
         "$FOAM_CASE/0/air/Tambient"
     ); 
     //////////////////////////////////////////////////////////////////////////
+    fileName cloudCoverFile
+    (
+       mesh_.time().rootPath()
+       /mesh_.time().globalCaseName()
+       /"0/air/cloudCover"
+    ); 
+
+    scalar cc = 0; //cloud cover
+    if(isFile(cloudCoverFile))
+    {
+        Info << "Reading cloud cover values..." << endl;
+        interpolationTable<scalar> cloudCover
+        (
+            cloudCoverFile
+        );
+        cc = cloudCover(time.value());
+    }
+    else
+    {
+        Info << "Constant cloud cover of 0 is being used..." << endl;
+    }
 
     //////////////////////////////////////////////////////////////////////////
     //is grass model activated?
@@ -503,7 +524,6 @@ void Foam::radiation::viewFactorSky::calculate()
                     label faceI = fineFaces[j];
                     if (!isA<wallFvPatch>(mesh_.boundary()[patchID])) // added by aytac to take into account sky temperature
                     {
-                        scalar cc = 0; //cloud cover
                         scalar ec = (1-0.84*cc)*(0.527 + 0.161*Foam::exp(8.45*(1-273/Tambient(time.value())))) +0.84*cc; //cloud emissivity
                         scalar Tsky = pow(9.365574E-6*(1-cc)*pow(Tambient(time.value()),6) + pow(Tambient(time.value()),4)*cc*ec ,0.25); // Swinbank model (1963, Cole 1976)
                         T4ave[coarseI] += (pow4(Tsky)*sf[faceI])/area;
