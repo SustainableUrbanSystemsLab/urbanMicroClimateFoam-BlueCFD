@@ -330,7 +330,7 @@ void interpfvMeshToCartesian
 
     // Define cartesian interpolation grid
     scalar minCellV = gMin(mesh.V()); // Cartesian mesh resolution (determine from minimum cell size)
-    scalar minCellL = Foam::pow(minCellV, 1.0/3.0);
+    scalar minCellL = Foam::pow(minCellV, 1.0/3.0)*10;
 
     dp = vector(minCellL,minCellL,minCellL); // grid spacing
 
@@ -374,7 +374,7 @@ void interpfvMeshToCartesian
           ptemp = pInterp[pIndex]; //ptemp = transform(Tinv, pInterp[pIndex]);
 
           // Find intersecting cell
-          cellIndex = ms.findCell(ptemp,vegetationCell,true); // faster
+          cellIndex = ms.findCell(ptemp,-1,true); // faster
 
           // if point is inside domain
           if (cellIndex != -1)
@@ -728,6 +728,11 @@ int main(int argc, char *argv[])
          )
      );
 
+    #include "readGravitationalAcceleration.H"
+    Info << "Gravity is = " << g << endl;
+    const vector ez = - g.value()/mag(g.value());
+    Info << "Vertical vector : " << ez << endl;
+
     scalar kc = vegetationProperties.lookupOrDefault("kc", 0.5);//(0-90)*(PI/180);
 
     ////////////////////////////////////////////////////////////////////////////
@@ -838,7 +843,7 @@ int main(int argc, char *argv[])
         n2 /= mag(n2);
 
         // only if sun is above the horizon
-        if (n2[1] > 0)
+        if ( (n2 & ez) > 0)
         {
             ////////////////////////////////////////////////////////////////////
             // Setup
