@@ -235,7 +235,7 @@ Foam::vegetation::simplifiedVegetation::simplifiedVegetation
             mesh_.time().timeName(),
             mesh_,
             IOobject::NO_READ,
-            IOobject::NO_WRITE
+            IOobject::AUTO_WRITE
         ),
         mesh_,
         dimensionedScalar("0", dimensionSet(0,-1,1,0,0,0,0), 0.0)
@@ -264,7 +264,7 @@ Foam::vegetation::simplifiedVegetation::simplifiedVegetation
             IOobject::NO_WRITE
         ),
         mesh_,
-        dimensionedVector("0", dimensionSet(1,0,-3,0,0,0,0), vector::zero)
+        dimensionedScalar("0", dimensionSet(1,0,-3,0,0,0,0), 0.0)
     ),
     Rn_
     (
@@ -332,10 +332,16 @@ void Foam::vegetation::simplifiedVegetation::radiation()
 
     // radiation density inside vegetation
     forAll(LAD_, cellI)
+    {
         if (LAD_[cellI] > 10*SMALL)
-          Rn_[cellI] = -divqrswi[cellI] + (integrateQr)/(vegiVolume);
+        {
+            Rn_[cellI] = -divqrswi[cellI] + (integrateQr)/(vegiVolume);
+            Rg_[cellI] = -divqrswi[cellI]/LAD_[cellI];
+        }
+    }
 
     Rn_.correctBoundaryConditions();
+    Rg_.correctBoundaryConditions();
     //Rn_.write();
 
 }
@@ -377,11 +383,14 @@ void Foam::vegetation::simplifiedVegetation::resistance(volScalarField& magU, vo
             //    rs_[cellI] = rsMin_.value()*((a1_.value() + Rg0_.value())/(a2_.value() + Rg0_.value()));
             //else
             //    rs_[cellI] = rsMin_.value()*((a1_.value() + Rg0_.value())/(a2_.value() + Rg0_.value()))*(1.0 + a3_.value()*pow(VPD_[cellI]/1000.0-D0_.value(),2));
-            if ((VPD_[cellI]/1000.0) < D0_.value())
-                rs_[cellI] = rsMin_.value();//*((a1_.value() + mag(Rg_[cellI]))/(a2_.value() + mag(Rg_[cellI])));
+/*            if ((VPD_[cellI]/1000.0) < D0_.value())
+                rs_[cellI] = rsMin_.value();//((a1_.value() + mag(Rg_[cellI]))/(a2_.value() + mag(Rg_[cellI])));
             else
-                rs_[cellI] = rsMin_.value();//*((a1_.value() + mag(Rg_[cellI]))/(a2_.value() + mag(Rg_[cellI])))*(1.0 + a3_.value()*pow(VPD_[cellI]/1000.0-D0_.value(),2));
-
+                rs_[cellI] = rsMin_.value();//((a1_.value() + mag(Rg_[cellI]))/(a2_.value() + mag(Rg_[cellI])))*(1.0 + a3_.value()*pow(VPD_[cellI]/1000.0-D0_.value(),2));
+*/
+            scalar f1 = 7.119*exp(-0.05004*Rg_[cellI]) + 0.6174*exp(0.0006336*Rg_[cellI]);
+            scalar f2 = 0.4372*pow((VPD_[cellI]+1),0.204);
+            rs_[cellI] = rsMin_.value()*f1*f2;
 
         }
     }

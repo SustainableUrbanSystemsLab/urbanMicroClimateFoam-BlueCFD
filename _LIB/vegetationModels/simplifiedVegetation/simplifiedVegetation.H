@@ -102,7 +102,7 @@ class simplifiedVegetation
 		volScalarField ra_;     // aerodynamic resistance
 		volScalarField rs_;     // stomatal resistance
 		volScalarField rhosat_; // saturated density field
-		volVectorField Rg_;     // global radiation
+		volScalarField Rg_;     // global radiation
 		volScalarField Rn_;     // global radiation density in volume
 		volScalarField VPD_;    // vapor pressure deficit
 
