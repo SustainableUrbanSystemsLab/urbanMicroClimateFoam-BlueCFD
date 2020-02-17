@@ -388,10 +388,17 @@ void Foam::vegetation::simplifiedVegetation::resistance(volScalarField& magU, vo
             else
                 rs_[cellI] = rsMin_.value();//((a1_.value() + mag(Rg_[cellI]))/(a2_.value() + mag(Rg_[cellI])))*(1.0 + a3_.value()*pow(VPD_[cellI]/1000.0-D0_.value(),2));
 */
-            scalar f1 = 7.119*exp(-0.05004*Rg_[cellI]) + 0.6174*exp(0.0006336*Rg_[cellI]);
-            scalar f2 = 0.4372*pow((VPD_[cellI]+1),0.204);
+            scalar f1 = 7.119*exp(-0.05004*Rg_[cellI]) + 0.6174*exp(0.0006336*Rg_[cellI]);   
+            scalar f2 = 1;
+            if(VPD_[cellI] < 0)
+            {                   
+                f2 = 0.4372;
+            }
+            else
+            {
+                f2 = 0.4372*pow((VPD_[cellI]+1),0.204);
+            }                     
             rs_[cellI] = rsMin_.value()*f1*f2;
-
         }
     }
     ev_.correctBoundaryConditions();
