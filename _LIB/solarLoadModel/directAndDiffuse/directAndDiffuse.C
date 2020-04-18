@@ -31,6 +31,8 @@ License
 #include "typeInfo.H"
 #include "Time.H"
 
+#include "vectorIOList.H"
+
 using namespace Foam::constant;
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
@@ -330,6 +332,20 @@ void Foam::solarLoad::directAndDiffuse::initialise()
         }
     
         timestepsInADay_ = readLabel(coeffs_.lookup("timestepsInADay"));
+
+        // Read sunPosVector list
+        vectorIOList sunPosVector
+        (   
+           IOobject
+           (
+                "sunPosVector",
+                mesh_.time().caseConstant(),
+                mesh_,
+                IOobject::MUST_READ,
+                IOobject::NO_WRITE
+           )
+        ); 
+        sunPosVectorLength_ = sunPosVector.size();
     }
 }
 
@@ -652,12 +668,11 @@ void Foam::solarLoad::directAndDiffuse::calculate()
     if (Pstream::master())
     {
         Time& time = const_cast<Time&>(mesh_.time());
-        //Info << "time.value(): " << time.value() << endl;
-        Info << "AAA: " << time.deltaT().value() << endl;
         label timestep = ceil( (time.value()/time.deltaT().value())-0.5 ); 
-        timestep = timestep%timestepsInADay_; 
-        //Info << ", timestep: " << timestep << endl;
-
+        timestep = (timestep * timestepsInADay_) / (86400 / time.deltaT().value()); //e.g. in case you have 10min timesteps in solar radiation data, but solving for hourly timesteps
+        timestep = timestep % sunPosVectorLength_;
+        Info << "timestep: " << timestep << ", timestepsInADay_: " << timestepsInADay_ << ", sunPosVectorLength_: " << sunPosVectorLength_ << endl;
+        
         // Variable Albedo
         if (!constAlbedo_) //this is not tested - aytac
         {

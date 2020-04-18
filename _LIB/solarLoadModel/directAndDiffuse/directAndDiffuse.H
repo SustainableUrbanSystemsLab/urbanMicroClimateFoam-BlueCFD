@@ -118,7 +118,10 @@ class directAndDiffuse
         bool constAlbedo_;
 
         //- timestepsInADay
-        label timestepsInADay_;
+        label timestepsInADay_;    
+        
+        //- sunPosVectorLength
+        label sunPosVectorLength_;           
 
         //- Iterations Counter
         label iterCounter_;
