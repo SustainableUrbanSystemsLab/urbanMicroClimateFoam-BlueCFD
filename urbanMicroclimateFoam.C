@@ -57,9 +57,11 @@ int main(int argc, char *argv[])
 
     #include "createFluidMeshes.H"
     #include "createSolidMeshes.H"
+    #include "createVegMeshes.H"
 
     #include "createFluidFields.H"
     #include "createSolidFields.H"
+    #include "createVegFields.H"
 
     #include "initContinuityErrs.H"
     #include "initSolidContinuityErrs.H"
@@ -70,28 +72,20 @@ int main(int argc, char *argv[])
     {
         Info<< nl << "Time = " << runTime.timeName() << endl;
 
+        forAll(vegRegions, i)
+        {
+			Info<< "\nVegetation region found..." << endl;
+			#include "setRegionVegFields.H"
+			#include "solveVeg.H"
+        }
+
         forAll(fluidRegions, i)
         {
-        	if (fluidRegions[i].name() == "vegetation")        		
-			{
-				Info<< "\nVegetation region found..." << endl;
-				#include "setVegetationFields.H"
-
-				Info << "Updating T boundary fields..." << endl;
-				thermo.T().correctBoundaryConditions();
-				Info << "Updating long-wave radiation heat transfer for region: " << fluidRegions[i].name() << endl;
-				rad.correct();
-				Info << "Updating short-wave radiation heat transfer for region: " << fluidRegions[i].name() << endl;
-				sol.correct();
-			}
-			else
-			{
-	            Info<< "\nSolving for fluid region "
-	                << fluidRegions[i].name() << endl;
-	            #include "setRegionFluidFields.H"
-	            #include "readFluidMultiRegionSIMPLEControls.H"
-	            #include "solveFluid.H"
-	        }
+            Info<< "\nSolving for fluid region "
+                << fluidRegions[i].name() << endl;
+            #include "setRegionFluidFields.H"
+            #include "readFluidMultiRegionSIMPLEControls.H"
+            #include "solveFluid.H"
         }
 
         Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"

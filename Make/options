@@ -1,6 +1,7 @@
 EXE_INC = \
     -Ifluid \
     -Isolid \
+    -Iveg \
     -I_LIB/solarLoadModel/lnInclude \
     -I_LIB/buildingMaterialModel/lnInclude \
     -I_LIB/simpleControlFluid/lnInclude \
