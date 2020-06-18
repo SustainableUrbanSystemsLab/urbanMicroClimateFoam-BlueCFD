@@ -32,6 +32,8 @@ License
 #include "interpolationTable.H"
 #include "uniformDimensionedFields.H"
 
+#include "regionProperties.H"
+
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
@@ -256,62 +258,55 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
     ////////////////////////////////////////////////////////////////////////// 
 
     scalarField qrNbr(Tp.size(), 0.0);
-    if (qrNbrName_ != "none")
-    {
-        qrNbr = nbrPatch.lookupPatchField<volScalarField, scalar>(qrNbrName_);
-        mpp.distribute(qrNbr);
-    }
-
     scalarField qsNbr(Tp.size(), 0.0);
-    if (qsNbrName_ != "none")
-    {
-        qsNbr = nbrPatch.lookupPatchField<volScalarField, scalar>(qsNbrName_);
-        mpp.distribute(qsNbr);
-    }   
 
-    //Access vegetation region and populate QsVegiNbr if necessary
-    //-- if vegetation exists --//
-    IOdictionary vegetationProperties
-    (
-		IOobject
-		(
-		    "vegetationProperties",
-		    nbrMesh.time().constant(),
-		    nbrMesh,
-		    IOobject::MUST_READ,
-		    IOobject::NO_WRITE
-        )
-    );
+    //-- Access vegetation region and populate radiation if vegetation exists,
+    //otherwise use radiation from air region --//
+    regionProperties rp(time);
+    const wordList vegNames(rp["vegetation"]);
 
-    if (vegetationProperties.typeHeaderOk<IOdictionary>(true))
+    if (vegNames.size()>0)
     {
-        word vegetationModel(vegetationProperties.lookup("vegetationModel"));
-        if (vegetationModel != "none")
+        const word& vegiRegion = "vegetation";
+        const scalar mppVegDistance = 0;
+ 
+        const polyMesh& vegiMesh =
+        	patch().boundaryMesh().mesh().time().lookupObject<polyMesh>(vegiRegion);
+ 
+        const word& nbrPatchName = nbrPatch.name();
+ 
+        const label patchi = vegiMesh.boundaryMesh().findPatchID(nbrPatchName);
+    
+        const fvPatch& vegiNbrPatch =
+            refCast<const fvMesh>(vegiMesh).boundary()[patchi];
+ 
+        const mappedPatchBase& mppVeg = mappedPatchBase(patch().patch(), vegiRegion, mpp.mode(), mpp.samplePatch(), mppVegDistance);
+        //const mappedPatchBase& mppVeg =
+        //    refCast<const mappedPatchBase>(patch().patch(), vegiRegion, mpp.mode(), mpp.samplePatch(), mppVegDistance);
+ 
+        if (qrNbrName_ != "none")
         {
-            const word& vegiRegion = "vegetation";
-            const scalar mppVegDistance = 0;
-
-	        const polyMesh& vegiMesh =
-	        	patch().boundaryMesh().mesh().time().lookupObject<polyMesh>("vegetation");
-
-	        const word& nbrPatchName = nbrPatch.name();
-
-	        const label patchi = vegiMesh.boundaryMesh().findPatchID(nbrPatchName);
-	    
-	        const fvPatch& vegiNbrPatch =
-	            refCast<const fvMesh>(vegiMesh).boundary()[patchi];
-
-            const mappedPatchBase& mppVeg = mappedPatchBase(patch().patch(), vegiRegion, mpp.mode(), mpp.samplePatch(), mppVegDistance);
-            //const mappedPatchBase& mppVeg =
-            //    refCast<const mappedPatchBase>(patch().patch(), vegiRegion, mpp.mode(), mpp.samplePatch(), mppVegDistance);
-
-	    	qsNbr = vegiNbrPatch.lookupPatchField<volScalarField, scalar>("qs");  
-
-	    	qrNbr = vegiNbrPatch.lookupPatchField<volScalarField, scalar>("qr");
-
-            mppVeg.distribute(qsNbr); //Info << "QsVegiNbr: " << QsVegiNbr << endl;
-            mppVeg.distribute(qrNbr); //Info << "QrVegiNbr: " << QrVegiNbr << endl;
+            qrNbr = vegiNbrPatch.lookupPatchField<volScalarField, scalar>(qrNbrName_);
+            mppVeg.distribute(qrNbr);
         }
+        if (qsNbrName_ != "none")
+        {
+            qsNbr = vegiNbrPatch.lookupPatchField<volScalarField, scalar>(qsNbrName_);
+            mppVeg.distribute(qsNbr);
+        }
+    }
+    else
+    {
+        if (qrNbrName_ != "none")
+        {
+            qrNbr = nbrPatch.lookupPatchField<volScalarField, scalar>(qrNbrName_);
+            mpp.distribute(qrNbr);
+        }
+        if (qsNbrName_ != "none")
+        {
+            qsNbr = nbrPatch.lookupPatchField<volScalarField, scalar>(qsNbrName_);
+            mpp.distribute(qsNbr);
+        }   
     }
     //////////////////////////////
 
