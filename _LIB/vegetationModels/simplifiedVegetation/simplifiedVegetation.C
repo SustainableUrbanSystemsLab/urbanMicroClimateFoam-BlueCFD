@@ -328,15 +328,15 @@ void Foam::vegetation::simplifiedVegetation::radiation()
     timestep = timestep % timestepsInADay_;
     //Info << ", 2 timestep: " << timestep << endl;
 
-    scalarList divqrswi =  divqrsw[timestep];
+    scalarList divqrswi =  divqrsw[timestep]; // [W/m3]
 
     // radiation density inside vegetation
     forAll(LAD_, cellI)
     {
         if (LAD_[cellI] > 10*SMALL)
         {
-            Rn_[cellI] = -divqrswi[cellI] + (integrateQr)/(vegiVolume);
-            Rg_[cellI] = -divqrswi[cellI]/LAD_[cellI];
+            Rn_[cellI] = -divqrswi[cellI] + (integrateQr)/(vegiVolume); // [W/m3]
+            Rg_[cellI] = -divqrswi[cellI]/LAD_[cellI]; // [W/m2]
         }
     }
 
@@ -427,11 +427,11 @@ void Foam::vegetation::simplifiedVegetation::calculate(volVectorField& U, volSca
     Info << "    max leaf temp tl=" << max(T.internalField())
          << "k, iteration i=0" << endl;
 
-    const fvMesh& vegiMesh = mesh_.time().lookupObject<fvMesh>("vegetation");
-    const label patchi = vegiMesh.boundaryMesh().findPatchID("air_to_vegetation");
-    const fvPatch& vegiPatch = vegiMesh.boundary()[patchi];
-    scalarField vegiPatchQs = vegiPatch.lookupPatchField<volScalarField, scalar>("qs");
-    scalar integrateQs = gSum(vegiPatch.magSf() * vegiPatchQs);
+//    const fvMesh& vegiMesh = mesh_.time().lookupObject<fvMesh>("vegetation");
+//    const label patchi = vegiMesh.boundaryMesh().findPatchID("air_to_vegetation");
+//    const fvPatch& vegiPatch = vegiMesh.boundary()[patchi];
+//    scalarField vegiPatchQs = vegiPatch.lookupPatchField<volScalarField, scalar>("qs");
+//    scalar integrateQs = gSum(vegiPatch.magSf() * vegiPatchQs);
 
     scalar maxError, maxRelError;
     int i;
@@ -458,7 +458,7 @@ void Foam::vegetation::simplifiedVegetation::calculate(volVectorField& U, volSca
 
                 // Calculate transpiration rate
                 //no transpiration at night when solar radiation is not >0
-             	E_[cellI] = pos(integrateQs-SMALL)*nEvapSides_.value()*LAD_[cellI]*rhoa_.value()*(qsat_[cellI]-q[cellI])/(ra_[cellI]+rs_[cellI]);
+             	E_[cellI] = pos(Rg_[cellI]-SMALL)*nEvapSides_.value()*LAD_[cellI]*rhoa_.value()*(qsat_[cellI]-q[cellI])/(ra_[cellI]+rs_[cellI]);
 
                 // Calculate latent heat flux
                 Qlat_[cellI] = lambda_.value()*E_[cellI];
@@ -516,7 +516,7 @@ void Foam::vegetation::simplifiedVegetation::calculate(volVectorField& U, volSca
             qsat_[cellI] = 0.621945*(evsat_[cellI]/(p_-evsat_[cellI])); // ASHRAE 1, eq.23
 
             // Calculate transpiration rate
-            E_[cellI] = pos(integrateQs-SMALL)*nEvapSides_.value()*LAD_[cellI]*rhoa_.value()*(qsat_[cellI]-q[cellI])/(ra_[cellI]+rs_[cellI]); // todo: implement switch for double or single side
+            E_[cellI] = pos(Rg_[cellI]-SMALL)*nEvapSides_.value()*LAD_[cellI]*rhoa_.value()*(qsat_[cellI]-q[cellI])/(ra_[cellI]+rs_[cellI]); // todo: implement switch for double or single side
 
             // Calculate latent heat flux
             Qlat_[cellI] = lambda_.value()*E_[cellI];
