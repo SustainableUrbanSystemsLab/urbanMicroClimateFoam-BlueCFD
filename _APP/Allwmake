@@ -7,4 +7,3 @@ wmake solarRayTracingGen
 wmake solarRayTracingGenCyclic
 wmake viewFactorsGenCyclic
 wmake calcLAI
-wmake solarRayTracingVegGen

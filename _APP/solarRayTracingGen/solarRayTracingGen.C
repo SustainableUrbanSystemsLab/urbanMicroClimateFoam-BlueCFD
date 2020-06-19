@@ -65,6 +65,8 @@ Description
 
 #include "unitConversion.H"
 
+#include "regionProperties.H"
+
 using namespace Foam;
 
 triSurface triangulate
@@ -168,7 +170,7 @@ int main(int argc, char *argv[])
     #include "setRootCase.H"
     #include "createTime.H"
     #include "createNamedMesh.H"
-
+    
     // Read view factor dictionary
     IOdictionary viewFactorDict
     (
@@ -684,6 +686,26 @@ int main(int argc, char *argv[])
     label j = 0;
     label k = 0;
 
+    regionProperties rp(runTime); 
+    const wordList vegNames(rp["vegetation"]); 
+    scalarListIOList kcLAIboundaryList
+    (
+        IOobject
+        (
+            "kcLAIboundary",
+            runTime.constant(),
+            mesh,
+            IOobject::READ_IF_PRESENT,
+            IOobject::NO_WRITE
+        )
+    );   
+    if (vegNames.size()>0 && !kcLAIboundaryList.typeHeaderOk<IOList<scalarList>>())
+    {
+        FatalErrorInFunction
+            << "File kcLAIboundary not found! Did you not run calcLAI before?"
+            << exit(FatalError);
+    }        
+
     forAll(sunPosVector, vectorId)
     {    
         vector sunPos = sunPosVector[vectorId];
@@ -705,10 +727,17 @@ int main(int argc, char *argv[])
             while (j < howManyCoarseFacesPerPatch[i])
             {
                 sunVisibleOrNot[vectorId][k] = nVisibleFaceFacesList[vectorId][faceNo];
-                
-                cosPhi = (localCoarseSf[faceNo] & sunPos)/(mag(localCoarseSf[faceNo])*mag(sunPos) + SMALL);
-                sunViewCoeff[vectorId][k] = nVisibleFaceFacesList[vectorId][faceNo]*mag(cosPhi) * IDN[vectorId];
 
+                cosPhi = (localCoarseSf[faceNo] & sunPos)/(mag(localCoarseSf[faceNo])*mag(sunPos) + SMALL);                
+                sunViewCoeff[vectorId][k] = nVisibleFaceFacesList[vectorId][faceNo]*mag(cosPhi) * IDN[vectorId];
+                if (vegNames.size()>0)
+                {
+                    if (kcLAIboundaryList[vectorId][k]-0>SMALL && cosPhi < 0) //if LAIboundary value is nonzero and if the surface is looking towards the sun, update sunViewCoeff
+                    {
+                        sunViewCoeff[vectorId][k] = mag(cosPhi) * IDN[vectorId] * Foam::exp(-kcLAIboundaryList[vectorId][k]); // beer-lambert law
+                    }
+                }
+                
                 cosPhi = (localCoarseSf[faceNo] & skyPos)/(mag(localCoarseSf[faceNo])*mag(skyPos) + SMALL);
                 radAngleBetween = Foam::acos( min(max(cosPhi, -1), 1) );
                 degAngleBetween = radToDeg(radAngleBetween);
