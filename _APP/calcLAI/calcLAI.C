@@ -605,7 +605,7 @@ int main(int argc, char *argv[])
         return 0;
     }
     */
-
+/*
     volScalarField qr
     (
       IOobject
@@ -618,7 +618,7 @@ int main(int argc, char *argv[])
       ),
       mesh
     );
-
+*/
     wordList boundaryTypes = LAD.boundaryField().types();
 
     // Read sunPosVector list
@@ -627,7 +627,7 @@ int main(int argc, char *argv[])
        IOobject
        (
             "sunPosVector",
-            runTime.time().constant(),
+            runTime.time().caseConstant(),
             runTime.db(),
             IOobject::MUST_READ,
             IOobject::NO_WRITE
@@ -681,7 +681,7 @@ int main(int argc, char *argv[])
        IOobject
        (
             "IDN",
-            runTime.time().constant(),
+            runTime.time().caseConstant(),
             runTime.db(),
             IOobject::MUST_READ,
             IOobject::NO_WRITE

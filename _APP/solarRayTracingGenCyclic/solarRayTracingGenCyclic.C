@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
        IOobject
        (
             "sunPosVector",
-            runTime.time().constant(),
+            runTime.time().caseConstant(),
             runTime.db(),
             IOobject::MUST_READ,
             IOobject::NO_WRITE
@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
        IOobject
        (
             "IDN",
-            runTime.time().constant(),
+            runTime.time().caseConstant(),
             runTime.db(),
             IOobject::MUST_READ,
             IOobject::NO_WRITE
@@ -214,7 +214,7 @@ int main(int argc, char *argv[])
        IOobject
        (
             "Idif",
-            runTime.time().constant(),
+            runTime.time().caseConstant(),
             runTime.db(),
             IOobject::MUST_READ,
             IOobject::NO_WRITE
