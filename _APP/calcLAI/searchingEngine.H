@@ -6,15 +6,14 @@ label nCoarseFaces = 0;      //total number of coarse faces
 label nCoarseFacesAll = 0;   //Also includes non-wall faces with greyDiffusive boundary
 label nFineFacesTotal = 0;        //total number of fine faces including non-fixedValueFvPatchScalarField patches following advise from bug report
 
-//const volScalarField::GeometricBoundaryField& LADb = LAD.boundaryField();
-const volScalarField::Boundary& qrb = qr.boundaryField();
+//const volScalarField::Boundary& qrb = qr.boundaryField();
+const volScalarField::Boundary& LADb = LAD.boundaryField();
 
-
-//forAll(LADb, patchI)
-forAll(qrb, patchI)
+forAll(LADb, patchI)
+//forAll(qrb, patchI)
 {
     const polyPatch& pp = patches[patchI];
-    const fvPatchScalarField& qrpI = qrb[patchI];
+    //const fvPatchScalarField& LADI = LADb[patchI];
 
     if ((isA<wallFvPatch>(mesh.boundary()[patchI])) && (pp.size() > 0))
     {
@@ -22,16 +21,16 @@ forAll(qrb, patchI)
       nCoarseFacesAll += coarsePatches[patchI].size();
       nFineFacesTotal += patches[patchI].size();
     }
-    //else if (!pp.coupled() && !isA<cyclicAMIPolyPatch>(pp))
-    else if ((isA<fixedValueFvPatchScalarField>(qrpI)) && (pp.size() > 0))
+    else if (!pp.coupled() && !isA<cyclicAMIPolyPatch>(pp) && !isA<emptyPolyPatch>(pp))
+    //else if ((isA<fixedValueFvPatchScalarField>(qrpI)) && (pp.size() > 0))
     {
         nCoarseFacesAll += coarsePatches[patchI].size();
         nFineFacesTotal += patches[patchI].size();
     }
-    else
+/*    else
     {
-        nFineFacesTotal += patches[patchI].size();
-    }
+        nFineFacesTotal += patches[patchI].size(); Info << "AAA" << endl;
+    }*/
 
 }
 
