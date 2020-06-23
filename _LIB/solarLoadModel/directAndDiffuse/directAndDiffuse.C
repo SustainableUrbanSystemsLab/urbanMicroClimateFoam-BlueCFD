@@ -340,7 +340,7 @@ void Foam::solarLoad::directAndDiffuse::initialise()
            (
                 "sunPosVector",
                 mesh_.time().caseConstant(),
-                mesh_,
+                mesh_.time().db(),
                 IOobject::MUST_READ,
                 IOobject::NO_WRITE
            )

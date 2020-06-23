@@ -43,6 +43,8 @@ Description
 #include "simpleControlFluid.H"
 #include "fvOptions.H"
 
+#include "vegetationModel.H"  // vegetation model by Lento added    
+
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 int main(int argc, char *argv[])
@@ -54,9 +56,11 @@ int main(int argc, char *argv[])
 
     #include "createFluidMeshes.H"
     #include "createSolidMeshes.H"
+    #include "createVegMeshes.H"
 
     #include "createFluidFields.H"
     #include "createSolidFields.H"
+    #include "createVegFields.H"
 
     #include "initContinuityErrs.H"
     #include "initSolidContinuityErrs.H"
@@ -66,6 +70,13 @@ int main(int argc, char *argv[])
     while (runTime.loop())
     {
         Info<< nl << "Time = " << runTime.timeName() << endl;
+
+        forAll(vegRegions, i)
+        {
+			Info<< "\nVegetation region found..." << endl;
+			#include "setRegionVegFields.H"
+			#include "solveVeg.H"
+        }
 
         forAll(fluidRegions, i)
         {

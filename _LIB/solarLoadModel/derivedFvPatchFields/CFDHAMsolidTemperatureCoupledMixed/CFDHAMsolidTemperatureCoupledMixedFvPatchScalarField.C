@@ -33,6 +33,7 @@ License
 #include "uniformDimensionedFields.H"
 
 #include "hashedWordList.H"
+#include "regionProperties.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -278,18 +279,58 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
     //////////////////////////////////////////////////////////////////////////
 
     scalarField qrNbr(Tp.size(), 0.0);
-    if (qrNbrName_ != "none")
-    {
-        qrNbr = nbrPatch.lookupPatchField<volScalarField, scalar>(qrNbrName_);
-        mpp.distribute(qrNbr);
-    }
-
     scalarField qsNbr(Tp.size(), 0.0);
-    if (qsNbrName_ != "none")
+
+    //-- Access vegetation region and populate radiation if vegetation exists,
+    //otherwise use radiation from air region --//
+    regionProperties rp(time);
+    const wordList vegNames(rp["vegetation"]);
+
+    if (vegNames.size()>0)
     {
-        qsNbr = nbrPatch.lookupPatchField<volScalarField, scalar>(qsNbrName_);
-        mpp.distribute(qsNbr);
-    }   
+        const word& vegiRegion = "vegetation";
+        const scalar mppVegDistance = 0;
+ 
+        const polyMesh& vegiMesh =
+        	patch().boundaryMesh().mesh().time().lookupObject<polyMesh>(vegiRegion);
+ 
+        const word& nbrPatchName = nbrPatch.name();
+ 
+        const label patchi = vegiMesh.boundaryMesh().findPatchID(nbrPatchName);
+    
+        const fvPatch& vegiNbrPatch =
+            refCast<const fvMesh>(vegiMesh).boundary()[patchi];
+ 
+        const mappedPatchBase& mppVeg = mappedPatchBase(patch().patch(), vegiRegion, mpp.mode(), mpp.samplePatch(), mppVegDistance);
+        //const mappedPatchBase& mppVeg =
+        //    refCast<const mappedPatchBase>(patch().patch(), vegiRegion, mpp.mode(), mpp.samplePatch(), mppVegDistance);
+ 
+        if (qrNbrName_ != "none")
+        {
+            qrNbr = vegiNbrPatch.lookupPatchField<volScalarField, scalar>(qrNbrName_);
+            mppVeg.distribute(qrNbr);
+        }
+        if (qsNbrName_ != "none")
+        {
+            qsNbr = vegiNbrPatch.lookupPatchField<volScalarField, scalar>(qsNbrName_);
+            mppVeg.distribute(qsNbr);
+        }
+    }
+    else
+    {
+        if (qrNbrName_ != "none")
+        {
+            qrNbr = nbrPatch.lookupPatchField<volScalarField, scalar>(qrNbrName_);
+            mpp.distribute(qrNbr);
+        }
+        if (qsNbrName_ != "none")
+        {
+            qsNbr = nbrPatch.lookupPatchField<volScalarField, scalar>(qsNbrName_);
+            mpp.distribute(qsNbr);
+        }   
+    }
+    //////////////////////////////
+
 
     //-- Grass adjustments --//
     IOdictionary grassProperties
