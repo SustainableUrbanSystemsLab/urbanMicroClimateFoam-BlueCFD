@@ -53,8 +53,7 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 :
     mixedFvPatchScalarField(p, iF),
     qrNbrName_("undefined-qrNbr"),
-    qsNbrName_("undefined-qsNbr"),
-    impermeable_("undefined-impermeable")
+    qsNbrName_("undefined-qsNbr")
 {
     this->refValue() = 0.0;
     this->refGrad() = 0.0;
@@ -73,8 +72,7 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 :
     mixedFvPatchScalarField(psf, p, iF, mapper),
     qrNbrName_(psf.qrNbrName_),
-    qsNbrName_(psf.qsNbrName_),
-    impermeable_(psf.impermeable_)
+    qsNbrName_(psf.qsNbrName_)
 {}
 
 
@@ -88,8 +86,7 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 :
     mixedFvPatchScalarField(p, iF),
     qrNbrName_(dict.lookupOrDefault<word>("qrNbr", "none")),
-    qsNbrName_(dict.lookupOrDefault<word>("qsNbr", "none")),
-    impermeable_(dict.lookupOrDefault<bool>("impermeable", false))
+    qsNbrName_(dict.lookupOrDefault<word>("qsNbr", "none"))
 {
     if (!isA<mappedPatchBase>(this->patch().patch()))
     {
@@ -129,8 +126,7 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 :
     mixedFvPatchScalarField(psf, iF),
     qrNbrName_(psf.qrNbrName_),
-    qsNbrName_(psf.qsNbrName_),
-    impermeable_(psf.impermeable_)
+    qsNbrName_(psf.qsNbrName_)
 {}
 
 
@@ -403,17 +399,17 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
         }
     }         
 
-    if(impermeable_ == false)
+    if(fieldpc.type() == "compressible::CFDHAMsolidMoistureCoupledImpermeable")
     {
         valueFraction() = 0;
         refValue() = 0;
-        refGrad() = (q_conv + LE + qrNbr + qsNbr + CR + phiGT -X)/(lambda_m+(cap_v*(Tp-Tref)+L_v)*K_pt);
+        refGrad() = (q_conv + qrNbr + qsNbr)/(lambda_m);
     }
     else
     {
         valueFraction() = 0;
         refValue() = 0;
-        refGrad() = (q_conv + qrNbr + qsNbr)/(lambda_m);
+        refGrad() = (q_conv + LE + qrNbr + qsNbr + CR + phiGT -X)/(lambda_m+(cap_v*(Tp-Tref)+L_v)*K_pt);
     }
 
     mixedFvPatchScalarField::updateCoeffs(); 
@@ -432,7 +428,6 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::write
     mixedFvPatchScalarField::write(os);
     os.writeKeyword("qrNbr")<< qrNbrName_ << token::END_STATEMENT << nl;
     os.writeKeyword("qsNbr")<< qsNbrName_ << token::END_STATEMENT << nl;
-    os.writeKeyword("impermeable")<< impermeable_ << token::END_STATEMENT << nl;
 }
 
 

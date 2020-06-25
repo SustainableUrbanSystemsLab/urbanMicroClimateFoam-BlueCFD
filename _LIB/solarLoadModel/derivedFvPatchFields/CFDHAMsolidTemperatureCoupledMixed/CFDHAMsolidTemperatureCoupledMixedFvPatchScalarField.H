@@ -35,7 +35,6 @@ Description
             type            compressible::CFDHAMsolidTemperatureCoupledMixed;
             qrNbr           qr; //or none, name of thermal radiation from neighbour region
             qsNbr           qs; //or none, name of solar radiation from neighbour region
-            impermeable     false; //(or true, default=false);
             value           uniform -1e7;
         }
 
@@ -71,9 +70,7 @@ class CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
         
          //- Name of the solar radiative heat flux in the neighbour region
         const word qsNbrName_;          	                    
-
-         //- is the patch impermeable?
-        const bool impermeable_;                    
+                 
 
 public:
 

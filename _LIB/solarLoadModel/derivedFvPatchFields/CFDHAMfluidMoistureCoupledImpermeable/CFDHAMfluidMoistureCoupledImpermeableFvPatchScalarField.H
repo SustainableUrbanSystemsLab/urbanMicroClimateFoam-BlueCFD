@@ -24,25 +24,26 @@ License
 Class
     Foam::
     compressible::
-    CFDHAMsolidMoistureCoupledMixedFvPatchScalarField
+    CFDHAMfluidMoistureCoupledImpermeableFvPatchScalarField
 
 Description
-    Coupled boundary condition for moisture flux at solid boundaries - ayk
+    Coupled boundary condition for moisture value at fluid impermeable boundaries - ayk
+    Value entry is only place-holder
 
     Example usage:
         myInterfacePatchName
         {
-            type            compressible::CFDHAMsolidMoistureCoupledMixed;
-            value           uniform -1e7;
+            type            compressible::CFDHAMfluidMoistureCoupledImpermeable;
+            value           uniform 0.008;
         }
 
 SourceFiles
-    CFDHAMsolidMoistureCoupledMixedFvPatchScalarField.C
+    CFDHAMfluidMoistureCoupledImpermeableFvPatchScalarField.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef CFDHAMsolidMoistureCoupledMixedFvPatchScalarField_H
-#define CFDHAMsolidMoistureCoupledMixedFvPatchScalarField_H
+#ifndef CFDHAMfluidMoistureCoupledImpermeableFvPatchScalarField_H
+#define CFDHAMfluidMoistureCoupledImpermeableFvPatchScalarField_H
 
 #include "mixedFvPatchFields.H"
 
@@ -54,32 +55,32 @@ namespace compressible
 {
 
 /*---------------------------------------------------------------------------*\
-    Class CFDHAMsolidMoistureCoupledMixedFvPatchScalarField Declaration
+    Class CFDHAMfluidMoistureCoupledImpermeableFvPatchScalarField Declaration
 \*---------------------------------------------------------------------------*/
 
-class CFDHAMsolidMoistureCoupledMixedFvPatchScalarField
+class CFDHAMfluidMoistureCoupledImpermeableFvPatchScalarField
 :
     public mixedFvPatchScalarField
 {        
-    // Private data
+    // Private data                            
 
 public:
 
     //- Runtime type information
-    TypeName("compressible::CFDHAMsolidMoistureCoupledMixed");
+    TypeName("compressible::CFDHAMfluidMoistureCoupledImpermeable");
 
 
     // Constructors
 
         //- Construct from patch and internal field
-        CFDHAMsolidMoistureCoupledMixedFvPatchScalarField
+        CFDHAMfluidMoistureCoupledImpermeableFvPatchScalarField
         (
             const fvPatch&,
             const DimensionedField<scalar, volMesh>&
         );
 
         //- Construct from patch, internal field and dictionary
-        CFDHAMsolidMoistureCoupledMixedFvPatchScalarField
+        CFDHAMfluidMoistureCoupledImpermeableFvPatchScalarField
         (
             const fvPatch&,
             const DimensionedField<scalar, volMesh>&,
@@ -87,12 +88,12 @@ public:
         );
 
         //- Construct by mapping given
-        //  turbulentTemperatureCoupledBaffleMixedFvPatchScalarField onto a
+        //  turbulentTemperatureCoupledBaffleImpermeableFvPatchScalarField onto a
         //  new patch
-        CFDHAMsolidMoistureCoupledMixedFvPatchScalarField
+        CFDHAMfluidMoistureCoupledImpermeableFvPatchScalarField
         (
             const
-            CFDHAMsolidMoistureCoupledMixedFvPatchScalarField&,
+            CFDHAMfluidMoistureCoupledImpermeableFvPatchScalarField&,
             const fvPatch&,
             const DimensionedField<scalar, volMesh>&,
             const fvPatchFieldMapper&
@@ -103,7 +104,7 @@ public:
         {
             return tmp<fvPatchScalarField>
             (
-                new CFDHAMsolidMoistureCoupledMixedFvPatchScalarField
+                new CFDHAMfluidMoistureCoupledImpermeableFvPatchScalarField
                 (
                     *this
                 )
@@ -111,9 +112,9 @@ public:
         }
 
         //- Construct as copy setting internal field reference
-        CFDHAMsolidMoistureCoupledMixedFvPatchScalarField
+        CFDHAMfluidMoistureCoupledImpermeableFvPatchScalarField
         (
-            const CFDHAMsolidMoistureCoupledMixedFvPatchScalarField&,
+            const CFDHAMfluidMoistureCoupledImpermeableFvPatchScalarField&,
             const DimensionedField<scalar, volMesh>&
         );
 
@@ -125,7 +126,7 @@ public:
         {
             return tmp<fvPatchScalarField>
             (
-                new CFDHAMsolidMoistureCoupledMixedFvPatchScalarField
+                new CFDHAMfluidMoistureCoupledImpermeableFvPatchScalarField
                 (
                     *this,
                     iF

@@ -23,7 +23,7 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "CFDHAMsolidMoistureCoupledMixedFvPatchScalarField.H"
+#include "CFDHAMsolidMoistureCoupledImpermeableFvPatchScalarField.H"
 #include "addToRunTimeSelectionTable.H"
 #include "fvPatchFieldMapper.H"
 #include "volFields.H"
@@ -40,8 +40,8 @@ namespace compressible
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::
-CFDHAMsolidMoistureCoupledMixedFvPatchScalarField
+CFDHAMsolidMoistureCoupledImpermeableFvPatchScalarField::
+CFDHAMsolidMoistureCoupledImpermeableFvPatchScalarField
 (
     const fvPatch& p,
     const DimensionedField<scalar, volMesh>& iF
@@ -55,10 +55,10 @@ CFDHAMsolidMoistureCoupledMixedFvPatchScalarField
 }
 
 
-CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::
-CFDHAMsolidMoistureCoupledMixedFvPatchScalarField
+CFDHAMsolidMoistureCoupledImpermeableFvPatchScalarField::
+CFDHAMsolidMoistureCoupledImpermeableFvPatchScalarField
 (
-    const CFDHAMsolidMoistureCoupledMixedFvPatchScalarField& psf,
+    const CFDHAMsolidMoistureCoupledImpermeableFvPatchScalarField& psf,
     const fvPatch& p,
     const DimensionedField<scalar, volMesh>& iF,
     const fvPatchFieldMapper& mapper
@@ -68,8 +68,8 @@ CFDHAMsolidMoistureCoupledMixedFvPatchScalarField
 {}
 
 
-CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::
-CFDHAMsolidMoistureCoupledMixedFvPatchScalarField
+CFDHAMsolidMoistureCoupledImpermeableFvPatchScalarField::
+CFDHAMsolidMoistureCoupledImpermeableFvPatchScalarField
 (
     const fvPatch& p,
     const DimensionedField<scalar, volMesh>& iF,
@@ -107,10 +107,10 @@ CFDHAMsolidMoistureCoupledMixedFvPatchScalarField
 }
 
 
-CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::
-CFDHAMsolidMoistureCoupledMixedFvPatchScalarField
+CFDHAMsolidMoistureCoupledImpermeableFvPatchScalarField::
+CFDHAMsolidMoistureCoupledImpermeableFvPatchScalarField
 (
-    const CFDHAMsolidMoistureCoupledMixedFvPatchScalarField& psf,
+    const CFDHAMsolidMoistureCoupledImpermeableFvPatchScalarField& psf,
     const DimensionedField<scalar, volMesh>& iF
 )
 :
@@ -120,7 +120,7 @@ CFDHAMsolidMoistureCoupledMixedFvPatchScalarField
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
+void CFDHAMsolidMoistureCoupledImpermeableFvPatchScalarField::updateCoeffs()
 {
     if (updated())
     {
@@ -133,103 +133,16 @@ void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
     UPstream::msgType() = oldTag+1;
 
     // Get the coupling information from the mappedPatchBase
-    const mappedPatchBase& mpp =
+/*    const mappedPatchBase& mpp =
         refCast<const mappedPatchBase>(patch().patch());
     const polyMesh& nbrMesh = mpp.sampleMesh();
     const label samplePatchI = mpp.samplePolyPatch().index();
     const fvPatch& nbrPatch =
         refCast<const fvMesh>(nbrMesh).boundary()[samplePatchI];
-
-    scalar rhol=1.0e3; scalar Rv=8.31451*1000/(18.01534);                        
-    scalar Dm = 2.5e-5; scalar Sct = 0.7;
-
-    scalarField& pcp = *this;
-
-    const mixedFvPatchScalarField&
-        fieldTs = refCast
-            <const mixedFvPatchScalarField>
-            (
-                patch().lookupPatchField<volScalarField, scalar>("Ts")
-            );
-    const fvPatchScalarField&
-        fieldpc = refCast
-            <const fvPatchScalarField>
-            (
-                patch().lookupPatchField<volScalarField, scalar>("pc")
-            );  
-    const mixedFvPatchScalarField&
-        nbrFieldw = refCast
-            <const mixedFvPatchScalarField>
-            (
-                nbrPatch.lookupPatchField<volScalarField, scalar>("w")
-            );            
-                        
-    scalarField Ts(pcp.size(), 0.0);
-        Ts = patch().lookupPatchField<volScalarField, scalar>("Ts"); 
-    scalarField TNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("T");
-        mpp.distribute(TNbr); 
-
-    scalarField wcNbr(nbrFieldw.patchInternalField());
-        mpp.distribute(wcNbr);
-    scalarField wNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("w");
-    scalarField rhoNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("rho");
-    scalarField pv_o = wNbr*1e5/(0.621945*rhoNbr);
-        mpp.distribute(wNbr);
-        mpp.distribute(rhoNbr);
-        mpp.distribute(pv_o);  
-    scalarField pv_o_sat = exp(6.58094e1-7.06627e3/TNbr-5.976*log(TNbr));
-    scalarField pc_o=log(pv_o/pv_o_sat)*rhol*Rv*TNbr; 
-
-    scalarField gcrNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("gcr");
-        mpp.distribute(gcrNbr);    
-
-    scalarField Krel(pcp.size(), 0.0);
-        Krel = patch().lookupPatchField<volScalarField, scalar>("Krel"); 
-
-    scalarField K_v(pcp.size(), 0.0);
-        K_v = patch().lookupPatchField<volScalarField, scalar>("K_v");             
-
-    scalarField deltaCoeff_ = nbrPatch.deltaCoeffs(); 
-        mpp.distribute(deltaCoeff_);
-    scalarField nutNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("nut");
-        mpp.distribute(nutNbr);
-    
-    scalarField pvsat_s = exp(6.58094e1-7.06627e3/Ts-5.976*log(Ts));
-    scalarField pv_s = pvsat_s*exp((pcp)/(rhol*Rv*Ts));
-
-    scalarField gl = ((gcrNbr*rhol)/(3600*1000));
-    scalarField g_conv = rhoNbr*(Dm + nutNbr/Sct) * (wcNbr-(0.62198*pv_s/1e5)) *deltaCoeff_; 
-    scalarField g_cond = (Krel+K_v)*fieldpc.snGrad();  
-    
-    // term with temperature gradient:
-    scalarField K_pt(pcp.size(), 0.0);
-        K_pt = patch().lookupPatchField<volScalarField, scalar>("K_pt");                 
-    scalarField X = K_pt*fieldTs.snGrad();
-    //////////////////////////////////
-
-    //-- Gravity flux --//
-    //lookup gravity vector
-    uniformDimensionedVectorField g = db().lookupObject<uniformDimensionedVectorField>("g");
-    scalarField gn = g.value() & patch().nf();
-
-    scalarField phiG = Krel*rhol*gn;
-    //////////////////////////////////
-
-    valueFraction() = 0.0;
-    if(gMax(gl) > 0)
-    {     
-        forAll(valueFraction(),faceI)
-        {  
-            if(pcp[faceI] > -100.0 && (gl[faceI] > g_cond[faceI] - g_conv[faceI] - phiG[faceI] + X[faceI]) )    
-            {
-                valueFraction()[faceI] = 1.0;
-            }
-        }
-    }
-   
-    refGrad() = (g_conv + gl + phiG - X)/(Krel + K_v);
-    refValue() =  -100.0 + 1.0;
-        
+*/
+    refGrad() = 0; 
+    refValue() = 0;
+    valueFraction() = 0;        
 
     mixedFvPatchScalarField::updateCoeffs(); 
 
@@ -239,7 +152,7 @@ void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
 }
 
 
-void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::write
+void CFDHAMsolidMoistureCoupledImpermeableFvPatchScalarField::write
 (
     Ostream& os
 ) const
@@ -253,7 +166,7 @@ void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::write
 makePatchTypeField
 (
     fvPatchScalarField,
-    CFDHAMsolidMoistureCoupledMixedFvPatchScalarField
+    CFDHAMsolidMoistureCoupledImpermeableFvPatchScalarField
 );
 
 
