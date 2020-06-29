@@ -27,7 +27,9 @@ Class
     CFDHAMsolidMoistureCoupledImpermeableFvPatchScalarField
 
 Description
-    Coupled boundary condition for moisture flux at solid impermeable boundaries - ayk
+    Coupled boundary condition for moisture flux at solid impermeable boundaries
+    Written by Aytac Kubilay
+        
     Value entry is only place-holder
 
     Example usage:

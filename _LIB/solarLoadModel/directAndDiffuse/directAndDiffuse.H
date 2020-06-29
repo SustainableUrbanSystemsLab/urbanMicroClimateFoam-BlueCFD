@@ -25,7 +25,7 @@ Class
     Foam::solarLoad::directAndDiffuse
 
 Description
-    Solar radiation model based on viewFactorModel. - aytac
+    Solar radiation model based on viewFactorModel. - Written by Aytac Kubilay
     The system solved is: C q = b
     where:
             Cij  = deltaij/(1-Aj) - (Aj/(1-Aj))Fij

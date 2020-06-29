@@ -27,7 +27,8 @@ Class
     CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
 
 Description
-    Coupled boundary condition for heat flux at solid boundaries - ayk
+    Coupled boundary condition for heat flux at solid boundaries
+    Written by Aytac Kubilay    
 
     Example usage:
         myInterfacePatchName

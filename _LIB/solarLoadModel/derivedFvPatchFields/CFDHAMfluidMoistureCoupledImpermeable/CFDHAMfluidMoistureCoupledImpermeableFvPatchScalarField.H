@@ -27,7 +27,9 @@ Class
     CFDHAMfluidMoistureCoupledImpermeableFvPatchScalarField
 
 Description
-    Coupled boundary condition for moisture value at fluid impermeable boundaries - ayk
+    Coupled boundary condition for moisture value at fluid impermeable boundaries
+    Written by Aytac Kubilay
+    
     Value entry is only place-holder
 
     Example usage:

@@ -27,7 +27,8 @@ Class
     CFDHAMsolidMoistureCoupledMixedFvPatchScalarField
 
 Description
-    Coupled boundary condition for moisture flux at solid boundaries - ayk
+    Coupled boundary condition for moisture flux at solid boundaries
+    Written by Aytac Kubilay    
 
     Example usage:
         myInterfacePatchName

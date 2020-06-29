@@ -25,8 +25,13 @@ Application
     urbanMicroclimateFoam
 
 Description
-    Solves for air flow and transport in building materials
+    Solves for air flow (CFD) and transport in porous building materials (HAM)
     Written by Aytac Kubilay, December 2015, ETH Zurich/Empa
+    
+    Contributions:
+    Aytac Kubilay, akubilay@ethz.ch
+    Andrea Ferrari, andferra@ethz.ch
+    Lento Manickathan, lento.manickathan@empa.ch
 
 \*---------------------------------------------------------------------------*/
 
@@ -43,7 +48,7 @@ Description
 #include "simpleControlFluid.H"
 #include "fvOptions.H"
 
-#include "vegetationModel.H"  // vegetation model by Lento added    
+#include "vegetationModel.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

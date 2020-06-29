@@ -22,7 +22,7 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Application
-    solarRayTracingGen
+    solarRayTracingGenCyclic - work in progress
 
 Description
     Aytac Kubilay, 2015, Empa
