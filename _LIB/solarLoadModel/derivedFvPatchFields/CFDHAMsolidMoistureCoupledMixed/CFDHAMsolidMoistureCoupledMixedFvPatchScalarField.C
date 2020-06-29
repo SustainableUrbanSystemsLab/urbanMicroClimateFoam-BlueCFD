@@ -199,7 +199,7 @@ void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
 
     scalarField gl = ((gcrNbr*rhol)/(3600*1000));
     scalarField g_conv = rhoNbr*(Dm + nutNbr/Sct) * (wcNbr-(0.62198*pv_s/1e5)) *deltaCoeff_; 
-    scalarField g_cond = (Krel+K_v)*fieldpc.snGrad();  
+//    scalarField g_cond = (Krel+K_v)*fieldpc.snGrad();  
     
     // term with temperature gradient:
     scalarField K_pt(pcp.size(), 0.0);
@@ -217,10 +217,12 @@ void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
 
     valueFraction() = 0.0;
     if(gMax(gl) > 0)
-    {     
+    {
+        scalarField g_cond = (Krel+K_v)*(-10.0-fieldpc.patchInternalField())*patch().deltaCoeffs();        
         forAll(valueFraction(),faceI)
         {  
-            if(pcp[faceI] > -100.0 && (gl[faceI] > g_cond[faceI] - g_conv[faceI] - phiG[faceI] + X[faceI]) )    
+            //if(pcp[faceI] > -100.0 && (gl[faceI] > g_cond[faceI] - g_conv[faceI] - phiG[faceI] + X[faceI]) )    
+            if( (gl[faceI] > g_cond[faceI] - g_conv[faceI] - phiG[faceI] + X[faceI]) )    
             {
                 valueFraction()[faceI] = 1.0;
             }
@@ -228,7 +230,8 @@ void CFDHAMsolidMoistureCoupledMixedFvPatchScalarField::updateCoeffs()
     }
    
     refGrad() = (g_conv + gl + phiG - X)/(Krel + K_v);
-    refValue() =  -100.0 + 1.0;
+//    refValue() =  -100.0 + 1.0;
+    refValue() =  -10.0;
         
 
     mixedFvPatchScalarField::updateCoeffs(); 

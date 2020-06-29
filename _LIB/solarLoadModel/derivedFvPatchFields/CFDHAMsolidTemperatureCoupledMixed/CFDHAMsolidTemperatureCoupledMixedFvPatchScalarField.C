@@ -383,11 +383,13 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
     scalarField CR(Tp.size(), 0.0);
     if(gMax(gl) > 0)
     {
-        scalarField g_cond = (Krel+K_v)*fieldpc.snGrad();
+        //scalarField g_cond = (Krel+K_v)*fieldpc.snGrad();
+        scalarField g_cond = (Krel+K_v)*(-10.0-fieldpc.patchInternalField())*patch().deltaCoeffs();       
         forAll(CR,faceI)
         {
             scalar rainFlux = 0;
-            if(pc[faceI] > -100.0 && (gl[faceI] > g_cond[faceI] - g_conv[faceI] - phiG[faceI] + Xmoist[faceI]) )
+            //if(pc[faceI] > -100.0 && (gl[faceI] > g_cond[faceI] - g_conv[faceI] - phiG[faceI] + Xmoist[faceI]) )
+            if( (gl[faceI] > g_cond[faceI] - g_conv[faceI] - phiG[faceI] + Xmoist[faceI]) )
             {
                 rainFlux = g_cond[faceI] - g_conv[faceI] - phiG[faceI] + Xmoist[faceI];
             }
