@@ -326,7 +326,9 @@ void Foam::vegetation::simplifiedVegetation::radiation()
     // Read sunPosVector list
     interpolationTable<vector> sunPosVector
     (
-        mesh_.time().caseConstant()
+        mesh_.time().rootPath()
+        /mesh_.time().globalCaseName()
+        /mesh_.time().constant()
         /"sunPosVector"
     );
     // look for the correct range    

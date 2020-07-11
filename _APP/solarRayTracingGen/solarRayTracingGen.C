@@ -191,17 +191,23 @@ int main(int argc, char *argv[])
     // Read sunPosVector list
     interpolationTable<vector> sunPosVector
     (
-        runTime.time().caseConstant()
+        runTime.time().rootPath()
+        /runTime.time().globalCaseName()
+        /runTime.time().constant()
         /"sunPosVector"
     );  
     interpolationTable<scalar> IDN // direct solar radiation intensity flux
     (
-        runTime.time().caseConstant()
+        runTime.time().rootPath()
+        /runTime.time().globalCaseName()
+        /runTime.time().constant()
         /"IDN"
     );    
     interpolationTable<scalar> Idif // diffuse solar radiation intensity flux
     (
-        runTime.time().caseConstant()
+        runTime.time().rootPath()
+        /runTime.time().globalCaseName()
+        /runTime.time().constant()
         /"Idif"
     );
 

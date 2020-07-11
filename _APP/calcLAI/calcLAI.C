@@ -622,11 +622,12 @@ int main(int argc, char *argv[])
     );
 */
     wordList boundaryTypes = LAD.boundaryField().types();
-
     // Read sunPosVector list
     interpolationTable<vector> sunPosVector
     (
-        runTime.time().caseConstant()
+        runTime.time().rootPath()
+        /runTime.time().globalCaseName()
+        /runTime.time().constant()
         /"sunPosVector"
     );
 
@@ -674,7 +675,9 @@ int main(int argc, char *argv[])
 
     interpolationTable<scalar> IDN // direct solar radiation intensity flux
     (
-        runTime.time().caseConstant()
+        runTime.time().rootPath()
+        /runTime.time().globalCaseName()
+        /runTime.time().constant()
         /"IDN"
     ); 
 
