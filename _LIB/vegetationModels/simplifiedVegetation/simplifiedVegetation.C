@@ -30,6 +30,8 @@ Vegetation model implemented by L. Manickathan, Empa, February 2017
 #include "simplifiedVegetation.H"
 #include "addToRunTimeSelectionTable.H"
 
+#include "interpolationTable.H"
+
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
 namespace Foam
@@ -319,15 +321,36 @@ void Foam::vegetation::simplifiedVegetation::radiation()
 
     scalar vegiVolume = gSum(pos(LAD_.primitiveField() - 10*SMALL)*mesh_.V().field());
 
-    label timestepsInADay_ = divqrsw.size(); //readLabel(coeffs_.lookup("timestepsInADay"));
-
+//    label timestepsInADay_ = divqrsw.size(); //readLabel(coeffs_.lookup("timestepsInADay"));
     Time& time = const_cast<Time&>(mesh_.time());
-
+    // Read sunPosVector list
+    interpolationTable<vector> sunPosVector
+    (
+        mesh_.time().caseConstant()
+        /"sunPosVector"
+    );
+    // look for the correct range    
+    label lo = 0;
+    label hi = 0;        
+    for (label i = 0; i < sunPosVector.size(); ++i)
+    {
+        if (time.value() >= sunPosVector[i].first())
+        {
+            lo = hi = i;
+        }
+        else
+        {
+            hi = i;
+            break;
+        }   
+    }
+    label timestep = lo;            
+    /*
     label timestep = ceil( (time.value()/(86400/timestepsInADay_))-0.5 );
     //Info << ", 1 timestep: " << timestep;
     timestep = timestep % timestepsInADay_;
     //Info << ", 2 timestep: " << timestep << endl;
-
+    */
     scalarList divqrswi =  divqrsw[timestep]; // [W/m3]
 
     // radiation density inside vegetation

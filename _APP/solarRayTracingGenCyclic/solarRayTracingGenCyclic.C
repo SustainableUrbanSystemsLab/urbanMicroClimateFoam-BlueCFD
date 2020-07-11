@@ -67,6 +67,8 @@ Description
 
 #include "unitConversion.H"
 
+#include "interpolationTable.H"
+
 using namespace Foam;
 
 triSurface triangulate
@@ -187,39 +189,21 @@ int main(int argc, char *argv[])
     vector skyPos = viewFactorDict.lookup("skyPosVector");
 
     // Read sunPosVector list
-    vectorIOList sunPosVector
+    interpolationTable<vector> sunPosVector
     (
-       IOobject
-       (
-            "sunPosVector",
-            runTime.time().caseConstant(),
-            runTime.db(),
-            IOobject::MUST_READ,
-            IOobject::NO_WRITE
-       )
-    );
-    scalarIOList IDN // direct solar radiation intensity flux
+        runTime.time().caseConstant()
+        /"sunPosVector"
+    );  
+    interpolationTable<scalar> IDN // direct solar radiation intensity flux
     (
-       IOobject
-       (
-            "IDN",
-            runTime.time().caseConstant(),
-            runTime.db(),
-            IOobject::MUST_READ,
-            IOobject::NO_WRITE
-       )
+        runTime.time().caseConstant()
+        /"IDN"
     );    
-    scalarIOList Idif // diffuse solar radiation intensity flux
+    interpolationTable<scalar> Idif // diffuse solar radiation intensity flux
     (
-       IOobject
-       (
-            "Idif",
-            runTime.time().caseConstant(),
-            runTime.db(),
-            IOobject::MUST_READ,
-            IOobject::NO_WRITE
-       )
-    );      
+        runTime.time().caseConstant()
+        /"Idif"
+    );     
 
     const label debug = viewFactorDict.lookupOrDefault<label>("debug", 0);
 
@@ -519,7 +503,7 @@ int main(int argc, char *argv[])
     {   
         labelList nVisibleFaceFaces(nCoarseFaces, 0);
 
-        vector sunPos = sunPosVector[vectorId];
+        vector sunPos = sunPosVector[vectorId].second();
 
         //List<pointIndexHit> hitInfo(1);
         forAll(solarStart, pointI)
@@ -686,7 +670,7 @@ int main(int argc, char *argv[])
 
     forAll(sunPosVector, vectorId)
     {    
-        vector sunPos = sunPosVector[vectorId];
+        vector sunPos = sunPosVector[vectorId].second();
 
         forAll(viewFactorsPatches, patchID)
         {
@@ -707,13 +691,13 @@ int main(int argc, char *argv[])
                 sunVisibleOrNot[vectorId][k] = nVisibleFaceFacesList[vectorId][faceNo];
                 
                 cosPhi = (localCoarseSf[faceNo] & sunPos)/(mag(localCoarseSf[faceNo])*mag(sunPos) + SMALL);
-                sunViewCoeff[vectorId][k] = nVisibleFaceFacesList[vectorId][faceNo]*mag(cosPhi) * IDN[vectorId];
+                sunViewCoeff[vectorId][k] = nVisibleFaceFacesList[vectorId][faceNo]*mag(cosPhi) * IDN[vectorId].second();
 
                 cosPhi = (localCoarseSf[faceNo] & skyPos)/(mag(localCoarseSf[faceNo])*mag(skyPos) + SMALL);
                 radAngleBetween = Foam::acos( min(max(cosPhi, -1), 1) );
                 degAngleBetween = radToDeg(radAngleBetween);
                 if (degAngleBetween > 90 && degAngleBetween <= 180){degAngleBetween=90 - (degAngleBetween-90);}
-                skyViewCoeff[vectorId][k] = (1-0.5*(degAngleBetween/90)) * Idif[vectorId];            
+                skyViewCoeff[vectorId][k] = (1-0.5*(degAngleBetween/90)) * Idif[vectorId].second();            
                 
                 k++;
                 j++;

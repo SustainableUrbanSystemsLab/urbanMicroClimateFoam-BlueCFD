@@ -75,6 +75,8 @@ Versions
 #include "unitConversion.H"
 //#include "fvIOoptionList.H"
 
+#include "interpolationTable.H"
+
 using namespace Foam;
 
 // calculate the end point for a ray hit check
@@ -622,16 +624,10 @@ int main(int argc, char *argv[])
     wordList boundaryTypes = LAD.boundaryField().types();
 
     // Read sunPosVector list
-    vectorIOList sunPosVector
+    interpolationTable<vector> sunPosVector
     (
-       IOobject
-       (
-            "sunPosVector",
-            runTime.time().caseConstant(),
-            runTime.db(),
-            IOobject::MUST_READ,
-            IOobject::NO_WRITE
-       )
+        runTime.time().caseConstant()
+        /"sunPosVector"
     );
 
     scalarListIOList LAIList
@@ -676,17 +672,11 @@ int main(int argc, char *argv[])
         sunPosVector.size()
     );
 
-    scalarIOList IDN // direct solar radiation intensity flux
+    interpolationTable<scalar> IDN // direct solar radiation intensity flux
     (
-       IOobject
-       (
-            "IDN",
-            runTime.time().caseConstant(),
-            runTime.db(),
-            IOobject::MUST_READ,
-            IOobject::NO_WRITE
-       )
-    );
+        runTime.time().caseConstant()
+        /"IDN"
+    ); 
 
     labelListIOList finalAgglom
     (
@@ -839,7 +829,7 @@ int main(int argc, char *argv[])
 
 
         // sunPosVector i
-        vector n2 = sunPosVector[vectorID];
+        vector n2 = sunPosVector[vectorID].second();
         n2 /= mag(n2);
 
         // only if sun is above the horizon
@@ -887,7 +877,7 @@ int main(int argc, char *argv[])
             ////////////////////////////////////////////////////////////////////
             // Calculated short-wave radiation intensity
 
-            scalarField qrswInterpRot = IDN[vectorID]*Foam::exp(-kc*LAIInterpRot);
+            scalarField qrswInterpRot = IDN[vectorID].second()*Foam::exp(-kc*LAIInterpRot);
 
             // Info << "qrswInterpRot: gMin: " << gMin(qrswInterpRot) << endl;
             // Info << "qrswInterpRot: gMax: " << gMax(qrswInterpRot) << endl;
@@ -1009,7 +999,7 @@ int main(int argc, char *argv[])
                 if (!pHitListCells[cellI].hit())
                 {
                     //qrsw[cellI] = -n2*IDN[vectorID];//*Foam::exp(-kc*LAI[cellI]);
-                    qrsw[cellI] = -n2*IDN[vectorID]*Foam::exp(-kc*LAI[cellI]);
+                    qrsw[cellI] = -n2*IDN[vectorID].second()*Foam::exp(-kc*LAI[cellI]);
                 }
             }
 
