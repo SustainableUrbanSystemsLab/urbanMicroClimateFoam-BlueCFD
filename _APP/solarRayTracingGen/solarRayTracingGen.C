@@ -489,8 +489,8 @@ int main(int argc, char *argv[])
     Pstream::scatterList(minList);
     Pstream::scatterList(maxList);
 
-    point min_(point::zero);
-    point max_(point::zero);
+    point min_(point::max);
+    point max_(point::min);
     for (label i = 0; i < minList.size(); i++)
     {
         min_ = ::Foam::min(min_, minList[i]);

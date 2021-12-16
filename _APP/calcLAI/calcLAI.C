@@ -113,7 +113,7 @@ point calcEndPoint
   // closest edg direction
   scalar i = min(ix, min(iy, iz));
 
-  return 0.9999*i*n2 + start;
+  return 0.99*i*n2 + start;
 }
 
 
@@ -1092,7 +1092,7 @@ int main(int argc, char *argv[])
                 {
 
                     // Check if cell in building shadow shadow
-                    point starti = vegLocalCoarseCf[faceI] + n2*0.0001;
+                    point starti = vegLocalCoarseCf[faceI] + n2*0.01;
                     point endi = calcEndPoint(starti, n2, pminO, pmaxO);
                     vegCoarseFaceStartList.append(starti);
                     vegCoarseFaceEndList.append(endi);
