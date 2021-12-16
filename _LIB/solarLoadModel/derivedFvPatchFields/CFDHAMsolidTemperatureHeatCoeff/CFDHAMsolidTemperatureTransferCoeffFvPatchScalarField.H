@@ -24,7 +24,7 @@ License
 Class
     Foam::
     compressible::
-    CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField
+    CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
 
 Description
     Coupled boundary condition for heat flux at solid boundaries
@@ -33,19 +33,23 @@ Description
     Example usage:
         myInterfacePatchName
         {
-            type            compressible::CFDHAMsolidTemperatureHeatCoeff;
+            type            compressible::CFDHAMsolidTemperatureTransferCoeff;
             qrNbr           qr; //or none, name of thermal radiation from neighbour region
             qsNbr           qs; //or none, name of solar radiation from neighbour region
-            value           uniform -1e7;
+            hcoeff          8.0;
+            Tamb            "$FOAM_CASE/0/Ta.dat";
+            betacoeff       1e-8;
+            pv_o            "$FOAM_CASE/0/pv_o.dat";            
+            value           uniform 293.15;
         }
 
 SourceFiles
-    CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField.C
+    CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField_H
-#define CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField_H
+#ifndef CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField_H
+#define CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField_H
 
 #include "mixedFvPatchFields.H"
 
@@ -57,10 +61,10 @@ namespace compressible
 {
 
 /*---------------------------------------------------------------------------*\
-    Class CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField Declaration
+    Class CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField Declaration
 \*---------------------------------------------------------------------------*/
 
-class CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField
+class CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
 :
     public mixedFvPatchScalarField
 {        
@@ -76,26 +80,32 @@ class CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField
         const scalar hcoeff_;
         
          //- Path to the file with the reference temperature values
-        const fileName Tamb_;          	                    
+        const fileName Tamb_;   
+        
+         //- Convective moisture transfer coefficient [s/m]
+        const scalar betacoeff_;
+        
+         //- Path to the file with the reference exterior vapor pressure values
+        const fileName pv_o_;                     	                    
                  
 
 public:
 
     //- Runtime type information
-    TypeName("compressible::CFDHAMsolidTemperatureHeatCoeff");
+    TypeName("compressible::CFDHAMsolidTemperatureTransferCoeff");
 
 
     // Constructors
 
         //- Construct from patch and internal field
-        CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField
+        CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
         (
             const fvPatch&,
             const DimensionedField<scalar, volMesh>&
         );
 
         //- Construct from patch, internal field and dictionary
-        CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField
+        CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
         (
             const fvPatch&,
             const DimensionedField<scalar, volMesh>&,
@@ -105,10 +115,10 @@ public:
         //- Construct by mapping given
         //  turbulentTemperatureCoupledBaffleMixedFvPatchScalarField onto a
         //  new patch
-        CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField
+        CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
         (
             const
-            CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField&,
+            CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField&,
             const fvPatch&,
             const DimensionedField<scalar, volMesh>&,
             const fvPatchFieldMapper&
@@ -119,7 +129,7 @@ public:
         {
             return tmp<fvPatchScalarField>
             (
-                new CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField
+                new CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
                 (
                     *this
                 )
@@ -127,9 +137,9 @@ public:
         }
 
         //- Construct as copy setting internal field reference
-        CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField
+        CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
         (
-            const CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField&,
+            const CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField&,
             const DimensionedField<scalar, volMesh>&
         );
 
@@ -141,7 +151,7 @@ public:
         {
             return tmp<fvPatchScalarField>
             (
-                new CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField
+                new CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
                 (
                     *this,
                     iF

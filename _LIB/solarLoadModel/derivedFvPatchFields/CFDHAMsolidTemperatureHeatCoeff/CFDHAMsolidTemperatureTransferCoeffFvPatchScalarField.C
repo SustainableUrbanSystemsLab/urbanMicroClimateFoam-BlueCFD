@@ -23,7 +23,7 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField.H"
+#include "CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField.H"
 #include "addToRunTimeSelectionTable.H"
 #include "fvPatchFieldMapper.H"
 #include "volFields.H"
@@ -44,8 +44,8 @@ namespace compressible
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField::
-CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField
+CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField::
+CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
 (
     const fvPatch& p,
     const DimensionedField<scalar, volMesh>& iF
@@ -55,7 +55,9 @@ CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField
     qrNbrName_("undefined-qrNbr"),
     qsNbrName_("undefined-qsNbr"),
     hcoeff_(),
-    Tamb_()
+    Tamb_(),
+    betacoeff_(),
+    pv_o_()  
 {
     this->refValue() = 0.0;
     this->refGrad() = 0.0;
@@ -63,10 +65,10 @@ CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField
 }
 
 
-CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField::
-CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField
+CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField::
+CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
 (
-    const CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField& psf,
+    const CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField& psf,
     const fvPatch& p,
     const DimensionedField<scalar, volMesh>& iF,
     const fvPatchFieldMapper& mapper
@@ -76,12 +78,14 @@ CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField
     qrNbrName_(psf.qrNbrName_),
     qsNbrName_(psf.qsNbrName_),
     hcoeff_(psf.hcoeff_),
-    Tamb_(psf.Tamb_)
+    Tamb_(psf.Tamb_),
+    betacoeff_(psf.betacoeff_),
+    pv_o_(psf.pv_o_) 
 {}
 
 
-CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField::
-CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField
+CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField::
+CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
 (
     const fvPatch& p,
     const DimensionedField<scalar, volMesh>& iF,
@@ -92,7 +96,9 @@ CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField
     qrNbrName_(dict.lookupOrDefault<word>("qrNbr", "none")),
     qsNbrName_(dict.lookupOrDefault<word>("qsNbr", "none")),
     hcoeff_(dict.lookupOrDefault<scalar>("hcoeff",0)),
-    Tamb_(dict.lookupOrDefault<fileName>("Tamb", "none"))
+    Tamb_(dict.lookupOrDefault<fileName>("Tamb", "none")),
+    betacoeff_(dict.lookupOrDefault<scalar>("betacoeff",0)),
+    pv_o_(dict.lookupOrDefault<fileName>("pv_o", "none")) 
 {
     if (!isA<mappedPatchBase>(this->patch().patch()))
     {
@@ -123,10 +129,10 @@ CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField
 }
 
 
-CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField::
-CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField
+CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField::
+CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
 (
-    const CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField& psf,
+    const CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField& psf,
     const DimensionedField<scalar, volMesh>& iF
 )
 :
@@ -134,13 +140,15 @@ CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField
     qrNbrName_(psf.qrNbrName_),
     qsNbrName_(psf.qsNbrName_),
     hcoeff_(psf.hcoeff_),
-    Tamb_(psf.Tamb_)
+    Tamb_(psf.Tamb_),
+    betacoeff_(psf.betacoeff_),
+    pv_o_(psf.pv_o_)   
 {}
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-void CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField::updateCoeffs()
+void CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField::updateCoeffs()
 {
     if (updated())
     {
@@ -168,7 +176,7 @@ void CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField::updateCoeffs()
 
     scalarField& Tp = *this;
 
-    const mixedFvPatchScalarField& //CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField&
+    const mixedFvPatchScalarField& //CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField&
         nbrField = refCast
             <const mixedFvPatchScalarField>
             (
@@ -232,8 +240,13 @@ void CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField::updateCoeffs()
             
     scalarField pvsat_s = exp(6.58094e1-7.06627e3/Tp-5.976*log(Tp));
     scalarField pv_s = pvsat_s*exp((pc)/(rhol*Rv*Tp));
-    
-    scalarField g_conv = rhoNbr*(Dm + nutNbr/Sct) * (wcNbr-(0.62198*pv_s/1e5)) *deltaCoeff_; 
+
+    interpolationTable<scalar> pv_oValue
+    (
+        pv_o_
+    );     
+    scalarField g_conv = betacoeff_*(pv_oValue(time.value())-pv_s);     
+    //scalarField g_conv = rhoNbr*(Dm + nutNbr/Sct) * (wcNbr-(0.62198*pv_s/1e5)) *deltaCoeff_; 
     scalarField LE = (cap_v*(Tp-Tref)+L_v)*g_conv;//Latent and sensible heat transfer due to vapor exchange   */
 
     scalarField K_v(Tp.size(), 0.0);
@@ -436,7 +449,7 @@ void CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField::updateCoeffs()
 }
 
 
-void CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField::write
+void CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField::write
 (
     Ostream& os
 ) const
@@ -446,6 +459,8 @@ void CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField::write
     os.writeKeyword("qsNbr")<< qsNbrName_ << token::END_STATEMENT << nl;
     os.writeKeyword("hcoeff")<< hcoeff_ << token::END_STATEMENT << nl;
     os.writeKeyword("Tamb")<< Tamb_ << token::END_STATEMENT << nl;
+    os.writeKeyword("betacoeff")<< betacoeff_ << token::END_STATEMENT << nl;
+    os.writeKeyword("pv_o")<< pv_o_ << token::END_STATEMENT << nl;       
 }
 
 
@@ -454,7 +469,7 @@ void CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField::write
 makePatchTypeField
 (
     fvPatchScalarField,
-    CFDHAMsolidTemperatureHeatCoeffFvPatchScalarField
+    CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
 );
 
 
