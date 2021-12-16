@@ -16,3 +16,5 @@ forAll(TsBf, patchi)
         TsBf[patchi][facei] = Ts_old.boundaryField()[patchi][facei];
     }
 }
+pcBf.updateCoeffs();
+TsBf.updateCoeffs();

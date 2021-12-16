@@ -31,75 +31,44 @@
         {
 
             //Moisture transfer////////////
-                #include "pcEqn.H"    
+            #include "pcEqn.H"    
 
-                //Firstly, test if all pc values are valid
-                if (gMax(pc) >= 0 || gMax(pc.boundaryField()) >= 0)
-                {
-                    Info << "This is going to crash (pc)! Decreasing timestep and reverting fields..." << endl;
-                    Info << "Error: gMax(pc): " << gMax(pc) << ", gMax(pc.boundaryField()): " << gMax(pc.boundaryField()) << endl;
-                    timeStepDecrease = true;
-                    #include "setSolidRegionDeltaT.H"
-                    #include "revertValues.H"    
-                    break;
-                }
-                pc.correctBoundaryConditions();
+            //Firstly, test if all pc values are valid
+            if (gMax(pc) >= 0 || gMax(pc.boundaryField()) >= 0)
+            {
+                Info << "This is going to crash (pc)! Decreasing timestep and reverting fields..." << endl;
+                Info << "Error: gMax(pc): " << gMax(pc) << ", gMax(pc.boundaryField()): " << gMax(pc.boundaryField()) << endl;
+                timeStepDecrease = true;
+                #include "setSolidRegionDeltaT.H"
+                #include "revertValues.H"    
+                break;
+            }
+            pc.correctBoundaryConditions();
             ///////////////////////////////
 
             //Heat transfer////////////////
-                #include "TsEqn.H" 
-                //Firstly, test if all Ts values are valid
-                if (gMin(Ts) <= 0 || gMin(Ts.boundaryField()) <= 0)
-                {           
-                    Info << "This is going to crash (Ts)! Decreasing timestep and reverting fields..." << endl;
-                    timeStepDecrease = true;
-                    #include "setSolidRegionDeltaT.H"
-                    #include "revertValues.H"  
-                    break;                      
-                }
-                Ts.correctBoundaryConditions();
+            #include "TsEqn.H" 
+            //Firstly, test if all Ts values are valid
+            if (gMin(Ts) <= 0 || gMin(Ts.boundaryField()) <= 0)
+            {           
+                Info << "This is going to crash (Ts)! Decreasing timestep and reverting fields..." << endl;
+                timeStepDecrease = true;
+                #include "setSolidRegionDeltaT.H"
+                #include "revertValues.H"  
+                break;                      
+            }
+            Ts.correctBoundaryConditions();
             ///////////////////////////////
             
 
             //Convergence test/////////////
 
-                //update values for convergence test
-                #include "updatebuildingMaterials.H"
-              
-                //convergence test
-
-                scalar maxChangews = gMax(mag(ws.primitiveField()-ws_n.primitiveField())); 
-                scalar maxChangeTs = gMax(mag(Ts.primitiveField()-Ts_n.primitiveField())); 
-                if(maxChangews < PicardTolerancews && maxChangeTs < PicardToleranceTs && nInternalIter>=2) //force at least 1 internal iteration
-                {
-                    pc_n = pc; //pc_n.boundaryFieldRef().updateCoeffs();
-                    ws_n = ws; //ws_n.boundaryFieldRef().updateCoeffs();
-                    Ts_n = Ts; //Ts_n.boundaryFieldRef().updateCoeffs();
-                    Info << "Total internal iterations: " << nInternalIter << endl;
-                    timeStepDecrease = false;
-                    break;
-                }
-                else if (nInternalIter == nInternalIterMax) //nonlinear iteration reached maximum
-                {
-                    Info
-                       << "Nonlinear iteration didn't converge !"
-                       << endl
-                       << "maxChangews: " << maxChangews << endl
-                       << "maxChangeT: " << maxChangeTs << endl
-                       << "Total internal iterations: " << nInternalIter << endl;
-                    timeStepDecrease = true;
-                    #include "setSolidRegionDeltaT.H"                    
-                    #include "revertValues.H"
-                }   
-                else //not converged nor reached the maximum iteration yet, continue
-                {
-                    pc_n = pc; //pc_n.boundaryFieldRef().updateCoeffs();
-                    ws_n = ws; //ws_n.boundaryFieldRef().updateCoeffs();
-                    Ts_n = Ts; //Ts_n.boundaryFieldRef().updateCoeffs();
-                    Info << "maxChangews: " << maxChangews << ", maxChangeTs: " << maxChangeTs << endl;
-                }               
+            //update values for convergence test
+            #include "updatebuildingMaterials.H"
+          
+            //convergence test
+            #include "checkConvergence.H"
             ///////////////////////////////
-
         }                
 
         if (timeStepDecrease == false) 
