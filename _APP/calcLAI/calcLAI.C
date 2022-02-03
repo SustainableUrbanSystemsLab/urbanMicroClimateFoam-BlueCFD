@@ -947,7 +947,8 @@ int main(int argc, char *argv[])
                     // Check if cell in building shadow shadow
                     point starti = transform(Tinv, ptemp);
                     point endi = calcEndPoint(starti, n2, pminO, pmaxO);
-                    startList.append(starti);
+                    const vector& d = endi - starti;
+                    startList.append(starti + 0.01*d);
                     endList.append(endi);
                     insideCellIList.append(cellI);
                 }
@@ -1092,9 +1093,10 @@ int main(int argc, char *argv[])
                 {
 
                     // Check if cell in building shadow shadow
-                    point starti = vegLocalCoarseCf[faceI] + n2*0.01;
+                    point starti = vegLocalCoarseCf[faceI];
                     point endi = calcEndPoint(starti, n2, pminO, pmaxO);
-                    vegCoarseFaceStartList.append(starti);
+                    const vector& d = endi - starti;
+                    vegCoarseFaceStartList.append(starti + 0.01*d);
                     vegCoarseFaceEndList.append(endi);
                     vegCoarseFaceInsideFaceIList.append(faceI);
                     vegCoarseFaceInsideList[faceI] = true;
