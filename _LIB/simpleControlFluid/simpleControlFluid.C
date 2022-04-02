@@ -67,6 +67,8 @@ bool Foam::simpleControlFluid::run(Time& time)
 {
     read();
 
+    Time& runTime = const_cast<Time&>(mesh().time());
+
     if (initialised_)
     {
         if (criteriaSatisfied())
@@ -77,7 +79,8 @@ bool Foam::simpleControlFluid::run(Time& time)
         {
             storePrevIterFields();
             time.setDeltaT(1); //this is related to the calculation of timestep continuity error
-            time.setTime(time.value(),time.timeIndex()+1); //necessary for iter().stream() to get the correct iteration for convergence control
+            runTime.loop(); //this is needed to use functionObjects with runTime writeControl, e.g. probes in controlDict
+            time.setTime(time.value()-1,time.timeIndex()); //necessary for iter().stream() to get the correct iteration for convergence control
             //time value must stay the same, otherwise wrong ambient value is read
             return true;
         }
