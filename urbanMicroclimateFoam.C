@@ -76,13 +76,6 @@ int main(int argc, char *argv[])
     {
         Info<< nl << "Time = " << runTime.timeName() << endl;
 
-        forAll(vegRegions, i)
-        {
-			Info<< "\nVegetation region found..." << endl;
-			#include "setRegionVegFields.H"
-			#include "solveVeg.H"
-        }
-
         forAll(fluidRegions, i)
         {
             Info<< "\nSolving for fluid region "
@@ -91,6 +84,13 @@ int main(int argc, char *argv[])
             #include "readFluidMultiRegionSIMPLEControls.H"
             #include "solveFluid.H"
         }
+        
+        forAll(vegRegions, i)
+        {
+			Info<< "\nVegetation region found..." << endl;
+			#include "setRegionVegFields.H"
+			#include "solveVeg.H"
+        }        
 
         Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
             << "  ClockTime = " << runTime.elapsedClockTime() << " s"

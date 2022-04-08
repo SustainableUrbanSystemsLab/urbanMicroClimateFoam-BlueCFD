@@ -37,7 +37,7 @@ Info<< nl << fluidRegions[i].name() << " region solution converged in "
 
 runTime.TimeState::operator=(pts); //restore time state
 
-if (maxFluidIteration == 0 && vegNames.size()==0)
+if (maxFluidIteration == 0)
 {
     Info << "Updating T boundary fields..." << endl;
     thermo.T().correctBoundaryConditions();
