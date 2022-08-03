@@ -673,7 +673,7 @@ void Foam::solarLoad::directAndDiffuse::calculate()
         );            
         // look for the correct range
         label lo = 0;
-        label hi = 0;        
+        label hi = 0;
         for (label i = 0; i < sunPosVector.size(); ++i)
         {
             if (time.value() >= sunPosVector[i].first())
@@ -686,7 +686,11 @@ void Foam::solarLoad::directAndDiffuse::calculate()
                 break;
             }   
         }
-        label timestep = lo;           
+        scalar hi_fraction = 0; 
+        if (lo != hi) //if timestep is between two time values in sunPosVector
+        {
+            hi_fraction = (time.value() - sunPosVector[lo].first()) / (sunPosVector[hi].first() - sunPosVector[lo].first());
+        }
         /*
         label timestep = ceil( (time.value()/time.deltaT().value())-0.5 ); 
         timestep = (timestep * timestepsInADay_) / (86400 / time.deltaT().value()); //e.g. in case you have 10min timesteps in solar radiation data, but solving for hourly timesteps
@@ -703,7 +707,7 @@ void Foam::solarLoad::directAndDiffuse::calculate()
                 for (label j=0; j<totalNCoarseFaces_; j++)
                 {
                     //scalar invEj = 1.0/E[j];
-                    scalar Isol = (skyViewCoeffMatrix_()[timestep][j] + sunViewCoeffMatrix_()[timestep][j]);
+                    scalar Isol = (skyViewCoeffMatrix_()[lo][j] + sunViewCoeffMatrix_()[lo][j]);
                     if (i==j)
                     {
                         C(i, j) = (1/(1-A[j]))-(A[j]/(1-A[j]))*Fmatrix_()(i, j);
@@ -750,7 +754,8 @@ void Foam::solarLoad::directAndDiffuse::calculate()
             {
                 for (label j=0; j<totalNCoarseFaces_; j++)
                 {
-                    scalar Isol = (skyViewCoeffMatrix_()[timestep][j] + sunViewCoeffMatrix_()[timestep][j]);
+                    scalar Isol = (skyViewCoeffMatrix_()[lo][j]*(1-hi_fraction) + skyViewCoeffMatrix_()[hi][j]*(hi_fraction)
+                                 + sunViewCoeffMatrix_()[lo][j]*(1-hi_fraction) + sunViewCoeffMatrix_()[hi][j]*(hi_fraction));
                     if (i==j)
                     {
                         q[i] += (- 1.0)*(-Isol) - qsExt[j];
