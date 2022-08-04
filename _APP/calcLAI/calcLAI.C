@@ -1144,7 +1144,7 @@ int main(int argc, char *argv[])
                         }
                         else
                         {
-                            kcLAIboundary[k] = 1000;
+                            kcLAIboundary[k] = -1;//1000; //negative value on the boundary indicates that, that coarseFace is blocked by building.
                         }
                         insideFaceI++;
                     }

@@ -835,9 +835,12 @@ int main(int argc, char *argv[])
 
                 if (vegNames.size()>0)
                 {
-                    if (kcLAIboundaryList[vectorId][faceNoAll]-0>SMALL && cosPhi < 0) //if LAIboundary value is nonzero and if the surface is looking towards the sun, update sunViewCoeff
+                    if (kcLAIboundaryList[vectorId][faceNoAll]-0>SMALL && cosPhi < 0) 
+                    //if LAIboundary value is positive and if the surface is looking towards the sun, update sunViewCoeff
+                    //nVisibleFaceFacesListFINE_avg indicates the ratio of coarseFace that see the sun
+                    //if LAIboundary value is negative (-1, as set by calcLAI), this is handled by the previous part above
                     {
-                        sunViewCoeff[vectorId][faceNoAll] = mag(cosPhi) * IDN[vectorId].second() * Foam::exp(-kcLAIboundaryList[vectorId][faceNoAll]); // beer-lambert law
+                        sunViewCoeff[vectorId][faceNoAll] += (1 - nVisibleFaceFacesListFINE_avg) * mag(cosPhi) * IDN[vectorId].second() * Foam::exp(-kcLAIboundaryList[vectorId][faceNoAll]); // beer-lambert law
                     }
                 }
                 
