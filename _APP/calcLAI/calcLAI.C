@@ -721,12 +721,15 @@ int main(int argc, char *argv[])
          )
      );
 
+    word vegModel = vegetationProperties.lookup("vegetationModel");
+    dictionary coeffs = vegetationProperties.subDict(vegModel + "Coeffs");
+
     #include "readGravitationalAcceleration.H"
     Info << "Gravity is = " << g << endl;
     const vector ez = - g.value()/mag(g.value());
     Info << "Vertical vector : " << ez << endl;
 
-    scalar kc = vegetationProperties.lookupOrDefault("kc", 0.5);//(0-90)*(PI/180);
+    scalar kc = dimensioned<scalar>::lookupOrDefault("kc", coeffs, 0.5).value();
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
