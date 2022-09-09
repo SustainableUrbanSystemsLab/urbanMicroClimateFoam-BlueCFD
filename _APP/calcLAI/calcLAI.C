@@ -319,7 +319,8 @@ void interpfvMeshToCartesian
     int &nx,
     int &ny,
     int &nz,
-    point &dp
+    point &dp,
+    const scalar &minCellSizeFactor
 )
 {
 
@@ -332,7 +333,8 @@ void interpfvMeshToCartesian
 
     // Define cartesian interpolation grid
     scalar minCellV = gMin(mesh.V()); // Cartesian mesh resolution (determine from minimum cell size)
-    scalar minCellL = Foam::pow(minCellV, 1.0/3.0)*10;
+    scalar minCellL = Foam::pow(minCellV, 1.0/3.0)*minCellSizeFactor;
+    Info << "minCellSizeFactor = " << minCellSizeFactor << ", minCellL = " << minCellL << endl;
 
     dp = vector(minCellL,minCellL,minCellL); // grid spacing
 
@@ -730,6 +732,7 @@ int main(int argc, char *argv[])
     Info << "Vertical vector : " << ez << endl;
 
     scalar kc = dimensioned<scalar>::lookupOrDefault("kc", coeffs, 0.5).value();
+    scalar minCellSizeFactor = dimensioned<scalar>::lookupOrDefault("minCellSizeFactor", coeffs, 10).value(); 
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -778,7 +781,7 @@ int main(int argc, char *argv[])
     int nx, ny, nz;
     point dp;
 
-    interpfvMeshToCartesian(mesh, LAD, pmin, pmax, vegetationCell, pInterp, LADInterp, nx, ny, nz, dp);
+    interpfvMeshToCartesian(mesh, LAD, pmin, pmax, vegetationCell, pInterp, LADInterp, nx, ny, nz, dp, minCellSizeFactor);
 
     Info << " took " << (std::clock()-tstartStep) / (double)CLOCKS_PER_SEC
          << " second(s)."<< endl;
