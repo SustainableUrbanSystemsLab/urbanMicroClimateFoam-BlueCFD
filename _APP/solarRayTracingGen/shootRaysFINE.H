@@ -54,7 +54,7 @@ const label maxDynListLengthFINE
         
         forAll(hitInfo, rayI)
         {
-            Info << "rayI: " << rayI << startFINE[rayI] << endFINE[rayI] << endl;
+            //Info << "rayI: " << rayI << startFINE[rayI] << endFINE[rayI] << endl; //debug
 
             if (!hitInfo[rayI].hit()) // if the ray did not hit any surface between start and end positions...
             {
@@ -63,16 +63,16 @@ const label maxDynListLengthFINE
                 {
                     rayStartFaceFINE.append(startFINEIndex[rayI]);
                     rayEndFaceFINE.append(endFINEIndex[rayI]);
-                    Info << "Clear" << endl;
+                    //Info << "Clear" << endl; //debug
                 }
 		        else
 		        {
-		            Info << "Not looking towards the sun" << endl;
+		            //Info << "Not looking towards the sun" << endl; //debug
 		        }
             }
 		    else
 		    {
-		        Info << "Hit a wall" << endl;
+		        //Info << "Hit a wall" << endl; //debug
 		    }
         }
 
