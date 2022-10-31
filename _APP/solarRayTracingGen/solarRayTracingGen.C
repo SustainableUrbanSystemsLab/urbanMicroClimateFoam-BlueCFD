@@ -481,7 +481,7 @@ int main(int argc, char *argv[])
 
     // Determine rays between coarse face centres
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    DynamicList<label> rayStartFace(nCoarseFaces + 0.01*nCoarseFaces); DynamicList<label> rayStartFaceFINE(nFineFaces + 0.01*nFineFaces);
+    DynamicList<label> rayStartFace(nCoarseFaces + 0.001*nCoarseFaces); DynamicList<label> rayStartFaceFINE(nFineFaces + 0.001*nFineFaces);
 
     DynamicList<label> rayEndFace(rayStartFace.size()); DynamicList<label> rayEndFaceFINE(rayStartFaceFINE.size()); 
 
@@ -838,7 +838,6 @@ int main(int argc, char *argv[])
                     if (kcLAIboundaryList[vectorId][faceNoAll]-0>SMALL && cosPhi < 0) 
                     //if LAIboundary value is positive and if the surface is looking towards the sun, update sunViewCoeff
                     //nVisibleFaceFacesListFINE_avg indicates the ratio of coarseFace that see the sun
-                    //if LAIboundary value is negative (-1, as set by calcLAI), this is handled by the previous part above
                     {
                         sunViewCoeff[vectorId][faceNoAll] += (1 - nVisibleFaceFacesListFINE_avg) * mag(cosPhi) * IDN[vectorId].second() * Foam::exp(-kcLAIboundaryList[vectorId][faceNoAll]); // beer-lambert law
                     }

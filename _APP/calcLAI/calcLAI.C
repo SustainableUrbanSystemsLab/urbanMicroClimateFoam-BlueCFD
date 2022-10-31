@@ -113,7 +113,7 @@ point calcEndPoint
   // closest edg direction
   scalar i = min(ix, min(iy, iz));
 
-  return 0.99*i*n2 + start;
+  return 0.999*i*n2 + start;
 }
 
 
@@ -757,7 +757,7 @@ int main(int argc, char *argv[])
     // Set up searching engine for obstacles (copied from Aytac)
     #include "searchingEngine.H"
 
-    DynamicList<label> rayStartFace(nCoarseFaces + 0.01*nCoarseFaces);
+    DynamicList<label> rayStartFace(nCoarseFaces + 0.001*nCoarseFaces);
 
     // Generate dummy data
     scalarList zeroList_nMeshCells(nMeshCells, 0.0);
@@ -954,7 +954,7 @@ int main(int argc, char *argv[])
                     point starti = transform(Tinv, ptemp);
                     point endi = calcEndPoint(starti, n2, pminO, pmaxO);
                     const vector& d = endi - starti;
-                    startList.append(starti + 0.01*d);
+                    startList.append(starti + 0.001*d);
                     endList.append(endi);
                     insideCellIList.append(cellI);
                 }
@@ -1102,7 +1102,7 @@ int main(int argc, char *argv[])
                     point starti = vegLocalCoarseCf[faceI];
                     point endi = calcEndPoint(starti, n2, pminO, pmaxO);
                     const vector& d = endi - starti;
-                    vegCoarseFaceStartList.append(starti + 0.01*d);
+                    vegCoarseFaceStartList.append(starti + 0.001*d);
                     vegCoarseFaceEndList.append(endi);
                     vegCoarseFaceInsideFaceIList.append(faceI);
                     vegCoarseFaceInsideList[faceI] = true;
@@ -1150,7 +1150,7 @@ int main(int argc, char *argv[])
                         }
                         else
                         {
-                            kcLAIboundary[k] = -1;//1000; //negative value on the boundary indicates that, that coarseFace is blocked by building.
+                            kcLAIboundary[k] = 1000;
                         }
                         insideFaceI++;
                     }

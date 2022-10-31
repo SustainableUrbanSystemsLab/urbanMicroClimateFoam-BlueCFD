@@ -35,10 +35,10 @@ const label maxDynListLengthFINE
             
             const vector& d = remFc - fc;
            
-            startFINE.append(fc + 0.01*d);
+            startFINE.append(fc + 0.001*d);
             startFINEIndex.append(iFINE);
             startFINEArea.append(area);
-            endFINE.append(fc + 0.99*d);
+            endFINE.append(fc + 0.999*d);
             label globalI = globalNumbering.toGlobal(Pstream::myProcNo(), iFINE);
             endFINEIndex.append(globalI);
             if (startFINEIndex.size() > maxDynListLengthFINE)
