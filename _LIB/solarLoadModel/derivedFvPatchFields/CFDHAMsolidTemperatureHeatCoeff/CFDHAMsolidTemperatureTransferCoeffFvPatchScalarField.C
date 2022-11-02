@@ -378,14 +378,14 @@ void CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField::updateCoeffs()
 
             if (grassPatches.contains(nbrPatch.name()))//if patch is covered with grass
             {
-                scalarField TlNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("Tl");
-                    mpp.distribute(TlNbr);
+                scalarField TgNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("Tg");
+                    mpp.distribute(TgNbr);
 
                 const dictionary& coeffs = grassProperties.subDict(grassModel + "Coeffs");
                 scalar LAI = coeffs.lookupOrDefault("LAI", 2.0);
                 scalar beta = coeffs.lookupOrDefault("beta", 0.78);
                 scalar albedoSoil = coeffs.lookupOrDefault("albedoSoil", 0.0);
-                qrNbr = 6*(TlNbr-Tp); //thermal radiation between grass and surface - Malys et al 2014
+                qrNbr = 6*(TgNbr-Tp); //thermal radiation between grass and surface - Malys et al 2014
                                       //assuming external thermal radiation is fully absorbed with grass layer
                 qsNbr = qsNbr*exp(-beta*LAI)*(1-albedoSoil); //solar radiation transmitted through grass layer - solar radiation reflected from soil surface
             }

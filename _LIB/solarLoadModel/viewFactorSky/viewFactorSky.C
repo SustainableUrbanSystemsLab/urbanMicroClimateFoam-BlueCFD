@@ -476,10 +476,10 @@ void Foam::radiation::viewFactorSky::calculate()
 
         const scalarField& Tp = T_.boundaryField()[patchID];
         const scalarField& sf = mesh_.magSf().boundaryField()[patchID];
-        scalarField Tl_(T_.size(), -1.0);
+        scalarField Tg_(T_.size(), -1.0);
         if (grassPatches.contains(mesh_.boundary()[patchID].name()))
         {
-            Tl_ = mesh_.boundary()[patchID].lookupPatchField<volScalarField, scalar>("Tl");
+            Tg_ = mesh_.boundary()[patchID].lookupPatchField<volScalarField, scalar>("Tg");
         }
 
         fvPatchScalarField& qrPatch = qrBf[patchID];
@@ -530,9 +530,9 @@ void Foam::radiation::viewFactorSky::calculate()
                     }
                     else
                     {
-                        if (grassPatches.contains(mesh_.boundary()[patchID].name()))//use Tl if patch is covered with grass
+                        if (grassPatches.contains(mesh_.boundary()[patchID].name()))//use Tg if patch is covered with grass
                         {
-                            T4ave[coarseI] += (pow4(Tl_[faceI])*sf[faceI])/area;
+                            T4ave[coarseI] += (pow4(Tg_[faceI])*sf[faceI])/area;
                         }    
                         else//otherwise use T wall temperature
                         {

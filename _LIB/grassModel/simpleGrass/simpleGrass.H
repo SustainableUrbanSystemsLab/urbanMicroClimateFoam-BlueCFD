@@ -56,8 +56,8 @@ class simpleGrass
 {
     // Private data
 
-        //- leaf temperature [K]
-        volScalarField Tl_;
+        //- grass leaf temperature [K]
+        volScalarField Tg_;
 
         //- Selected patches
         labelList selectedPatches_;
