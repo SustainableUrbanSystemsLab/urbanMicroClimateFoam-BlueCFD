@@ -9,8 +9,6 @@ while ((simpleControlFluid.run(runTime) || fluidIteration <= minFluidIteration) 
 //  Pressure-velocity SIMPLE corrector
     Info << "Internal iteration number: " << fluidIteration << endl;
 
-    gra.correct(thermo.T(), w, U, Sh, Sw, Cf);
-
     if(!simple.lookupOrDefault<bool>("frozenFlow", 0))
     {
         p_rgh.storePrevIter();
@@ -21,6 +19,8 @@ while ((simpleControlFluid.run(runTime) || fluidIteration <= minFluidIteration) 
             #include "pEqn.H"
             #include "wEqn.H"
         }
+        
+        gra.correct(thermo.T(), w, U, Sh, Sw, Cf);
 
         // Solve vegetation energy balance
         veg.correct(U, thermo.T(), w);

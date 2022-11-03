@@ -171,17 +171,7 @@ void Foam::grass::simpleGrass::calculate
         scalarField wc = thisPatch.patchInternalField(w_);        
         scalarField deltaCoeffs = thisPatch.deltaCoeffs();
 
-        // Get the coupling information from the mappedPatchBase
-        const mappedPatchBase& mpp =
-            refCast<const mappedPatchBase>(thisPatch.patch());
-        const polyMesh& nbrMesh = mpp.sampleMesh();
-        const label samplePatchI = mpp.samplePolyPatch().index();
-        const fvPatch& nbrPatch =
-            refCast<const fvMesh>(nbrMesh).boundary()[samplePatchI];
-        scalarField Ts = nbrPatch.lookupPatchField<volScalarField, scalar>("Ts");
-            mpp.distribute(Ts);
-// read Ts from solid domain instead
-//        scalarField Ts = thisPatch.lookupPatchField<volScalarField, scalar>("T");
+        scalarField Ts = thisPatch.lookupPatchField<volScalarField, scalar>("T");
 
         scalarField qr(thisPatch.size(), 0.0);
         scalarField qs(thisPatch.size(), 0.0);
@@ -203,6 +193,10 @@ void Foam::grass::simpleGrass::calculate
 
             const fvPatch& vegiNbrPatch =
                 refCast<const fvMesh>(vegiMesh).boundary()[patchi];
+
+            // Get the coupling information from the mappedPatchBase
+            const mappedPatchBase& mpp =
+                refCast<const mappedPatchBase>(thisPatch.patch());
 
             const mappedPatchBase& mppVeg = mappedPatchBase(thisPatch.patch(), vegiRegion, mpp.mode(), thisPatch.name(), mppVegDistance);
             //const mappedPatchBase& mppVeg =
