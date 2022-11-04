@@ -15,7 +15,7 @@
         rho*(U&g)
       + rad.Sh(thermo, he)
       + sol.Sh(thermo, he)
-      + Sh
+      + gra.Sh()
       + veg.Sh() // vegetation energy source term
       + fvOptions(rho, he)
     );

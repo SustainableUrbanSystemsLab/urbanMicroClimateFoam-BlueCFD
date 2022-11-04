@@ -161,10 +161,7 @@ public:
             (
                 const volScalarField& T_, 
                 const volScalarField& w_,
-                const volVectorField& U_,
-                volScalarField& Sh_,
-                volScalarField& Sw_,
-                volScalarField& Cf_
+                const volVectorField& U_
             );
 
             //- Solve grass equation(s)
@@ -172,14 +169,20 @@ public:
             (
                 const volScalarField& T_, 
                 const volScalarField& w_,
-                const volVectorField& U_,
-                volScalarField& Sh_,
-                volScalarField& Sw_,
-                volScalarField& Cf_
+                const volVectorField& U_
             ) = 0;
 
             //- Read grassProperties dictionary
             virtual bool read() = 0;
+            
+            //- return leaf drag coefficient
+            virtual tmp<volScalarField> Sh() const = 0;
+
+            //- return leaf drag coefficient
+            virtual tmp<volScalarField> Cf() const = 0;
+
+            //- return leaf drag coefficient
+            virtual tmp<volScalarField> Sw() const = 0;            
 
         // Access
 

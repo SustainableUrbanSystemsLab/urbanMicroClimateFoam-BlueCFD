@@ -9,10 +9,6 @@
     volScalarField& gcr = gcrFluid[i];  
     surfaceScalarField& phi = phiFluid[i]; 
 
-    volScalarField& Sh = ShFluid[i];
-    volScalarField& Sw = SwFluid[i];   
-    volScalarField& Cf = CfFluid[i]; 
-
     compressible::turbulenceModel& turb = turbulence[i];
 
     volScalarField& p = thermo.p();

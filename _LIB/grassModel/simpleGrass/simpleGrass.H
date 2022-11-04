@@ -79,6 +79,10 @@ class simpleGrass
 
 		scalar rs; //stomatal resistance - s/m
 		scalar ra; //aerodynamic resistance - s/m
+		
+		volScalarField Sh_;
+		volScalarField Sw_;
+		volScalarField Cf_;		
 
         //- debug switch
         bool debug_;
@@ -126,11 +130,22 @@ public:
             (
                 const volScalarField& T_, 
                 const volScalarField& w_,
-                const volVectorField& U_,
-                volScalarField& Sh_,
-                volScalarField& Sw_,
-                volScalarField& Cf_
+                const volVectorField& U_
             );
+            
+            // -----------------------------------------------
+            // source terms
+
+            // return vegetation energy source
+            virtual tmp<volScalarField> Sh() const;
+
+            //- return leaf drag coefficient
+            virtual tmp<volScalarField> Cf() const;
+
+            // return vegetation specific humidity source
+            virtual tmp<volScalarField> Sw() const;
+
+            // -----------------------------------------------            
 
             //- Read grass properties dictionary
             bool read();

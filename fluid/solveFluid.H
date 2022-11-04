@@ -20,7 +20,7 @@ while ((simpleControlFluid.run(runTime) || fluidIteration <= minFluidIteration) 
             #include "wEqn.H"
         }
         
-        gra.correct(thermo.T(), w, U, Sh, Sw, Cf);
+        gra.correct(thermo.T(), w, U);
 
         // Solve vegetation energy balance
         veg.correct(U, thermo.T(), w);

@@ -120,6 +120,45 @@ Foam::grass::simpleGrass::simpleGrass(const volScalarField& T)
         ),
         T*0
     ),
+    Sw_
+    (
+        IOobject
+        (
+            "Sw",
+            mesh_.time().timeName(),
+            mesh_,
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        mesh_,
+        dimensionedScalar("0", dimensionSet(1,-3,-1,0,0,0,0), 0.0)
+    ),
+    Sh_
+    (
+        IOobject
+        (
+            "Sh",
+            mesh_.time().timeName(),
+            mesh_,
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        mesh_,
+        dimensionedScalar("0", dimensionSet(1,-1,-3,0,0,0,0), 0.0)
+    ),   
+    Cf_
+    (
+        IOobject
+        (
+            "Cf",
+            mesh_.time().timeName(),
+            mesh_,
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        mesh_,
+        dimensionedScalar("0", dimensionSet(0,-1,0,0,0,0,0), 0.0)
+    ),         
     selectedPatches_(mesh_.boundary().size(), -1)
 {
     initialise();
@@ -153,10 +192,7 @@ void Foam::grass::simpleGrass::calculate
 (
     const volScalarField& T_, 
     const volScalarField& w_,
-    const volVectorField& U_,
-    volScalarField& Sh_,
-    volScalarField& Sw_,
-    volScalarField& Cf_
+    const volVectorField& U_
 )
 {    
 
@@ -304,6 +340,70 @@ void Foam::grass::simpleGrass::calculate
         }
         /////////////////////////////////////////
     }
+}
+
+// return energy source term
+Foam::tmp<Foam::volScalarField> Foam::grass::simpleGrass::Sh() const
+{
+    return tmp<volScalarField>
+    (
+        new volScalarField
+        (
+            IOobject
+            (
+                "Sh",
+                mesh_.time().timeName(),
+                mesh_,
+                IOobject::NO_READ,
+                IOobject::NO_WRITE,
+                false
+            ),
+            Sh_
+        )
+    );
+}
+
+// solve & return momentum source term (explicit)
+Foam::tmp<Foam::volScalarField> Foam::grass::simpleGrass::Cf() const
+{
+    return tmp<volScalarField>
+    (
+        new volScalarField
+        (
+            IOobject
+            (
+                "Cf",
+                mesh_.time().timeName(),
+                mesh_,
+                IOobject::NO_READ,
+                IOobject::NO_WRITE,
+                false
+            ),
+            Cf_
+        )
+    );
+}
+
+
+// return specific humidity source term
+Foam::tmp<Foam::volScalarField> Foam::grass::simpleGrass::Sw() const
+{
+    return tmp<volScalarField>
+    (
+        new volScalarField
+        (
+            IOobject
+            (
+                "Sw",
+                mesh_.time().timeName(),
+                mesh_,
+                IOobject::NO_READ,
+                IOobject::NO_WRITE,
+                false
+            ),
+            Sw_
+        )
+    );
 }
 
 // ************************************************************************* //
