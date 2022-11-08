@@ -59,6 +59,10 @@ class simpleGrass
         //- grass leaf temperature [K]
         volScalarField Tg_;
 
+		volScalarField Sw_;
+		volScalarField Sh_;
+		volScalarField Cf_;		
+
         //- Selected patches
         labelList selectedPatches_;
 
@@ -80,10 +84,6 @@ class simpleGrass
 		scalar rs; //stomatal resistance - s/m
 		scalar ra; //aerodynamic resistance - s/m
 		
-		volScalarField Sh_;
-		volScalarField Sw_;
-		volScalarField Cf_;		
-
         //- debug switch
         bool debug_;
 
