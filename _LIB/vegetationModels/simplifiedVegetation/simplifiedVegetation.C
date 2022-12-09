@@ -346,14 +346,18 @@ void Foam::vegetation::simplifiedVegetation::radiation()
             break;
         }   
     }
-    label timestep = lo;            
+    scalar hi_fraction = 0; 
+    if (lo != hi) //if timestep is between two time values in sunPosVector
+    {
+        hi_fraction = (time.value() - sunPosVector[lo].first()) / (sunPosVector[hi].first() - sunPosVector[lo].first());
+    }  
     /*
     label timestep = ceil( (time.value()/(86400/timestepsInADay_))-0.5 );
     //Info << ", 1 timestep: " << timestep;
     timestep = timestep % timestepsInADay_;
     //Info << ", 2 timestep: " << timestep << endl;
     */
-    scalarList divqrswi =  divqrsw[timestep]; // [W/m3]
+    scalarList divqrswi =  divqrsw[lo]*(1-hi_fraction) + divqrsw[hi]*(hi_fraction); // [W/m3]
 
     // radiation density inside vegetation
     forAll(LAD_, cellI)

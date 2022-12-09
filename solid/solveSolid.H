@@ -85,17 +85,6 @@
             #include "setSolidRegionDeltaT.H"
         }
 
-        if (timeToOutput > 0.0)
-        {
-            //update thermal radiation fluxes
-            forAll(fluidRegions, i)
-            {
-                Info << "Updating long-wave radiation heat transfer for region: " << fluidRegions[i].name() << endl;
-                radiation::radiationModel& rad = radiation[i];
-                rad.correct();
-            }
-        } 
-        
         Info << "timeToOutput: " << timeToOutput << endl;
     }
 

@@ -113,7 +113,7 @@ point calcEndPoint
   // closest edg direction
   scalar i = min(ix, min(iy, iz));
 
-  return 0.99*i*n2 + start;
+  return 0.999*i*n2 + start;
 }
 
 
@@ -319,7 +319,8 @@ void interpfvMeshToCartesian
     int &nx,
     int &ny,
     int &nz,
-    point &dp
+    point &dp,
+    const scalar &minCellSizeFactor
 )
 {
 
@@ -332,7 +333,8 @@ void interpfvMeshToCartesian
 
     // Define cartesian interpolation grid
     scalar minCellV = gMin(mesh.V()); // Cartesian mesh resolution (determine from minimum cell size)
-    scalar minCellL = Foam::pow(minCellV, 1.0/3.0)*10;
+    scalar minCellL = Foam::pow(minCellV, 1.0/3.0)*minCellSizeFactor;
+    Info << "minCellSizeFactor = " << minCellSizeFactor << ", minCellL = " << minCellL << endl;
 
     dp = vector(minCellL,minCellL,minCellL); // grid spacing
 
@@ -721,12 +723,16 @@ int main(int argc, char *argv[])
          )
      );
 
+    word vegModel = vegetationProperties.lookup("vegetationModel");
+    dictionary coeffs = vegetationProperties.subDict(vegModel + "Coeffs");
+
     #include "readGravitationalAcceleration.H"
     Info << "Gravity is = " << g << endl;
     const vector ez = - g.value()/mag(g.value());
     Info << "Vertical vector : " << ez << endl;
 
-    scalar kc = vegetationProperties.lookupOrDefault("kc", 0.5);//(0-90)*(PI/180);
+    scalar kc = dimensioned<scalar>::lookupOrDefault("kc", coeffs, 0.5).value();
+    scalar minCellSizeFactor = dimensioned<scalar>::lookupOrDefault("minCellSizeFactor", coeffs, 10).value(); 
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -751,7 +757,7 @@ int main(int argc, char *argv[])
     // Set up searching engine for obstacles (copied from Aytac)
     #include "searchingEngine.H"
 
-    DynamicList<label> rayStartFace(nCoarseFaces + 0.01*nCoarseFaces);
+    DynamicList<label> rayStartFace(nCoarseFaces + 0.001*nCoarseFaces);
 
     // Generate dummy data
     scalarList zeroList_nMeshCells(nMeshCells, 0.0);
@@ -775,7 +781,7 @@ int main(int argc, char *argv[])
     int nx, ny, nz;
     point dp;
 
-    interpfvMeshToCartesian(mesh, LAD, pmin, pmax, vegetationCell, pInterp, LADInterp, nx, ny, nz, dp);
+    interpfvMeshToCartesian(mesh, LAD, pmin, pmax, vegetationCell, pInterp, LADInterp, nx, ny, nz, dp, minCellSizeFactor);
 
     Info << " took " << (std::clock()-tstartStep) / (double)CLOCKS_PER_SEC
          << " second(s)."<< endl;
@@ -948,7 +954,7 @@ int main(int argc, char *argv[])
                     point starti = transform(Tinv, ptemp);
                     point endi = calcEndPoint(starti, n2, pminO, pmaxO);
                     const vector& d = endi - starti;
-                    startList.append(starti + 0.01*d);
+                    startList.append(starti + 0.001*d);
                     endList.append(endi);
                     insideCellIList.append(cellI);
                 }
@@ -1096,7 +1102,7 @@ int main(int argc, char *argv[])
                     point starti = vegLocalCoarseCf[faceI];
                     point endi = calcEndPoint(starti, n2, pminO, pmaxO);
                     const vector& d = endi - starti;
-                    vegCoarseFaceStartList.append(starti + 0.01*d);
+                    vegCoarseFaceStartList.append(starti + 0.001*d);
                     vegCoarseFaceEndList.append(endi);
                     vegCoarseFaceInsideFaceIList.append(faceI);
                     vegCoarseFaceInsideList[faceI] = true;
