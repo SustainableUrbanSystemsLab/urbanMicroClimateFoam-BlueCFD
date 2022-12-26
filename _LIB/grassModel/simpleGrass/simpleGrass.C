@@ -32,6 +32,9 @@ License
 #include "mixedFvPatchFields.H"
 #include "mappedPatchBase.H"
 
+#include "hashedWordList.H"
+#include "regionProperties.H"
+
 using namespace Foam::constant;
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
@@ -105,18 +108,57 @@ Foam::scalarField Foam::grass::simpleGrass::calc_pvsat(const scalarField& T_)
 Foam::grass::simpleGrass::simpleGrass(const volScalarField& T)
 :
     grassModel(typeName, T),
-    Tl_
+    Tg_
     (
         IOobject
         (
-            "Tl",
+            "Tg",
             mesh_.time().timeName(),
             mesh_,
             IOobject::READ_IF_PRESENT,
             IOobject::AUTO_WRITE
         ),
-        -pos(T)
+        T*0
     ),
+    Sw_
+    (
+        IOobject
+        (
+            "Sw",
+            mesh_.time().timeName(),
+            mesh_,
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        mesh_,
+        dimensionedScalar("0", dimensionSet(1,-3,-1,0,0,0,0), 0.0)
+    ),
+    Sh_
+    (
+        IOobject
+        (
+            "Sh",
+            mesh_.time().timeName(),
+            mesh_,
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        mesh_,
+        dimensionedScalar("0", dimensionSet(1,-1,-3,0,0,0,0), 0.0)
+    ),   
+    Cf_
+    (
+        IOobject
+        (
+            "Cf",
+            mesh_.time().timeName(),
+            mesh_,
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        mesh_,
+        dimensionedScalar("0", dimensionSet(0,-1,0,0,0,0,0), 0.0)
+    ),         
     selectedPatches_(mesh_.boundary().size(), -1)
 {
     initialise();
@@ -150,10 +192,7 @@ void Foam::grass::simpleGrass::calculate
 (
     const volScalarField& T_, 
     const volScalarField& w_,
-    const volVectorField& U_,
-    volScalarField& Sh_,
-    volScalarField& Sw_,
-    volScalarField& Cf_
+    const volVectorField& U_
 )
 {    
 
@@ -163,25 +202,54 @@ void Foam::grass::simpleGrass::calculate
         const fvPatch& thisPatch = mesh_.boundary()[patchID];
 
         const labelUList& patchInternalLabels = thisPatch.faceCells();
-        scalarField Tl = thisPatch.patchInternalField(Tl_);
+        scalarField Tg = thisPatch.patchInternalField(Tg_);
         scalarField Tc = thisPatch.patchInternalField(T_);
         scalarField wc = thisPatch.patchInternalField(w_);        
         scalarField deltaCoeffs = thisPatch.deltaCoeffs();
 
-        // Get the coupling information from the mappedPatchBase
-        const mappedPatchBase& mpp =
-            refCast<const mappedPatchBase>(thisPatch.patch());
-        const polyMesh& nbrMesh = mpp.sampleMesh();
-        const label samplePatchI = mpp.samplePolyPatch().index();
-        const fvPatch& nbrPatch =
-            refCast<const fvMesh>(nbrMesh).boundary()[samplePatchI];
-        scalarField Ts = nbrPatch.lookupPatchField<volScalarField, scalar>("Ts");
-            mpp.distribute(Ts);
-// read Ts from solid domain instead
-//        scalarField Ts = thisPatch.lookupPatchField<volScalarField, scalar>("T");
+        scalarField Ts = thisPatch.lookupPatchField<volScalarField, scalar>("T");
 
-        scalarField qs = thisPatch.lookupPatchField<volScalarField, scalar>("qs");
-        scalarField qr = thisPatch.lookupPatchField<volScalarField, scalar>("qr");
+        scalarField qr(thisPatch.size(), 0.0);
+        scalarField qs(thisPatch.size(), 0.0);
+        //-- Access vegetation region and populate radiation if vegetation exists,
+        //otherwise use radiation from air region --//
+        regionProperties rp(mesh_.time());
+        const wordList vegNames(rp["vegetation"]);
+        if (vegNames.size()>0)
+        {
+            const word& vegiRegion = "vegetation";
+            const scalar mppVegDistance = 0; 
+               
+            const polyMesh& vegiMesh =
+            	thisPatch.boundaryMesh().mesh().time().lookupObject<polyMesh>(vegiRegion);
+     
+            const word& nbrPatchName = thisPatch.name();
+
+            const label patchi = vegiMesh.boundaryMesh().findPatchID(nbrPatchName);
+
+            const fvPatch& vegiNbrPatch =
+                refCast<const fvMesh>(vegiMesh).boundary()[patchi];
+
+            // Get the coupling information from the mappedPatchBase
+            const mappedPatchBase& mpp =
+                refCast<const mappedPatchBase>(thisPatch.patch());
+
+            const mappedPatchBase& mppVeg = mappedPatchBase(thisPatch.patch(), vegiRegion, mpp.mode(), thisPatch.name(), mppVegDistance);
+            //const mappedPatchBase& mppVeg =
+            //    refCast<const mappedPatchBase>(patch().patch(), vegiRegion, mpp.mode(), mpp.samplePatch(), mppVegDistance);
+     
+            qs = vegiNbrPatch.lookupPatchField<volScalarField, scalar>("qs");
+            mppVeg.distribute(qs);
+
+            qr = vegiNbrPatch.lookupPatchField<volScalarField, scalar>("qr");
+            mppVeg.distribute(qr);           
+        }
+        else
+        {
+            qs = thisPatch.lookupPatchField<volScalarField, scalar>("qs");
+            qr = thisPatch.lookupPatchField<volScalarField, scalar>("qr");
+        }
+        
         scalarField ra_(thisPatch.size(),ra);
 
         if(ra < 0) //calculate ra if it is not given in grassProperties
@@ -199,20 +267,19 @@ void Foam::grass::simpleGrass::calculate
         //scalarField wsat = 0.621945*(pvsat/(p_-pvsat)); // saturated specific humidity, ASHRAE 1, eq.23
         scalarField pv = p_ * wc / (Ra/Rv + wc); // vapour pressure
 
-        if (gMin(Tl) < 0)
-        {
-            Tl = Tc; //initialize if necessary
-        }
-
         scalarField Qs_abs = qs*(1-exp(-beta_*LAI_)+albedoSoil_*exp(-beta_*LAI_));
 
         scalarField E(scalarField(Qs_abs.size(),0.0));
 
-        ////calculate leaf temperature///////////
+        ////calculate grass leaf temperature///////////
         label maxIter = 500;
         for (label i=1; i<=maxIter; i++)
         {
-            scalarField pvsat = calc_pvsat(Tl); //saturation vapour pressure
+            if (i==1 && gMin(Tg) < SMALL)
+            {
+                Tg = Tc; //initialize if necessary
+            }
+            scalarField pvsat = calc_pvsat(Tg); //saturation vapour pressure
             E = pos(Qs_abs-SMALL)*nEvapSides_*h_cm*(pvsat-pv); //initialize transpiration rate [kg/(m2s)]
             //scalarField E = pos(Qs-SMALL)*nEvapSides_*rhoa*(wsat-wc)/(rs+ra);
             //no transpiration at night when Qs_abs is not >0
@@ -221,28 +288,28 @@ void Foam::grass::simpleGrass::calculate
             scalarField Qlat = lambda*E*LAI_; //latent heat flux
 
             scalarField Qr2surrounding = qr;
-            scalarField Qr2substrate = 6*(Ts-Tl); //thermal radiation between grass and surface - Malys et al 2014
+            scalarField Qr2substrate = 6*(Ts-Tg); //thermal radiation between grass and surface - Malys et al 2014
 
-            scalarField Tl_new = Tc + (Qr2surrounding + Qr2substrate + Qs_abs - Qlat)/ (h_ch*LAI_);
+            scalarField Tg_new = Tc + (Qr2surrounding + Qr2substrate + Qs_abs - Qlat)/ (h_ch*LAI_);
 
             // info
-            Info << " max leaf temp Tl=" << gMax(Tl_new)
+            Info << " max grass leaf temp Tg=" << gMax(Tg_new)
                  << " K, iteration i="   << i << endl;
 
             // Check rel. L-infinity error
-            scalar maxError = gMax(mag(Tl_new-Tl));
-            scalar maxRelError = maxError/gMax(mag(Tl_new));
+            scalar maxError = gMax(mag(Tg_new-Tg));
+            scalar maxRelError = maxError/gMax(mag(Tg_new));
 
-            // read relaxation factor for Tl - aytac
+            // read relaxation factor for Tg - aytac
             dictionary relaxationDict = mesh_.solutionDict().subDict("relaxationFactors");
-            scalar Tl_relax = relaxationDict.lookupOrDefault<scalar>("Tl", 0.5);
+            scalar Tg_relax = relaxationDict.lookupOrDefault<scalar>("Tg", 0.5);
 
             // convergence check
             if ((maxRelError < 1e-8) && (maxError < 1e-8))
             {
                 if(debug_)
                 {
-                    scalarField Qsen = h_ch*(Tc-Tl)*LAI_;
+                    scalarField Qsen = h_ch*(Tc-Tg)*LAI_;
                     Info << " Qs_abs: " << gSum(thisPatch.magSf()*Qs_abs)/gSum(thisPatch.magSf()) << endl;
                     Info << " Qlat: " << gSum(thisPatch.magSf()*-Qlat)/gSum(thisPatch.magSf()) << endl;
                     Info << " Qsen: " << gSum(thisPatch.magSf()*Qsen)/gSum(thisPatch.magSf()) << endl;
@@ -253,26 +320,90 @@ void Foam::grass::simpleGrass::calculate
             }
             else
             {
-                Tl = (1-Tl_relax)*Tl+(Tl_relax)*Tl_new;// update leaf temp. 
+                Tg = (1-Tg_relax)*Tg+(Tg_relax)*Tg_new;// update leaf temp. 
             }                    
         }
         /////////////////////////////////////////
 
         ////update fields////////////////////////
-        scalarField& Tl_Internal = Tl_.ref();
-        volScalarField::Boundary& Tl_Bf = Tl_.boundaryFieldRef();
-        scalarField& Tl_p = Tl_Bf[patchID];
+        scalarField& Tg_Internal = Tg_.ref();
+        volScalarField::Boundary& Tg_Bf = Tg_.boundaryFieldRef();
+        scalarField& Tg_p = Tg_Bf[patchID];
 
         forAll(patchInternalLabels, i)
         {
-            Tl_Internal[patchInternalLabels[i]] = Tl[i];
-            Tl_p[i] = Tl[i];
-            Sh_[patchInternalLabels[i]] = h_ch[i]*(Tl[i]-Tc[i])*(LAI_*(deltaCoeffs[i]/2));
+            Tg_Internal[patchInternalLabels[i]] = Tg[i];
+            Tg_p[i] = Tg[i];
+            Sh_[patchInternalLabels[i]] = h_ch[i]*(Tg[i]-Tc[i])*(LAI_*(deltaCoeffs[i]/2));
             Sw_[patchInternalLabels[i]] = E[i]*(LAI_*(deltaCoeffs[i]/2));
             Cf_[patchInternalLabels[i]] = Cd_*(LAI_*(deltaCoeffs[i]/2));
         }
         /////////////////////////////////////////
     }
+}
+
+// return energy source term
+Foam::tmp<Foam::volScalarField> Foam::grass::simpleGrass::Sh() const
+{
+    return tmp<volScalarField>
+    (
+        new volScalarField
+        (
+            IOobject
+            (
+                "Sh",
+                mesh_.time().timeName(),
+                mesh_,
+                IOobject::NO_READ,
+                IOobject::NO_WRITE,
+                false
+            ),
+            Sh_
+        )
+    );
+}
+
+// solve & return momentum source term (explicit)
+Foam::tmp<Foam::volScalarField> Foam::grass::simpleGrass::Cf() const
+{
+    return tmp<volScalarField>
+    (
+        new volScalarField
+        (
+            IOobject
+            (
+                "Cf",
+                mesh_.time().timeName(),
+                mesh_,
+                IOobject::NO_READ,
+                IOobject::NO_WRITE,
+                false
+            ),
+            Cf_
+        )
+    );
+}
+
+
+// return specific humidity source term
+Foam::tmp<Foam::volScalarField> Foam::grass::simpleGrass::Sw() const
+{
+    return tmp<volScalarField>
+    (
+        new volScalarField
+        (
+            IOobject
+            (
+                "Sw",
+                mesh_.time().timeName(),
+                mesh_,
+                IOobject::NO_READ,
+                IOobject::NO_WRITE,
+                false
+            ),
+            Sw_
+        )
+    );
 }
 
 // ************************************************************************* //

@@ -15,10 +15,6 @@ PtrList<vegetation::vegetationModel> vegetation(fluidRegions.size());
 PtrList<volScalarField> wFluid(fluidRegions.size());
 PtrList<volScalarField> gcrFluid(fluidRegions.size());
 
-PtrList<volScalarField> ShFluid(fluidRegions.size());
-PtrList<volScalarField> SwFluid(fluidRegions.size());
-PtrList<volScalarField> CfFluid(fluidRegions.size());
-
 List<scalar> initialMassFluid(fluidRegions.size());
 List<label> pRefCellFluid(fluidRegions.size(),0);
 List<scalar> pRefValueFluid(fluidRegions.size(),0.0);
@@ -139,63 +135,6 @@ forAll(fluidRegions, i)
             fluidRegions[i]
         )
     );   
-
-    Info<< "    Adding to ShFluid\n" << endl;
-    ShFluid.set
-    (
-        i,
-        new volScalarField
-        (
-            IOobject
-            (
-                "Sh",
-                runTime.timeName(),
-                fluidRegions[i],
-                IOobject::NO_READ,
-                IOobject::NO_WRITE
-            ),
-            fluidRegions[i],
-            dimensionedScalar("0", dimensionSet(1,-1,-3,0,0,0,0), 0.0)
-        )
-    );  
-
-    Info<< "    Adding to SwFluid\n" << endl;
-    SwFluid.set
-    (
-        i,
-        new volScalarField
-        (
-            IOobject
-            (
-                "Sw",
-                runTime.timeName(),
-                fluidRegions[i],
-                IOobject::NO_READ,
-                IOobject::NO_WRITE
-            ),
-            fluidRegions[i],
-            dimensionedScalar("0", dimensionSet(1,-3,-1,0,0,0,0), 0.0)
-        )
-    );  
-
-    Info<< "    Adding to CfFluid\n" << endl;
-    CfFluid.set
-    (
-        i,
-        new volScalarField
-        (
-            IOobject
-            (
-                "Cf",
-                runTime.timeName(),
-                fluidRegions[i],
-                IOobject::NO_READ,
-                IOobject::NO_WRITE
-            ),
-            fluidRegions[i],
-            dimensionedScalar("0", dimensionSet(0,-1,0,0,0,0,0), 0.0)
-        )
-    );  
 
     Info<< "    Adding to phiFluid\n" << endl;
     phiFluid.set

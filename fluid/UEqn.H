@@ -8,7 +8,7 @@
       + MRF.DDt(rho, U)
       + turb.divDevRhoReff(U)
      ==
-      - fvm::SuSp(Cf*rho*mag(U), U)
+      - fvm::SuSp(gra.Cf()*rho*mag(U), U)
       + fvOptions(rho, U)
       - fvm::SuSp(veg.Cf()*rho*mag(U), U) // vegetation momentum source
     );
