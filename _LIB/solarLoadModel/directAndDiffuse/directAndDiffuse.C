@@ -71,6 +71,7 @@ void Foam::solarLoad::directAndDiffuse::initialise()
             {
                 wallPatchOrNot_[count] = 1;
                 nLocalWallCoarseFaces_ += coarsePatches[patchI].size();
+                nLocalFineFaces_ += qsPatchI.patch().size();
             }    
             
             count++;
@@ -97,10 +98,13 @@ void Foam::solarLoad::directAndDiffuse::initialise()
 
     totalNCoarseFaces_ = nLocalCoarseFaces_;
     reduce(totalNCoarseFaces_, sumOp<label>());
+    totalNFineFaces_ = nLocalFineFaces_;
+    reduce(totalNFineFaces_, sumOp<label>());    
 
     if (Pstream::master())
     {
         Info<< "Total number of clusters : " << totalNCoarseFaces_ << endl;
+        Info<< "Total number of fine faces : " << totalNFineFaces_ << endl;
     }
 
     labelListIOList subMap
@@ -164,6 +168,20 @@ void Foam::solarLoad::directAndDiffuse::initialise()
             false
         )
     );
+    
+    scalarListIOList solarLoadFineFacesmyProc
+    (
+        IOobject
+        (
+            "solarLoadFineFaces",
+            mesh_.facesInstance(),
+            mesh_,
+            IOobject::MUST_READ,
+            IOobject::NO_WRITE,
+            false
+        )
+    );
+    solarLoadFineFacesSize = solarLoadFineFacesmyProc.size();       
     
     scalarListIOList skyViewCoeffmyProc
     (
@@ -229,7 +247,11 @@ void Foam::solarLoad::directAndDiffuse::initialise()
 
     List<scalarListList> F(Pstream::nProcs());
     F[Pstream::myProcNo()] = FmyProc;
-    Pstream::gatherList(F);    
+    Pstream::gatherList(F);
+    
+    List<scalarListList> solarLoadFineFaces(Pstream::nProcs());
+    solarLoadFineFaces[Pstream::myProcNo()] = solarLoadFineFacesmyProc;
+    Pstream::gatherList(solarLoadFineFaces);         
     
     List<scalarListList> skyViewCoeff(Pstream::nProcs());
     skyViewCoeff[Pstream::myProcNo()] = skyViewCoeffmyProc;
@@ -240,6 +262,76 @@ void Foam::solarLoad::directAndDiffuse::initialise()
     Pstream::gatherList(sunViewCoeff);        
 
     globalIndex globalNumbering(nLocalCoarseFaces_);
+    globalIndex globalNumberingFine(nLocalFineFaces_);
+
+    solarLoadFineFacesGlobal_.reset
+    (
+        new scalarListList(solarLoadFineFacesSize)
+    );    
+    forAll(solarLoadFineFacesGlobal_(), vectorId)
+    {
+        scalarList globalCoeffs(totalNFineFaces_, 0.0);   
+        solarLoadFineFacesGlobal_()[vectorId] = globalCoeffs;
+    }
+    for (label procI = 0; procI < Pstream::nProcs(); procI++)
+    {
+        insertScalarListListElements
+        (
+            globalNumberingFine,
+            procI,
+            sunskyMap,
+            globalFaceFacesProc[procI],
+            solarLoadFineFaces[procI],
+            solarLoadFineFacesGlobal_(),
+            "fine"
+        );
+    }
+ 
+    skyViewCoeffGlobal_.reset
+    (
+        new scalarListList(sunViewCoeffSize)
+    );    
+    forAll(skyViewCoeffGlobal_(), vectorId)
+    {
+        scalarList globalCoeffs(totalNCoarseFaces_, 0.0);   
+        skyViewCoeffGlobal_()[vectorId] = globalCoeffs;
+    } 
+    for (label procI = 0; procI < Pstream::nProcs(); procI++)
+    {
+        insertScalarListListElements
+        (
+            globalNumbering,
+            procI,
+            sunskyMap,
+            globalFaceFacesProc[procI],
+            skyViewCoeff[procI],
+            skyViewCoeffGlobal_(),
+            "coarse"
+        );
+    }
+
+    sunViewCoeffGlobal_.reset
+    (
+        new scalarListList(sunViewCoeffSize)
+    );
+    forAll(sunViewCoeffGlobal_(), vectorId)
+    {
+        scalarList globalCoeffs(totalNCoarseFaces_, 0.0);   
+        sunViewCoeffGlobal_()[vectorId] = globalCoeffs;
+    }        
+    for (label procI = 0; procI < Pstream::nProcs(); procI++)
+    {
+        insertScalarListListElements
+        (
+            globalNumbering,
+            procI,
+            sunskyMap,
+            globalFaceFacesProc[procI],
+            sunViewCoeff[procI],
+            sunViewCoeffGlobal_(),
+            "coarse"
+        );          
+    }
 
     if (Pstream::master())
     {
@@ -247,16 +339,6 @@ void Foam::solarLoad::directAndDiffuse::initialise()
         (
             new scalarSquareMatrix(totalNCoarseFaces_, 0.0)
         );    
-        
-        skyViewCoeffMatrix_.reset
-        (
-            new scalarRectangularMatrix(skyViewCoeffSize, totalNCoarseFaces_, 0.0)
-        );    
-
-        sunViewCoeffMatrix_.reset
-        (
-            new scalarRectangularMatrix(sunViewCoeffSize, totalNCoarseFaces_, 0.0)
-        );
 
         Info<< "Insert elements in the matrix..." << endl;
 
@@ -271,32 +353,6 @@ void Foam::solarLoad::directAndDiffuse::initialise()
                 Fmatrix_()
             );
         }
-        
-        for (label procI = 0; procI < Pstream::nProcs(); procI++)
-        {
-            insertRectangularMatrixElements
-            (
-                globalNumbering,
-                procI,
-                sunskyMap,
-                globalFaceFacesProc[procI],
-                skyViewCoeff[procI],
-                skyViewCoeffMatrix_()
-            );
-        }
-
-        for (label procI = 0; procI < Pstream::nProcs(); procI++)
-        {
-            insertRectangularMatrixElements
-            (
-                globalNumbering,
-                procI,
-                sunskyMap,
-                globalFaceFacesProc[procI],
-                sunViewCoeff[procI],
-                sunViewCoeffMatrix_()
-            );
-        }            
 
         bool smoothing = readBool(coeffs_.lookup("smoothing"));
         if (smoothing)
@@ -333,14 +389,6 @@ void Foam::solarLoad::directAndDiffuse::initialise()
             pivotIndices_.setSize(CLU_().m());
         }
     
-//        timestepsInADay_ = readLabel(coeffs_.lookup("timestepsInADay"));
-
-        // Read sunPosVector list
-/*        interpolationTable<vector> sunPosVector
-        (
-            mesh_.time().caseConstant()
-            /"sunPosVector"
-        ); */
     }
 }
 
@@ -390,13 +438,16 @@ Foam::solarLoad::directAndDiffuse::directAndDiffuse(const volScalarField& T)
     ),
     Fmatrix_(),
     CLU_(),
-    skyViewCoeffMatrix_(),
-    sunViewCoeffMatrix_(),    
+    solarLoadFineFacesGlobal_(),
+    skyViewCoeffGlobal_(),   
+    sunViewCoeffGlobal_(),
     selectedPatches_(mesh_.boundary().size(), -1),
     wallPatchOrNot_(mesh_.boundary().size(), 0),    
     totalNCoarseFaces_(0),
     nLocalCoarseFaces_(0),
-    nLocalWallCoarseFaces_(0),    
+    nLocalWallCoarseFaces_(0),
+    nLocalFineFaces_(0),        
+    totalNFineFaces_(0),
     constAlbedo_(false),
     timestepsInADay_(24),
     iterCounter_(0),
@@ -453,13 +504,16 @@ Foam::solarLoad::directAndDiffuse::directAndDiffuse
     ),
     Fmatrix_(),
     CLU_(),
-    skyViewCoeffMatrix_(),
-    sunViewCoeffMatrix_(),    
+    solarLoadFineFacesGlobal_(),    
+    skyViewCoeffGlobal_(),
+    sunViewCoeffGlobal_(),
     selectedPatches_(mesh_.boundary().size(), -1),
     wallPatchOrNot_(mesh_.boundary().size(), 0),    
     totalNCoarseFaces_(0),
     nLocalCoarseFaces_(0),
-    nLocalWallCoarseFaces_(0),    
+    nLocalWallCoarseFaces_(0),
+    nLocalFineFaces_(0),        
+    totalNFineFaces_(0),
     constAlbedo_(false),
     timestepsInADay_(24),
     iterCounter_(0),
@@ -514,32 +568,34 @@ void Foam::solarLoad::directAndDiffuse::insertMatrixElements
     //Info << "Fmatrix: " << Fmatrix << endl;
 }
 
-void Foam::solarLoad::directAndDiffuse::insertRectangularMatrixElements
+void Foam::solarLoad::directAndDiffuse::insertScalarListListElements
 (
     const globalIndex& globalNumbering,
     const label procI,
     const labelListList& sunskyMap,
     const labelListList& globalFaceFaces,
-    const scalarListList& skysunViewCoeffs,
-    scalarRectangularMatrix& skysunViewCoeffMatrix
+    const scalarListList& localCoeffs,
+    scalarListList& globalCoeffs,
+    const word& coarseOrFine
 )
 {
-    forAll(skysunViewCoeffs, vectorId)
+    forAll(localCoeffs, vectorId)
     {
-        const scalarList& vf = skysunViewCoeffs[vectorId];
-
-        //const labelList& globalFaces = globalFaceFaces[vectorId];
-        //label globalI = globalNumbering.toGlobal(procI, vectorId);
-
-        //Info << "globalFaces: " << globalFaces << endl; 
-
+        const scalarList& vf = localCoeffs[vectorId];
+        
         forAll(vf, faceI)
-        {        
-            skysunViewCoeffMatrix[vectorId][sunskyMap[procI][faceI]] = vf[faceI];
-        }
+        {
+            if (coarseOrFine == "coarse")
+            {               
+                globalCoeffs[vectorId][sunskyMap[procI][faceI]] = vf[faceI];
+            }
+            else
+            {
+                label globalI = globalNumbering.toGlobal(procI, faceI);
+                globalCoeffs[vectorId][globalI] = vf[faceI];
+            }
+        }        
     }
-
-   //Info << "skysunViewCoeffMatrix: " << skysunViewCoeffMatrix << endl;
 }
 
 void Foam::solarLoad::directAndDiffuse::calculate()
@@ -551,6 +607,7 @@ void Foam::solarLoad::directAndDiffuse::calculate()
     scalarField compactCoarseHo(map_->constructSize(), 0.0);
 
     globalIndex globalNumbering(nLocalCoarseFaces_);
+    globalIndex globalNumberingFine(nLocalFineFaces_);    
 
     // Fill local averaged Albedo(A) and external heatFlux(Ho)
     DynamicList<scalar> localCoarseAave(nLocalCoarseFaces_);
@@ -659,44 +716,39 @@ void Foam::solarLoad::directAndDiffuse::calculate()
 
     // Net solarLoad
     scalarField q(totalNCoarseFaces_, 0.0);
+    
+    Time& time = const_cast<Time&>(mesh_.time());   
+    // Read sunPosVector list
+    interpolationTable<vector> sunPosVector
+    (
+        mesh_.time().rootPath()
+        /mesh_.time().globalCaseName()
+        /mesh_.time().constant()
+        /"sunPosVector"
+    );            
+    // look for the correct range
+    label lo = 0;
+    label hi = 0;
+    for (label i = 0; i < sunPosVector.size(); ++i)
+    {
+        if (time.value() >= sunPosVector[i].first())
+        {
+            lo = hi = i;
+        }
+        else
+        {
+            hi = i;
+            break;
+        }   
+    }
+    scalar hi_fraction = 0; 
+    if (lo != hi) //if timestep is between two time values in sunPosVector
+    {
+        hi_fraction = (time.value() - sunPosVector[lo].first()) / (sunPosVector[hi].first() - sunPosVector[lo].first());
+    }  
 
     if (Pstream::master())
     {
-        Time& time = const_cast<Time&>(mesh_.time());   
-        // Read sunPosVector list
-        interpolationTable<vector> sunPosVector
-        (
-            mesh_.time().rootPath()
-            /mesh_.time().globalCaseName()
-            /mesh_.time().constant()
-            /"sunPosVector"
-        );            
-        // look for the correct range
-        label lo = 0;
-        label hi = 0;
-        for (label i = 0; i < sunPosVector.size(); ++i)
-        {
-            if (time.value() >= sunPosVector[i].first())
-            {
-                lo = hi = i;
-            }
-            else
-            {
-                hi = i;
-                break;
-            }   
-        }
-        scalar hi_fraction = 0; 
-        if (lo != hi) //if timestep is between two time values in sunPosVector
-        {
-            hi_fraction = (time.value() - sunPosVector[lo].first()) / (sunPosVector[hi].first() - sunPosVector[lo].first());
-        }
-        /*
-        label timestep = ceil( (time.value()/time.deltaT().value())-0.5 ); 
-        timestep = (timestep * timestepsInADay_) / (86400 / time.deltaT().value()); //e.g. in case you have 10min timesteps in solar radiation data, but solving for hourly timesteps
-        timestep = timestep % sunPosVectorLength_;
-        Info << "timestep: " << timestep << ", timestepsInADay_: " << timestepsInADay_ << ", sunPosVectorLength_: " << sunPosVectorLength_ << endl;
-        */
         // Variable Albedo
         if (!constAlbedo_) //this is not tested - aytac
         {
@@ -707,7 +759,7 @@ void Foam::solarLoad::directAndDiffuse::calculate()
                 for (label j=0; j<totalNCoarseFaces_; j++)
                 {
                     //scalar invEj = 1.0/E[j];
-                    scalar Isol = (skyViewCoeffMatrix_()[lo][j] + sunViewCoeffMatrix_()[lo][j]);
+                    scalar Isol = (skyViewCoeffGlobal_()[lo][j] + sunViewCoeffGlobal_()[lo][j]);
                     if (i==j)
                     {
                         C(i, j) = (1/(1-A[j]))-(A[j]/(1-A[j]))*Fmatrix_()(i, j);
@@ -754,8 +806,8 @@ void Foam::solarLoad::directAndDiffuse::calculate()
             {
                 for (label j=0; j<totalNCoarseFaces_; j++)
                 {
-                    scalar Isol = (skyViewCoeffMatrix_()[lo][j]*(1-hi_fraction) + skyViewCoeffMatrix_()[hi][j]*(hi_fraction)
-                                 + sunViewCoeffMatrix_()[lo][j]*(1-hi_fraction) + sunViewCoeffMatrix_()[hi][j]*(hi_fraction));
+                    scalar Isol = (skyViewCoeffGlobal_()[lo][j]*(1-hi_fraction) + skyViewCoeffGlobal_()[hi][j]*(hi_fraction)
+                                 + sunViewCoeffGlobal_()[lo][j]*(1-hi_fraction) + sunViewCoeffGlobal_()[hi][j]*(hi_fraction));
                     if (i==j)
                     {
                         q[i] += (- 1.0)*(-Isol) - qsExt[j];
@@ -776,9 +828,13 @@ void Foam::solarLoad::directAndDiffuse::calculate()
     // Scatter q and fill qs
     Pstream::listCombineScatter(q);
     Pstream::listCombineGather(q, maxEqOp<scalar>());
-
+    
+    Pstream::listCombineScatter(A);
+    Pstream::listCombineGather(A, maxEqOp<scalar>());    
 
     label globCoarseId = 0;
+    //label globFineId = 0;    
+    label fineFaceNo = 0;
     forAll(selectedPatches_, i)
     {
         const label patchID = selectedPatches_[i];
@@ -807,10 +863,21 @@ void Foam::solarLoad::directAndDiffuse::calculate()
                     label faceI = fineFaces[k];
 
                     qsp[faceI] = q[globalCoarse];
+                    if (isA<wallFvPatch>(mesh_.boundary()[patchID]))
+                    {
+                        label globalFine =
+                            globalNumberingFine.toGlobal(Pstream::myProcNo(), fineFaceNo+faceI);   
+                        qsp[faceI] -= (sunViewCoeffGlobal_()[lo][globalCoarse]*(1-hi_fraction) + sunViewCoeffGlobal_()[hi][globalCoarse]*(hi_fraction)) * (1-A[globalCoarse]);
+                        qsp[faceI] += (solarLoadFineFacesGlobal_()[lo][globalFine]*(1-hi_fraction) + solarLoadFineFacesGlobal_()[hi][globalFine]*(hi_fraction)) * (1-A[globalCoarse]);
+                    }
                     heatFlux += qsp[faceI]*sf[faceI];
                 }
                 globCoarseId ++;
             }
+        }
+        if (isA<wallFvPatch>(mesh_.boundary()[patchID]))
+        {
+            fineFaceNo += pp.size();
         }
     }
 

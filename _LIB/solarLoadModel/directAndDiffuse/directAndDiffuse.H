@@ -91,13 +91,18 @@ class directAndDiffuse
         //- Inverse of C matrix
         autoPtr<scalarSquareMatrix> CLU_;
         
-        //- skyViewCoeffMatrix_
-        autoPtr<scalarRectangularMatrix> skyViewCoeffMatrix_;
+        //- solarLoadFineFaces_
+        autoPtr<scalarListList> solarLoadFineFacesGlobal_;
+            
+        label solarLoadFineFacesSize;         
+        
+        //- skyViewCoeffGlobal_
+        autoPtr<scalarListList> skyViewCoeffGlobal_;
 
         label skyViewCoeffSize; 
         
-        //- sunViewCoeffMatrix_
-        autoPtr<scalarRectangularMatrix> sunViewCoeffMatrix_;    
+        //- sunViewCoeffGlobal_
+        autoPtr<scalarListList> sunViewCoeffGlobal_;        
 
         label sunViewCoeffSize;    
 
@@ -114,7 +119,13 @@ class directAndDiffuse
         label nLocalCoarseFaces_;
         
         //- Total local wall coarse faces
-        label nLocalWallCoarseFaces_;        
+        label nLocalWallCoarseFaces_;
+        
+        //- Total local wall fine faces
+        label nLocalFineFaces_;        
+
+        //- Total global wall fine faces
+        label totalNFineFaces_;
 
         //- Constant albedo
         bool constAlbedo_;
@@ -145,16 +156,17 @@ class directAndDiffuse
             const scalarListList& viewFactors,
             scalarSquareMatrix& matrix
         );
-
-        void insertRectangularMatrixElements
+        
+        void insertScalarListListElements
         (
             const globalIndex& index,
             const label fromProcI,
             const labelListList& sunskyMap,
             const labelListList& globalFaceFaces,
-            const scalarListList& skysunViewCoeffs,
-            scalarRectangularMatrix& skysunViewCoeffMatrix
-        );              
+            const scalarListList& localCoeffs,
+            scalarListList& globalCoeffs,
+            const word& coarseOrFine
+        );                    
 
         //- Disallow default bitwise copy construct
         directAndDiffuse(const directAndDiffuse&);

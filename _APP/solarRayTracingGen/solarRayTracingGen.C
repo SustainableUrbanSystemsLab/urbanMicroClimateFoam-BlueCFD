@@ -36,7 +36,7 @@ Description
 #include "Time.H"
 #include "volFields.H"
 #include "surfaceFields.H"
-#include "distributedTriSurfaceMesh.H"
+#include "distributedTriSurfaceMeshBugFix.H"
 #include "cyclicAMIPolyPatch.H"
 #include "triSurfaceTools.H"
 #include "mapDistribute.H"
@@ -682,11 +682,11 @@ int main(int argc, char *argv[])
     // Fill local view factor matrix
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    /*labelListIOList sunVisibleOrNot
+    scalarListIOList solarLoadFineFaces
     (
         IOobject
         (
-            "sunVisibleOrNot",
+            "solarLoadFineFaces",
             mesh.facesInstance(),
             mesh,
             IOobject::NO_READ,
@@ -694,7 +694,7 @@ int main(int argc, char *argv[])
             false
         ),
         sunPosVector.size()
-    );*/ 
+    );   
     scalarListIOList sunViewCoeff
     (
         IOobject
@@ -722,16 +722,13 @@ int main(int argc, char *argv[])
         sunPosVector.size()
     );    
     
-    //labelList dummy(nCoarseFacesAll, -1);
-    //scalarList dummy2(nCoarseFacesAll, 0.0);
     scalarList init(nCoarseFacesAll, 0.0);
+    scalarList initFine(nFineFaces, 0.0);
     forAll(sunViewCoeff, vectorId)
     {
-        //sunVisibleOrNot[vectorId] = dummy;
-        //sunViewCoeff[vectorId] = dummy2;
-        //skyViewCoeff[vectorId] = dummy2;
         sunViewCoeff[vectorId] = init;
         skyViewCoeff[vectorId] = init;
+        solarLoadFineFaces[vectorId] = initFine;
     }
 
     scalar cosPhi = 0;
@@ -741,9 +738,7 @@ int main(int argc, char *argv[])
     label faceNo = 0;
     label fineFaceNo = 0;     
     label patchIDall = 0;
-    //label i = 0;
     label j = 0;
-    //label k = 0;
     label faceNoAll = 0;
 
     regionProperties rp(runTime); 
@@ -772,26 +767,19 @@ int main(int argc, char *argv[])
 
         forAll(viewFactorsPatches, patchID)
         {
-            //while (i < viewFactorsPatches[patchID])
             while (patchIDall < viewFactorsPatches[patchID])
             {
-                //while (j < howManyCoarseFacesPerPatch[i])
                 while (j < howManyCoarseFacesPerPatch[patchIDall])
                 {
-                    //sunVisibleOrNot[vectorId][k] = 0;
-                    //k++;
                     faceNoAll++;
                     j++;
                 }
                 j = 0;
-                //i++;
                 patchIDall++;
             } 
             
-            //while (j < howManyCoarseFacesPerPatch[i])
             while (j < howManyCoarseFacesPerPatch[patchIDall])
             {
-                //sunVisibleOrNot[vectorId][k] = nVisibleFaceFacesList[vectorId][faceNo];
 
                 /////////////////////////////////////////////////////////////////////////
                 const labelList& agglom = finalAgglom[patchIDall];
@@ -799,34 +787,23 @@ int main(int argc, char *argv[])
                 labelListList coarseToFine(invertOneToMany(nAgglom, agglom));
                 const labelList& coarsePatchFace = coarseMesh.patchFaceMap()[patchIDall];
                 const label coarseFaceI = coarsePatchFace[j];
-                const labelList& fineFaces = coarseToFine[coarseFaceI];                
+                const labelList& fineFaces = coarseToFine[coarseFaceI];
                 
+                forAll(fineFaces, k)
+                {
+                     label faceI = fineFaces[k];
+                     cosPhi = (localFINESf[fineFaceNo+faceI] & sunPos)/(mag(localFINESf[fineFaceNo+faceI])*mag(sunPos) + SMALL);
+                     solarLoadFineFaces[vectorId][fineFaceNo+faceI] = nVisibleFaceFacesListFINE[vectorId][fineFaceNo+faceI]*mag(cosPhi) * IDN[vectorId].second();                                                  
+                }
+                                
                 scalar nVisibleFaceFacesListFINE_avg = 0;
                 forAll(fineFaces,fineFaceI)
                 {
                     nVisibleFaceFacesListFINE_avg += (nVisibleFaceFacesListFINE[vectorId][fineFaceNo+fineFaces[fineFaceI]])
                                                     * (mesh.magSf().boundaryField()[patchIDall][fineFaces[fineFaceI]])
-                                                    / (coarseMesh.magSf().boundaryField()[patchIDall][j]);                                                    
-                }  
-               
-                if(j==0)
-                {
-                    Info << "patchIDall:" << patchIDall << ", fineFaceNo: " << fineFaceNo << endl;
-                }                    
+                                                    / (coarseMesh.magSf().boundaryField()[patchIDall][j]);
+                }                                  
                 
-                if(patchIDall==6&&vectorId==0)
-                {
-                    //Info << "TEST: " << nVisibleFaceFacesListFINE_avg << endl;                      
-                    if(j==6)
-                    {
-                        forAll(fineFaces,fineFaceI)
-                        {                        
-                            //Info << (nVisibleFaceFacesListFINE[vectorId][fineFaceNo+fineFaces[fineFaceI]]) << endl;
-                        }
-                        Info << "fineFaceNo: " << fineFaceNo << endl;
-                        //Info << "fineFaces: " << fineFaces << endl;
-                    }
-                }
                 /////////////////////////////////////////////////////////////////////////
 
                 cosPhi = (localCoarseSf[faceNo] & sunPos)/(mag(localCoarseSf[faceNo])*mag(sunPos) + SMALL);                
@@ -840,6 +817,15 @@ int main(int argc, char *argv[])
                     //nVisibleFaceFacesListFINE_avg indicates the ratio of coarseFace that see the sun
                     {
                         sunViewCoeff[vectorId][faceNoAll] += (1 - nVisibleFaceFacesListFINE_avg) * mag(cosPhi) * IDN[vectorId].second() * Foam::exp(-kcLAIboundaryList[vectorId][faceNoAll]); // beer-lambert law
+                        forAll(fineFaces, k)
+                        {
+                             label faceI = fineFaces[k];
+                             cosPhi = (localFINESf[fineFaceNo+faceI] & sunPos)/(mag(localFINESf[fineFaceNo+faceI])*mag(sunPos) + SMALL);
+                             if(!nVisibleFaceFacesListFINE[vectorId][fineFaceNo+faceI])
+                             {
+                                 solarLoadFineFaces[vectorId][fineFaceNo+faceI] = mag(cosPhi) * IDN[vectorId].second() * Foam::exp(-kcLAIboundaryList[vectorId][faceNoAll]); // beer-lambert law;
+                             }
+                        }
                     }
                 }
                 
@@ -861,17 +847,13 @@ int main(int argc, char *argv[])
         faceNo = 0;
         fineFaceNo = 0;
     }
-    //Info << "sunVisibleOrNot: " << sunVisibleOrNot << endl;    
-
-    //Info << "localCoarseCf: " << localCoarseCf << endl;    
-    //Info << "localCoarseSf: " << localCoarseSf << endl;
     
     Info << "sunViewCoeff: " << sunViewCoeff << endl;    
     Info << "skyViewCoeff: " << skyViewCoeff << endl;    
 
-    //sunVisibleOrNot.write();
     sunViewCoeff.write();    
-    skyViewCoeff.write();    
+    skyViewCoeff.write();
+    solarLoadFineFaces.write();  
 
     Info<< "End\n" << endl;
     return 0;
