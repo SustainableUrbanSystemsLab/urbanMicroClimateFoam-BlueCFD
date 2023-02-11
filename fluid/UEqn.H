@@ -14,6 +14,11 @@
     );
     fvVectorMatrix& UEqn = tUEqn.ref();
 
+    if (blending)
+    {
+        UEqn -= rho*bL.bL_USource(U);
+    }
+
     UEqn.relax();
 
     fvOptions.constrain(UEqn);

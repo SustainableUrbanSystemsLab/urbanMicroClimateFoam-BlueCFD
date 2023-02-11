@@ -1,0 +1,3 @@
+blendingLayer.C
+
+LIB = $(FOAM_USER_LIBBIN)/libblendingLayer

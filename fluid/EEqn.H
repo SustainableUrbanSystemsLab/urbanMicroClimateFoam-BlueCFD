@@ -20,6 +20,11 @@
       + fvOptions(rho, he)
     );
 
+    if (blending)
+    {
+        EEqn -= rho*thermo.Cp()*bL.bL_TSource(thermo.T());
+    }
+
     EEqn.relax();
 
     fvOptions.constrain(EEqn);

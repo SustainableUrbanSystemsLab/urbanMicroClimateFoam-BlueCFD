@@ -6,6 +6,7 @@ EXE_INC = \
     -I_LIB/grassModel/lnInclude \
     -I_LIB/buildingMaterialModel/lnInclude \
     -I_LIB/simpleControlFluid/lnInclude \
+    -I_LIB/blendingLayer/lnInclude \
     -I_LIB/vegetationModels/lnInclude \
     -I$(LIB_SRC)/finiteVolume/lnInclude \
     -I$(LIB_SRC)/meshTools/lnInclude \
@@ -27,6 +28,7 @@ EXE_LIBS = \
     $(FOAM_USER_LIBBIN)/libgrassModel.so \
     $(FOAM_USER_LIBBIN)/libbuildingMaterialModel.so \
     $(FOAM_USER_LIBBIN)/libsimpleControlFluid.so \
+    $(FOAM_USER_LIBBIN)/libblendingLayer.so \
     $(FOAM_USER_LIBBIN)/libvegetationModels.so \
     -lfiniteVolume \
     -lcompressibleTransportModels \
