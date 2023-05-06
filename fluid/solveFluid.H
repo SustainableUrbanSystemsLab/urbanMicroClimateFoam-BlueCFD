@@ -1,13 +1,12 @@
 simpleControlFluid simpleControlFluid(fluidRegions[i]);
 
+runTime.setTime(runTime.value(),1);
 TimeState pts(runTime); //store time state
 
-label fluidIteration = 1;
-
-while ((simpleControlFluid.run(runTime) || fluidIteration <= minFluidIteration) && fluidIteration <= maxFluidIteration)
+while ((simpleControlFluid.run(runTime) || runTime.timeIndex() <= minFluidIteration) && runTime.timeIndex() <= maxFluidIteration)
 {
 //  Pressure-velocity SIMPLE corrector
-    Info << "Internal iteration number: " << fluidIteration << endl;
+    Info << "Internal iteration number: " << runTime.timeIndex() << endl;
 
     if(!simple.lookupOrDefault<bool>("frozenFlow", 0))
     {
@@ -29,11 +28,10 @@ while ((simpleControlFluid.run(runTime) || fluidIteration <= minFluidIteration) 
     }
 
     Info << nl;
-    fluidIteration++;
 }
 
-Info<< nl << fluidRegions[i].name() << " region solution converged in "
-    << fluidIteration-1 << " iterations" << nl << endl;
+Info<< nl << fluidRegions[i].name() << " region solution ended in "
+    << runTime.timeIndex()-1 << " iterations" << nl << endl;
 
 runTime.TimeState::operator=(pts); //restore time state
 
