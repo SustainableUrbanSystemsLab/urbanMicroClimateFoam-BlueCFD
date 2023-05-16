@@ -105,6 +105,9 @@ class simplifiedVegetation
 		volScalarField Rg_;     // global radiation
 		volScalarField Rn_;     // global radiation density in volume
 		volScalarField VPD_;    // vapor pressure deficit
+		
+		scalar Tl_relax;
+		scalar Tl_residualControl;
 
     // Private Member Functions
         //- Initialise
