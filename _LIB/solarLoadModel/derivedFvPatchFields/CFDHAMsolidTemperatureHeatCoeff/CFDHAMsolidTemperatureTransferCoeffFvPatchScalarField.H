@@ -86,8 +86,12 @@ class CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
         const scalar betacoeff_;
         
          //- Path to the file with the reference exterior vapor pressure values
-        const fileName pv_o_;                     	                    
-                 
+        const fileName pv_o_;
+        
+        //veg qr
+        scalarField qrNbr;
+        //veg qs
+        scalarField qsNbr;                               	                    
 
 public:
 
