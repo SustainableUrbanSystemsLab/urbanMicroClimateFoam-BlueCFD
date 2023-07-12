@@ -23,117 +23,101 @@ License
 
 Class
     Foam::
-    compressible::
-    CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
+    blendingLayerVelFvPatchVectorField
 
 Description
-    Coupled boundary condition for heat flux at solid boundaries
+    Reads lists of boundary values with spatial and temporal variation based 
+    on mesoscale simulations
+
     Written by Aytac Kubilay    
 
     Example usage:
-        myInterfacePatchName
+        myPatchName
         {
-            type            compressible::CFDHAMsolidTemperatureTransferCoeff;
-            qrNbr           qr; //or none, name of thermal radiation from neighbour region
-            qsNbr           qs; //or none, name of solar radiation from neighbour region
-            hcoeff          8.0;
-            Tamb            "$FOAM_CASE/0/Ta.dat";
-            betacoeff       1e-8;
-            pv_o            "$FOAM_CASE/0/pv_o.dat";            
-            value           uniform 293.15;
+            type            blendingLayerVel;
+            inputTimeStep   3600;
+            value           uniform (1 1 0);
         }
 
 SourceFiles
-    CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField.C
+    blendingLayerVelFvPatchVectorField.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField_H
-#define CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField_H
+#ifndef blendingLayerVelFvPatchVectorField_H
+#define blendingLayerVelFvPatchVectorField_H
 
-#include "mixedFvPatchFields.H"
+#include "fvPatchFields.H"
+#include "fixedValueFvPatchFields.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
 {
-namespace compressible
-{
 
 /*---------------------------------------------------------------------------*\
-    Class CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField Declaration
+    Class blendingLayerVelFvPatchVectorField Declaration
 \*---------------------------------------------------------------------------*/
 
-class CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
+class blendingLayerVelFvPatchVectorField
 :
-    public mixedFvPatchScalarField
+    public fixedValueFvPatchVectorField
 {        
     // Private data
+        
+        //mesoscale timestep interval
+        label inputTimeStep;
 
-         //- Name of the thermal radiative heat flux in the neighbour region
-        const word qrNbrName_;
-        
-         //- Name of the solar radiative heat flux in the neighbour region
-        const word qsNbrName_;
-        
-         //- Convective heat transfer coefficient [W/m2K]
-        const scalar hcoeff_;
-        
-         //- Path to the file with the reference temperature values
-        const fileName Tamb_;   
-        
-         //- Convective moisture transfer coefficient [s/m]
-        const scalar betacoeff_;
-        
-         //- Path to the file with the reference exterior vapor pressure values
-        const fileName pv_o_;
-        
-        //veg qr
-        scalarField qrNbr;
-        //veg qs
-        scalarField qsNbr;                               	                    
+        //mesoscale target field
+        vectorField Utarget_Field;                     
 
 public:
 
     //- Runtime type information
-    TypeName("compressible::CFDHAMsolidTemperatureTransferCoeff");
+    TypeName("blendingLayerVel");
 
 
     // Constructors
 
         //- Construct from patch and internal field
-        CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
+        blendingLayerVelFvPatchVectorField
         (
             const fvPatch&,
-            const DimensionedField<scalar, volMesh>&
+            const DimensionedField<vector, volMesh>&
         );
 
         //- Construct from patch, internal field and dictionary
-        CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
+        blendingLayerVelFvPatchVectorField
         (
             const fvPatch&,
-            const DimensionedField<scalar, volMesh>&,
+            const DimensionedField<vector, volMesh>&,
             const dictionary&
         );
 
         //- Construct by mapping given
         //  turbulentTemperatureCoupledBaffleMixedFvPatchScalarField onto a
         //  new patch
-        CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
+        blendingLayerVelFvPatchVectorField
         (
             const
-            CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField&,
+            blendingLayerVelFvPatchVectorField&,
             const fvPatch&,
-            const DimensionedField<scalar, volMesh>&,
+            const DimensionedField<vector, volMesh>&,
             const fvPatchFieldMapper&
         );
+        
+        //- Construct as copy
+        blendingLayerVelFvPatchVectorField
+        (
+            const blendingLayerVelFvPatchVectorField&
+        );        
 
         //- Construct and return a clone
-        virtual tmp<fvPatchScalarField> clone() const
+        virtual tmp<fvPatchVectorField> clone() const
         {
-            return tmp<fvPatchScalarField>
+            return tmp<fvPatchVectorField>
             (
-                new CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
+                new blendingLayerVelFvPatchVectorField
                 (
                     *this
                 )
@@ -141,21 +125,21 @@ public:
         }
 
         //- Construct as copy setting internal field reference
-        CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
+        blendingLayerVelFvPatchVectorField
         (
-            const CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField&,
-            const DimensionedField<scalar, volMesh>&
+            const blendingLayerVelFvPatchVectorField&,
+            const DimensionedField<vector, volMesh>&
         );
 
         //- Construct and return a clone setting internal field reference
-        virtual tmp<fvPatchScalarField> clone
+        virtual tmp<fvPatchVectorField> clone
         (
-            const DimensionedField<scalar, volMesh>& iF
+            const DimensionedField<vector, volMesh>& iF
         ) const
         {
-            return tmp<fvPatchScalarField>
+            return tmp<fvPatchVectorField>
             (
-                new CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
+                new blendingLayerVelFvPatchVectorField
                 (
                     *this,
                     iF
@@ -171,12 +155,12 @@ public:
 
         //- Write
         virtual void write(Ostream&) const;
+           
 };
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-} // End namespace compressible
 } // End namespace Foam
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

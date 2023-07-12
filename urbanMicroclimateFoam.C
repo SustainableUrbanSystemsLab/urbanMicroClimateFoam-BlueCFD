@@ -48,6 +48,8 @@ Description
 #include "simpleControlFluid.H"
 #include "fvOptions.H"
 
+#include "blendingLayer.H"
+
 #include "vegetationModel.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

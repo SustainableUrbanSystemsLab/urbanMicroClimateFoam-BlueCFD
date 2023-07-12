@@ -34,8 +34,14 @@ const label maxDynListLengthFINE
             const point& remFc = remoteFcFINE[iFINE];
             
             const vector& d = remFc - fc;
-           
-            startFINE.append(fc + 0.001*d);
+            
+            scalar surfTol = 0.001;
+            scalar cellLen = Foam::sqrt(mag(area));
+            if (surfTol*mag(d) < cellLen)
+            {
+                surfTol = max(0.001,(cellLen/(mag(d)+SMALL))/2); //to avoid start points very close to the surface
+            }
+            startFINE.append(fc + surfTol*d);
             startFINEIndex.append(iFINE);
             startFINEArea.append(area);
             endFINE.append(fc + 0.999*d);
@@ -50,12 +56,8 @@ const label maxDynListLengthFINE
         List<pointIndexHit> hitInfo(startFINEIndex.size());
         surfacesMesh.findLine(startFINE, endFINE, hitInfo);
         
-        //Info << "startFINE: " << startFINE << endl;
-        
         forAll(hitInfo, rayI)
         {
-            //Info << "rayI: " << rayI << startFINE[rayI] << endFINE[rayI] << endl; //debug
-
             if (!hitInfo[rayI].hit()) // if the ray did not hit any surface between start and end positions...
             {
                 scalar cosPhiTest = (startFINEArea[rayI] & sunPos)/(mag(startFINEArea[rayI])*mag(sunPos) + SMALL);

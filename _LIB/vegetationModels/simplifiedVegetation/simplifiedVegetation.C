@@ -299,6 +299,13 @@ Foam::vegetation::simplifiedVegetation::simplifiedVegetation
 		//bound(Tl_, TlMin_);
         initialise();
         Info << " Defined simplifiedVegetation model" << endl;
+        
+        // read relaxation factor for Tl - aytac
+        dictionary relaxationDict = mesh_.solutionDict().subDict("relaxationFactors");
+        Tl_relax = relaxationDict.lookupOrDefault<scalar>("Tl", 0.5);     
+        
+        dictionary residualControlDict = mesh_.solutionDict().subDict("SIMPLE").subDict("residualControl");
+        Tl_residualControl = residualControlDict.lookupOrDefault<scalar>("Tl", 1e-8);
     }
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
@@ -506,16 +513,12 @@ void Foam::vegetation::simplifiedVegetation::calculate(volVectorField& U, volSca
         maxError = gMax(mag(new_Tl.primitiveField()-Tl_.primitiveField()));
         maxRelError = maxError/gMax(mag(new_Tl.primitiveField()));
 
-        // read relaxation factor for Tl - aytac
-        dictionary relaxationDict = mesh_.solutionDict().subDict("relaxationFactors");
-        scalar Tl_relax = relaxationDict.lookupOrDefault<scalar>("Tl", 0.5);
-
         // update leaf temp.
         forAll(Tl_, cellI)
             Tl_[cellI] = (1-Tl_relax)*Tl_[cellI]+(Tl_relax)*new_Tl[cellI];
 
          // convergence check
-         if (maxRelError < 1e-8)
+         if (maxRelError < Tl_residualControl)
              break;
     }
     Tl_.correctBoundaryConditions();

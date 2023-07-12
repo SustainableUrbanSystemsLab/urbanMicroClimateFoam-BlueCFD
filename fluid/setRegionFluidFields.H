@@ -39,6 +39,12 @@
     const surfaceScalarField& ghf = ghfFluid[i];
 
 
-
+bool blending =
+    runTime.controlDict().lookupOrDefault<bool>("blending", false);
+blendingLayer bL(U, thermo.T());
+if (blending)
+{
+    bL.initialize();
+}
 
 

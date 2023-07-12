@@ -10,3 +10,5 @@ wmake $makeType simpleControlFluid
 wmake $makeType grassModel
 wmake $makeType turbulenceModels
 wmake $makeType vegetationModels
+wmake $makeType parallel/distributed
+wmake $makeType blendingLayer

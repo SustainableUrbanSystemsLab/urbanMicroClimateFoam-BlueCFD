@@ -54,9 +54,9 @@ dict.add("bounds", meshBb);
 dict.add
 (
     "distributionType",
-    distributedTriSurfaceMesh::distributionTypeNames_
+    distributedTriSurfaceMeshBugFix::distributionTypeNames_
     [
-        distributedTriSurfaceMesh::FROZEN
+        distributedTriSurfaceMeshBugFix::FROZEN
     ]
 );
 dict.add("mergeDistance", SMALL);
@@ -88,7 +88,7 @@ const triSurface localSurface = triangulate
     coarsePatches
 );
 
-distributedTriSurfaceMesh surfacesMesh
+distributedTriSurfaceMeshBugFix surfacesMesh
 (
     IOobject
     (

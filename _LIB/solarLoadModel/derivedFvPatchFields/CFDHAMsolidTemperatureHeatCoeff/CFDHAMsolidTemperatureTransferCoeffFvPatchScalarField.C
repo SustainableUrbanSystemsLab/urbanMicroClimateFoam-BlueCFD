@@ -57,7 +57,9 @@ CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
     hcoeff_(),
     Tamb_(),
     betacoeff_(),
-    pv_o_()  
+    pv_o_(),
+    qrNbr(0),
+    qsNbr(0)  
 {
     this->refValue() = 0.0;
     this->refGrad() = 0.0;
@@ -80,7 +82,9 @@ CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
     hcoeff_(psf.hcoeff_),
     Tamb_(psf.Tamb_),
     betacoeff_(psf.betacoeff_),
-    pv_o_(psf.pv_o_) 
+    pv_o_(psf.pv_o_),
+    qrNbr(psf.qrNbr),
+    qsNbr(psf.qsNbr) 
 {}
 
 
@@ -98,7 +102,9 @@ CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
     hcoeff_(dict.lookupOrDefault<scalar>("hcoeff",0)),
     Tamb_(dict.lookupOrDefault<fileName>("Tamb", "none")),
     betacoeff_(dict.lookupOrDefault<scalar>("betacoeff",0)),
-    pv_o_(dict.lookupOrDefault<fileName>("pv_o", "none")) 
+    pv_o_(dict.lookupOrDefault<fileName>("pv_o", "none")),
+    qrNbr(Zero),
+    qsNbr(Zero) 
 {
     if (!isA<mappedPatchBase>(this->patch().patch()))
     {
@@ -142,7 +148,9 @@ CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField
     hcoeff_(psf.hcoeff_),
     Tamb_(psf.Tamb_),
     betacoeff_(psf.betacoeff_),
-    pv_o_(psf.pv_o_)   
+    pv_o_(psf.pv_o_),
+    qrNbr(psf.qrNbr),
+    qsNbr(psf.qsNbr)   
 {}
 
 
@@ -301,8 +309,11 @@ void CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField::updateCoeffs()
     }
     //////////////////////////////////////////////////////////////////////////
 
-    scalarField qrNbr(Tp.size(), 0.0);
-    scalarField qsNbr(Tp.size(), 0.0);
+    //scalarField qrNbr(Tp.size(), 0.0);
+    //scalarField qsNbr(Tp.size(), 0.0);
+    dictionary controlDict_ = time.controlDict();
+    const scalar deltaT_(readScalar(controlDict_.lookup("deltaT")));
+    label moduloTest = int(time.value()/deltaT_);    
 
     //-- Access vegetation region and populate radiation if vegetation exists,
     //otherwise use radiation from air region --//
@@ -311,45 +322,49 @@ void CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField::updateCoeffs()
 
     if (vegNames.size()>0)
     {
-        const word& vegiRegion = "vegetation";
-        const scalar mppVegDistance = 0;
- 
-        const polyMesh& vegiMesh =
-        	patch().boundaryMesh().mesh().time().lookupObject<polyMesh>(vegiRegion);
- 
-        const word& nbrPatchName = nbrPatch.name();
- 
-        const label patchi = vegiMesh.boundaryMesh().findPatchID(nbrPatchName);
-    
-        const fvPatch& vegiNbrPatch =
-            refCast<const fvMesh>(vegiMesh).boundary()[patchi];
- 
-        const mappedPatchBase& mppVeg = mappedPatchBase(patch().patch(), vegiRegion, mpp.mode(), mpp.samplePatch(), mppVegDistance);
-        //const mappedPatchBase& mppVeg =
-        //    refCast<const mappedPatchBase>(patch().patch(), vegiRegion, mpp.mode(), mpp.samplePatch(), mppVegDistance);
- 
-        if (qrNbrName_ != "none")
-        {
-            qrNbr = vegiNbrPatch.lookupPatchField<volScalarField, scalar>(qrNbrName_);
-            mppVeg.distribute(qrNbr);
-        }
-        if (qsNbrName_ != "none")
-        {
-            qsNbr = vegiNbrPatch.lookupPatchField<volScalarField, scalar>(qsNbrName_);
-            mppVeg.distribute(qsNbr);
+        if(time.value()/deltaT_ - moduloTest < SMALL) //update qs and qr once at the beginning
+        {    
+            const word& vegiRegion = "vegetation";
+            const scalar mppVegDistance = 0;
+     
+            const polyMesh& vegiMesh =
+                patch().boundaryMesh().mesh().time().lookupObject<polyMesh>(vegiRegion);
+     
+            const word& nbrPatchName = nbrPatch.name();
+     
+            const label patchi = vegiMesh.boundaryMesh().findPatchID(nbrPatchName);
+        
+            const fvPatch& vegiNbrPatch =
+                refCast<const fvMesh>(vegiMesh).boundary()[patchi];
+     
+            const mappedPatchBase& mppVeg = mappedPatchBase(patch().patch(), vegiRegion, mpp.mode(), mpp.samplePatch(), mppVegDistance);
+     
+            if (qrNbrName_ != "none")
+            {
+                qrNbr = vegiNbrPatch.lookupPatchField<volScalarField, scalar>(qrNbrName_);
+                mppVeg.distribute(qrNbr);
+            }
+            if (qsNbrName_ != "none")
+            {
+                qsNbr = vegiNbrPatch.lookupPatchField<volScalarField, scalar>(qsNbrName_);
+                mppVeg.distribute(qsNbr);
+            }
         }
     }
     else
     {
-        if (qrNbrName_ != "none")
-        {
-            qrNbr = nbrPatch.lookupPatchField<volScalarField, scalar>(qrNbrName_);
-            mpp.distribute(qrNbr);
-        }
-        if (qsNbrName_ != "none")
-        {
-            qsNbr = nbrPatch.lookupPatchField<volScalarField, scalar>(qsNbrName_);
-            mpp.distribute(qsNbr);
+        if(time.value()/deltaT_ - moduloTest < SMALL) //update qs and qr once at the beginning
+        {    
+            if (qrNbrName_ != "none")
+            {
+                qrNbr = nbrPatch.lookupPatchField<volScalarField, scalar>(qrNbrName_);
+                mpp.distribute(qrNbr);
+            }
+            if (qsNbrName_ != "none")
+            {
+                qsNbr = nbrPatch.lookupPatchField<volScalarField, scalar>(qsNbrName_);
+                mpp.distribute(qsNbr);
+            }
         }   
     }
     //////////////////////////////
