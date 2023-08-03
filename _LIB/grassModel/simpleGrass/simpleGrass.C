@@ -162,6 +162,13 @@ Foam::grass::simpleGrass::simpleGrass(const volScalarField& T)
     selectedPatches_(mesh_.boundary().size(), -1)
 {
     initialise();
+
+    // read relaxation factor for Tg - aytac
+    dictionary relaxationDict = mesh_.solutionDict().subDict("relaxationFactors");
+    Tg_relax = relaxationDict.lookupOrDefault<scalar>("Tg", 0.5);
+
+    dictionary residualControlDict = mesh_.solutionDict().subDict("SIMPLE").subDict("residualControl");
+    Tg_residualControl = residualControlDict.lookupOrDefault<scalar>("Tg", 1e-8);
 }
 
 
@@ -300,12 +307,8 @@ void Foam::grass::simpleGrass::calculate
             scalar maxError = gMax(mag(Tg_new-Tg));
             scalar maxRelError = maxError/gMax(mag(Tg_new));
 
-            // read relaxation factor for Tg - aytac
-            dictionary relaxationDict = mesh_.solutionDict().subDict("relaxationFactors");
-            scalar Tg_relax = relaxationDict.lookupOrDefault<scalar>("Tg", 0.5);
-
             // convergence check
-            if ((maxRelError < 1e-8) && (maxError < 1e-8))
+            if (maxRelError < Tg_residualControl)
             {
                 if(debug_)
                 {

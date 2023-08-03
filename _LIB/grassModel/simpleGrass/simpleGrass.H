@@ -59,9 +59,9 @@ class simpleGrass
         //- grass leaf temperature [K]
         volScalarField Tg_;
 
-		volScalarField Sw_;
-		volScalarField Sh_;
-		volScalarField Cf_;		
+        volScalarField Sw_;
+        volScalarField Sh_;
+        volScalarField Cf_;     
 
         //- Selected patches
         labelList selectedPatches_;
@@ -75,20 +75,23 @@ class simpleGrass
         scalar albedoSoil_; // short-wave reflectivity for soil
         scalar emissivitySoil_; // long-wave reflectivity for soil
 
-		scalar p_; // air pressure - Pa
-		scalar rhoa; // density of air - kg/m3
-		scalar cpa; // specific heat of air at constant pressure - J/(kgK)
+        scalar p_; // air pressure - Pa
+        scalar rhoa; // density of air - kg/m3
+        scalar cpa; // specific heat of air at constant pressure - J/(kgK)
         scalar Ra; //gas constant for air
         scalar Rv; //gas constant for vapour
 
-		scalar rs; //stomatal resistance - s/m
-		scalar ra; //aerodynamic resistance - s/m
-		
+        scalar rs; //stomatal resistance - s/m
+        scalar ra; //aerodynamic resistance - s/m
+        
         //- debug switch
         bool debug_;
 
         //- Grass patch ID
         label grassPatchID;
+
+        scalar Tg_relax;
+        scalar Tg_residualControl;
 
     // Private Member Functions
 
