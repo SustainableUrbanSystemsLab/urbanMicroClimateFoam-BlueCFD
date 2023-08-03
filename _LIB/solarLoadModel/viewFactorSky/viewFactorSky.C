@@ -34,6 +34,8 @@ License
 #include "interpolationTable.H"
 #include "hashedWordList.H"
 
+#include "mappedPatchBase.H"
+
 using namespace Foam::constant;
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
@@ -448,15 +450,17 @@ void Foam::radiation::viewFactorSky::calculate()
     //////////////////////////////////////////////////////////////////////////
     //is grass model activated?
     hashedWordList grassPatches;
+    const polyMesh& airMesh =
+        mesh_.time().lookupObject<polyMesh>("air");
     IOdictionary grassProperties
     (
-		IOobject
-		(
-		    "grassProperties",
-		    mesh_.time().constant(),
-		    mesh_,
-		    IOobject::READ_IF_PRESENT,
-		    IOobject::NO_WRITE
+        IOobject
+        (
+            "grassProperties",
+            airMesh.time().constant(), 
+            airMesh,
+            IOobject::MUST_READ,
+            IOobject::NO_WRITE
         )
     );
     if (grassProperties.typeHeaderOk<IOdictionary>(true))
@@ -479,7 +483,23 @@ void Foam::radiation::viewFactorSky::calculate()
         scalarField Tg_(T_.size(), -1.0);
         if (grassPatches.contains(mesh_.boundary()[patchID].name()))
         {
-            Tg_ = mesh_.boundary()[patchID].lookupPatchField<volScalarField, scalar>("Tg");
+            if(mesh_.name() == "vegetation")
+            {
+                // Get the coupling information from the mappedPatchBase
+                const mappedPatchBase& mpp =
+                    refCast<const mappedPatchBase>(mesh_.boundary()[patchID].patch());
+                const polyMesh& nbrMesh = mpp.sampleMesh();
+                const label samplePatchI = mpp.samplePolyPatch().index();
+                const fvPatch& nbrPatch =
+                    refCast<const fvMesh>(nbrMesh).boundary()[samplePatchI];
+                scalarField TgNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("Tg");
+                    mpp.distribute(TgNbr);
+                Tg_ = TgNbr;
+            }
+            else
+            {
+                Tg_ = mesh_.boundary()[patchID].lookupPatchField<volScalarField, scalar>("Tg");
+            }        
         }
 
         fvPatchScalarField& qrPatch = qrBf[patchID];
