@@ -459,7 +459,7 @@ void Foam::radiation::viewFactorSky::calculate()
             "grassProperties",
             airMesh.time().constant(), 
             airMesh,
-            IOobject::MUST_READ,
+            IOobject::READ_IF_PRESENT,
             IOobject::NO_WRITE
         )
     );
