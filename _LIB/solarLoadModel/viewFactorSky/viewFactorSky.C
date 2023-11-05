@@ -674,13 +674,44 @@ void Foam::radiation::viewFactorSky::calculate()
                         }
                     }
                 }
-                
-                if (debug)
+
+                fileName fileCLU
+                (
+                   mesh_.time().rootPath()
+                   /mesh_.time().globalCaseName()
+                   /"processor0/CLU_qr"
+                ); //under processor0 to avoid keeping CLU file for future uses by mistake
+                // Check if file already exists
+                IFstream is(fileCLU);
+                label testCLU = -1;
+                if (is.good())
                 {
-                    InfoInFunction
-                        << "\nDecomposing C matrix..." << endl;
+                    is >> testCLU;
+                    if (testCLU == totalNCoarseFaces_)
+                    {
+                        is >> CLU_() >> pivotIndices_;
+                        Info << "Read decomposed C matrix from existing file!" << endl;
+                    }
+                    else
+                    {
+                        testCLU = -1;
+                        Info << "Warning: File for decomposed C matrix does not match totalNCoarseFaces! Will decompose C matrix again..." << endl;
+                    }
                 }
-                LUDecompose(CLU_(), pivotIndices_);
+                if (testCLU == -1)
+                {              
+                    Info<< "\nDecomposing C matrix..." << endl;
+                    LUDecompose(CLU_(), pivotIndices_);
+                    
+                    if (Pstream::nProcs() > 1)
+                    {
+                        // Write file - only in parallel cases
+                        OFstream os(fileCLU);
+                        os << totalNCoarseFaces_ << endl;
+                        os << CLU_() << endl;
+                        os << pivotIndices_ << endl;
+                    }
+                }
             }
 
             for (label i=0; i<totalNCoarseFaces_; i++)
@@ -701,12 +732,7 @@ void Foam::radiation::viewFactorSky::calculate()
                 }
             }
 
-            if (debug)
-            {
-                InfoInFunction
-                    << "\nLU Back substitute C matrix.." << endl;
-            }
-
+            Info<< "\nLU Back substitute C matrix.." << endl;
             LUBacksubstitute(CLU_(), pivotIndices_, q);
             iterCounter_ ++;
         }
