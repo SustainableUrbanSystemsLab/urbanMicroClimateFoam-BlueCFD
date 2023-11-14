@@ -1,42 +1,5 @@
 
 const polyBoundaryMesh& patches = mesh.boundaryMesh();
-const polyBoundaryMesh& coarsePatches = coarseMesh.boundaryMesh();
-
-label nCoarseFaces = 0;      //total number of coarse faces
-label nCoarseFacesAll = 0;   //Also includes non-wall faces with greyDiffusive boundary
-label nFineFacesTotal = 0;        //total number of fine faces including non-fixedValueFvPatchScalarField patches following advise from bug report
-
-//const volScalarField::Boundary& qrb = qr.boundaryField();
-const volScalarField::Boundary& LADb = LAD.boundaryField();
-
-forAll(LADb, patchI)
-//forAll(qrb, patchI)
-{
-    const polyPatch& pp = patches[patchI];
-    //const fvPatchScalarField& LADI = LADb[patchI];
-
-    if ((isA<wallFvPatch>(mesh.boundary()[patchI])) && (pp.size() > 0))
-    {
-      nCoarseFaces += coarsePatches[patchI].size();
-      nCoarseFacesAll += coarsePatches[patchI].size();
-      nFineFacesTotal += patches[patchI].size();
-    }
-    else if (!pp.coupled() && !isA<cyclicAMIPolyPatch>(pp) && !isA<emptyPolyPatch>(pp))
-    //else if ((isA<fixedValueFvPatchScalarField>(qrpI)) && (pp.size() > 0))
-    {
-        nCoarseFacesAll += coarsePatches[patchI].size();
-        nFineFacesTotal += patches[patchI].size();
-    }
-/*    else
-    {
-        nFineFacesTotal += patches[patchI].size(); Info << "AAA" << endl;
-    }*/
-
-}
-
-globalIndex globalNumbering(nCoarseFaces);
-
-Random rndGen(653213);
 
 // Determine mesh bounding boxes:
 List<treeBoundBox> meshBb
@@ -76,16 +39,10 @@ forAll(patches, patchi)
     }
 }
 
-labelList triSurfaceToAgglom(5*nFineFacesTotal);
-
-const triSurface localSurface = triangulate
+const triSurface localSurface = Foam::triSurfaceTools::triangulate
 (
     patches,
-    includePatches,
-    finalAgglom,
-    triSurfaceToAgglom,
-    globalNumbering,
-    coarsePatches
+    includePatches
 );
 
 distributedTriSurfaceMeshBugFix surfacesMesh
@@ -102,8 +59,5 @@ distributedTriSurfaceMeshBugFix surfacesMesh
     localSurface,
     dict
 );
-
-triSurfaceToAgglom.resize(surfacesMesh.size());
-
-surfacesMesh.setField(triSurfaceToAgglom);
+//surfacesMesh.searchableSurface::write();
 

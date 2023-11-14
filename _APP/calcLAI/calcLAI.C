@@ -27,11 +27,6 @@ Application
 Description
     calcLAI by Lento Manickathan
 
-Versions
-    May   - v1
-    July  - v2
-    Aug   - v3, v4
-
 \*---------------------------------------------------------------------------*/
 
 
@@ -173,100 +168,6 @@ scalar interp3D
   // Interpolate in z-dir
   return c0*(1.0-zd) + c1*zd;
 
-}
-
-
-triSurface triangulate
-(
-    const polyBoundaryMesh& bMesh,
-    const labelHashSet& includePatches,
-    const labelListIOList& finalAgglom,
-    labelList& triSurfaceToAgglom,
-    const globalIndex& globalNumbering,
-    const polyBoundaryMesh& coarsePatches
-)
-{
-    const polyMesh& mesh = bMesh.mesh();
-
-    // Storage for surfaceMesh. Size estimate.
-    DynamicList<labelledTri> triangles
-    (
-        mesh.nFaces() - mesh.nInternalFaces()
-    );
-
-    label newPatchI = 0;
-    label localTriFaceI = 0;
-
-    forAllConstIter(labelHashSet, includePatches, iter)
-    {
-        const label patchI = iter.key();
-        const polyPatch& patch = bMesh[patchI];
-        const pointField& points = patch.points();
-
-        label nTriTotal = 0;
-
-        forAll(patch, patchFaceI)
-        {
-            const face& f = patch[patchFaceI];
-
-            faceList triFaces(f.nTriangles(points));
-
-            label nTri = 0;
-
-            f.triangles(points, nTri, triFaces);
-
-            forAll(triFaces, triFaceI)
-            {
-                const face& f = triFaces[triFaceI];
-
-                triangles.append(labelledTri(f[0], f[1], f[2], newPatchI));
-
-                nTriTotal++;
-
-                triSurfaceToAgglom[localTriFaceI++] = globalNumbering.toGlobal
-                (
-                    Pstream::myProcNo(),
-                    finalAgglom[patchI][patchFaceI]
-                  + coarsePatches[patchI].start()
-                );
-            }
-        }
-
-        newPatchI++;
-    }
-
-    triSurfaceToAgglom.resize(localTriFaceI-1);
-
-    triangles.shrink();
-
-    // Create globally numbered tri surface
-    triSurface rawSurface(triangles, mesh.points());
-
-    // Create locally numbered tri surface
-    triSurface surface
-    (
-        rawSurface.localFaces(),
-        rawSurface.localPoints()
-    );
-
-    // Add patch names to surface
-    surface.patches().setSize(newPatchI);
-
-    newPatchI = 0;
-
-    forAllConstIter(labelHashSet, includePatches, iter)
-    {
-        const label patchI = iter.key();
-        const polyPatch& patch = bMesh[patchI];
-
-        surface.patches()[newPatchI].index() = patchI;
-        surface.patches()[newPatchI].name() = patch.name();
-        surface.patches()[newPatchI].geometricType() = patch.type();
-
-        newPatchI++;
-    }
-
-    return surface;
 }
 
 void calcVegBBOX
@@ -511,53 +412,6 @@ void integrateLAD
 
 }
 
-/*
-// calculate divergence using finite difference
-void calcDiv
-(
-  const scalarField &qrswInterpRot,
-  scalarField &divqrswInterpRot,
-  const int &nxRot,
-  const int &nyRot,
-  const int &nzRot,
-  const point &dp
-)
-{
-    int pIndex, pIndexkp1, pIndexkm1;
-    divqrswInterpRot.setSize(nxRot*nyRot*nzRot, pTraits<scalar>::zero);
-
-    for (int k=0; k < nzRot; k++)
-    {
-      for (int j=0; j < nyRot; j++)
-      {
-        for (int i=0; i < nxRot; i++)
-        {
-            // p indicies
-            pIndex = (nxRot*nyRot)*k + j*nxRot + i; // k
-            pIndexkp1 = (nxRot*nyRot)*(k+1) + j*nxRot + i; // p+1 index (forward)
-            pIndexkm1 = (nxRot*nyRot)*(k-1) + j*nxRot + i; // p-1 index (backward)
-
-            // forward (k==0), backward (k==end), central (0<k<end)
-            if (k == 0)
-                divqrswInterpRot[pIndex] = (qrswInterpRot[pIndexkp1] - qrswInterpRot[pIndex])/dp.z();
-            else if (k==(nzRot-1))
-                divqrswInterpRot[pIndex] = (qrswInterpRot[pIndex] - qrswInterpRot[pIndexkm1])/dp.z();
-            else
-                divqrswInterpRot[pIndex] = (qrswInterpRot[pIndexkp1] - 2.0*qrswInterpRot[pIndex] + qrswInterpRot[pIndexkm1])/(dp.z()*dp.z());
-
-            //Info << "k = " << k << ", divqrsw = " << divqrswInterpRot[pIndex] << endl;
-
-        }
-      }
-    }
-
-    Info << "divqrswInterpRot: " << divqrswInterpRot.size() << endl;
-    Info << "gMax(divqrswInterpRot): " << gMax(divqrswInterpRot) << endl;
-    Info << "gMin(divqrswInterpRot): " << gMin(divqrswInterpRot) << endl;
-
-}
-*/
-
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 
@@ -601,28 +455,6 @@ int main(int argc, char *argv[])
       mesh
     );
 
-    /*
-    // Check if vegetation is present
-    if (gSum(LAD) < 10*SMALL)
-    {
-        Info << "\n\n\n No vegetation !!!!!!!!!\n\nDon't waste my time d[-.-]b\n" << endl;
-        return 0;
-    }
-    */
-/*
-    volScalarField qr
-    (
-      IOobject
-      (
-          "qr",
-          runTime.timeName(),
-          mesh,
-          IOobject::MUST_READ,
-          IOobject::NO_WRITE
-      ),
-      mesh
-    );
-*/
     wordList boundaryTypes = LAD.boundaryField().types();
     // Read sunPosVector list
     interpolationTable<vector> sunPosVector
@@ -633,34 +465,6 @@ int main(int argc, char *argv[])
         /"sunPosVector"
     );
 
-/*    scalarListIOList LAIList
-    (
-        IOobject
-        (
-            "LAI",
-            mesh.facesInstance(),
-            mesh,
-            IOobject::NO_READ,
-            IOobject::NO_WRITE,
-            false
-        ),
-        sunPosVector.size()
-    );
-*/
-/*    vectorListIOList qrswList
-    (
-        IOobject
-        (
-            "qrsw",
-            mesh.facesInstance(),
-            mesh,
-            IOobject::NO_READ,
-            IOobject::NO_WRITE,
-            false
-        ),
-        sunPosVector.size()
-    );
-*/
     scalarListIOList divqrswList
     (
         IOobject
@@ -683,45 +487,17 @@ int main(int argc, char *argv[])
         /"IDN"
     ); 
 
-    labelListIOList finalAgglom
+    IOdictionary vegetationProperties
     (
         IOobject
         (
-            "finalAgglom",
-            mesh.facesInstance(),
+            "vegetationProperties",
+            runTime.constant(),
             mesh,
             IOobject::MUST_READ,
-            IOobject::NO_WRITE,
-            false
+            IOobject::NO_WRITE
         )
     );
-
-    singleCellFvMesh coarseMesh
-    (
-        IOobject
-        (
-            mesh.name(),
-            runTime.timeName(),
-            runTime,
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        mesh,
-        finalAgglom
-    );
-
-
-     IOdictionary vegetationProperties
-     (
-         IOobject
-         (
-             "vegetationProperties",
-             runTime.constant(),
-             mesh,
-             IOobject::MUST_READ,
-             IOobject::NO_WRITE
-         )
-     );
 
     word vegModel = vegetationProperties.lookup("vegetationModel");
     dictionary coeffs = vegetationProperties.subDict(vegModel + "Coeffs");
@@ -756,8 +532,6 @@ int main(int argc, char *argv[])
 
     // Set up searching engine for obstacles (copied from Aytac)
     #include "searchingEngine.H"
-
-    DynamicList<label> rayStartFace(nCoarseFaces + 0.001*nCoarseFaces);
 
     // Generate dummy data
     scalarList zeroList_nMeshCells(nMeshCells, 0.0);
@@ -825,17 +599,13 @@ int main(int argc, char *argv[])
         // Setup for each sun ray
 
         // Reference
-//        scalarList &LAI = LAIList[vectorID];
         scalarList &kcLAIboundary = kcLAIboundaryList[vectorID];
-//        vectorList &qrsw = qrswList[vectorID];
         scalarList &divqrsw = divqrswList[vectorID];
 
         // Initialize LAI
         scalarList LAI = zeroList_nMeshCells;
         kcLAIboundary = zeroList_nCoarseFacesAll;
-//        qrsw = zeroListVectors_nMeshCells;
         divqrsw = zeroList_nMeshCells;
-
 
         // sunPosVector i
         vector n2 = sunPosVector[vectorID].second();
@@ -988,79 +758,6 @@ int main(int argc, char *argv[])
             //Info << "gMax(LAI): " << gMax(LAI) << endl;
 
             //clock_t tstartlocal = std::clock();
-
-            DynamicField<point> startListCells(nMeshCells);
-            DynamicField<point> endListCells(nMeshCells);
-            List<pointIndexHit> pHitListCells(nMeshCells);
-
-            // Calculate solar short-wave radiation vector field
-/*            forAll(qrsw, cellI)
-            {
-                point starti = pmeshC[cellI];
-                point endi = calcEndPoint(starti, n2, pminO, pmaxO);
-                startListCells.append(starti);
-                endListCells.append(endi);
-            }
-
-            surfacesMesh.findLine(startListCells, endListCells, pHitListCells);
-
-            forAll(qrsw, cellI)
-            {
-                if (!pHitListCells[cellI].hit())
-                {
-                    //qrsw[cellI] = -n2*IDN[vectorID];//*Foam::exp(-kc*LAI[cellI]);
-                    qrsw[cellI] = -n2*IDN[vectorID].second()*Foam::exp(-kc*LAI[cellI]);
-                }
-            }
-*/
-            // Info << "setting qrsw " << vectorID
-            //      << ", It took " << (std::clock()-tstartlocal) / (double)CLOCKS_PER_SEC
-            //      << " second(s)."<< endl;
-
-            ////////////////////////////////////////////////////////////////////
-            // Calculate divqrsw inside only tree
-
-            /*
-            volVectorField fvqrsw
-            (
-                IOobject
-                (
-                   "qrsw",
-                   runTime.timeName(),
-                   mesh,
-                   IOobject::NO_READ
-                ),
-                mesh,
-                dimensionedVector("0", dimensionSet(1,0,-2,0,0,0,0), vector::zero),
-                boundaryTypes
-            );
-
-            forAll(fvqrsw, cellI)
-            {
-                fvqrsw[cellI] = qrsw[cellI];
-            }
-            divqrsw = fvc::div(fvqrsw);
-
-            forAll(divqrsw, cellI)
-            {
-                if (LAD[cellI] < 10*SMALL)
-                {
-                    divqrsw[cellI] = 0.0;
-                }
-                else if (pHitListCells[cellI].hit())
-                {
-                    divqrsw[cellI] = 0.0;
-                }
-            }
-            */
-            // Info << "gMin(divqrsw) " << gMin(divqrsw) << endl;
-            // Info << "gMax(divqrsw) " << gMax(divqrsw) << endl;
-
-            //Sout << "proc: [" << Pstream::myProcNo() << "], max(LAI) "<< max(LAI) << endl;
-
-            // Info << "setting qrsw + divqrsw" << vectorID
-            //      << ", It took " << (std::clock()-tstartlocal) / (double)CLOCKS_PER_SEC
-            //      << " second(s)."<< endl;
 
             ////////////////////////////////////////////////////////////////////
             // Interpolate LAI onto coarse mesh faces
