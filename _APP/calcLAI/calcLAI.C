@@ -888,20 +888,6 @@ int main(int argc, char *argv[])
                boundaryTypes
              );
 
-            volVectorField qrswi
-            (
-                IOobject
-                (
-                   "qrsw",
-                   runTime.timeName(),
-                   mesh,
-                   IOobject::NO_READ
-                ),
-                mesh,
-                dimensionedVector("0", dimensionSet(1,0,-2,0,0,0,0), vector::zero),
-                boundaryTypes
-            );
-
             volScalarField divqrswi
             (
                 IOobject
@@ -916,18 +902,14 @@ int main(int argc, char *argv[])
                 boundaryTypes
             );
 
-            forAll(qrswi, cellI)
+            forAll(LAIi, cellI)
             {
                 LAIi[cellI] = LAI[cellI];
-//                qrswi[cellI] = qrsw[cellI];
                 divqrswi[cellI] = divqrsw[cellI];
             }
             LAIi.correctBoundaryConditions();
-            qrswi.correctBoundaryConditions();
             divqrswi.correctBoundaryConditions();
             LAIi.write();
-            qrswi.write();
-            //LAD.write();
             divqrswi.write();
 
             //runTime++;
@@ -946,15 +928,8 @@ int main(int argc, char *argv[])
 
     }
 
-
-//    Info << "\nWriting fields: LAI " << endl;
-//    LAIList.write();
-
     Info << "\nWriting fields: kcLAI boundary" << endl;
     kcLAIboundaryList.write();
-
-//    Info << "\nWriting fields: qrsw" << endl;
-//    qrswList.write();
 
     Info << "\nWriting fields: div qrsw" << endl;
     divqrswList.write();
