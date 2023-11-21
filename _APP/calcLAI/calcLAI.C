@@ -25,7 +25,7 @@ Application
     calcLAI
 
 Description
-    calcLAI by Lento Manickathan
+    Original version by Lento Manickathan
 
 \*---------------------------------------------------------------------------*/
 
@@ -116,16 +116,17 @@ point calcEndPoint
 scalar interp3D
 (
     const point &ptemp,
-    const pointField &pInterp,
     const scalarField &valInterp,
     const int &nx,
-    const int &ny
-) //point &dp,
+    const int &ny,
+    const point &pmin,
+    const point &dp
+)
 {
 
   // point &dp, int &i0, int &j0, int &k0, int &nx, int &ny, int &nz)
-  point pmin = pInterp[0];
-  point dp   = pInterp[(nx*ny) + nx + 1] - pInterp[0];
+  //point pmin = pInterp[0];
+  //point dp   = pInterp[(nx*ny) + nx + 1] - pInterp[0];
 
   // Offset from p min.
   double xp = ptemp.x()-pmin.x();
@@ -148,7 +149,10 @@ scalar interp3D
   int i011 = (nx*ny)*(k0+1) + (j0+1)*nx + i0;
   int i111 = (nx*ny)*(k0+1) + (j0+1)*nx + i0+1;
 
-  point pInterp000 = pInterp[i000];
+  point pInterp000;// = pInterp[i000];
+  pInterp000.x() = pmin.x() + i0*dp.x();
+  pInterp000.y() = pmin.y() + j0*dp.y();
+  pInterp000.z() = pmin.z() + k0*dp.z();
 
   // Bilinear interpolation
   double xd = (ptemp.x()-pInterp000.x())/dp.x();
@@ -215,7 +219,6 @@ void interpfvMeshToCartesian
     point &pmin,
     point &pmax,
     const int &vegetationCell,
-    pointField &pInterp,
     scalarField &LADInterp,
     int &nx,
     int &ny,
@@ -250,9 +253,9 @@ void interpfvMeshToCartesian
 
     // Generate cartesian interpolation grid
     // coordinates
-    pInterp.setSize(nx*ny*nz, point::zero);
-    LADInterp.setSize(nx*ny*nz, pTraits<scalar>::zero);
 
+    DynamicList<scalar> LADInterpDyn;
+    DynamicList<label> pIndexDyn;
     ////////////////////////////////////////////////////////////////////////////
 
     /////////////// (Step 2) Interpolate LAD onto cartesian interpolation mesh
@@ -270,45 +273,55 @@ void interpfvMeshToCartesian
           // index of node p
           pIndex = (nx*ny)*k + j*nx + i;
 
-          // x,y,z coordinates in rotated coordinate system
-          pInterp[pIndex].x() = pmin.x() + i*dp.x();
-          pInterp[pIndex].y() = pmin.y() + j*dp.y();
-          pInterp[pIndex].z() = pmin.z() + k*dp.z();
-
           // coordinate of point in original coordinate system
-          ptemp = pInterp[pIndex]; //ptemp = transform(Tinv, pInterp[pIndex]);
+          ptemp.x() = pmin.x() + i*dp.x();
+          ptemp.y() = pmin.y() + j*dp.y();
+          ptemp.z() = pmin.z() + k*dp.z();
+
+          pmax = max(pmax, ptemp);
 
           // Find intersecting cell
           cellIndex = ms.findCell(ptemp,-1,true); // faster
 
           // if point is inside domain
           if (cellIndex != -1)
-              LADInterp[pIndex] = LAD[cellIndex]; //LAD_interpolator->interpolate(pInterp[pIndex],cellIndex); //TODO: some bug with interpolator
-
+          {
+              if(LAD[cellIndex] > 0)
+              {
+                  pIndexDyn.append(pIndex);
+                  LADInterpDyn.append(LAD[cellIndex]);
+              }
+          }
         }
       }
     }
 
-    List<scalarField> LADInterp_(Pstream::nProcs());
-    LADInterp_[Pstream::myProcNo()] = LADInterp;
-    Pstream::gatherList(LADInterp_);
+    List<DynamicList<scalar>> LADInterpDyn_(Pstream::nProcs());
+    LADInterpDyn_[Pstream::myProcNo()] = LADInterpDyn;
+    Pstream::gatherList(LADInterpDyn_);
 
+    List<DynamicList<label>> pIndexDyn_(Pstream::nProcs());
+    pIndexDyn_[Pstream::myProcNo()] = pIndexDyn;
+    Pstream::gatherList(pIndexDyn_);
+    
     if (Pstream::master())
     {
+        LADInterp.setSize(nx*ny*nz, pTraits<scalar>::zero);
         for (label procI = 0; procI < Pstream::nProcs(); procI++)
         {
-            if (procI > 0)
+            List<scalar> LADInterpLocal = LADInterpDyn_[procI];
+            List<label> pIndexLocal = pIndexDyn_[procI];
+            forAll (LADInterpLocal, i)
             {
-                LADInterp_[Pstream::myProcNo()] += LADInterp_[procI];
+                LADInterp[pIndexLocal[i]] = LADInterpLocal[i];
             }
         }
-        LADInterp = LADInterp_[Pstream::myProcNo()];
-    }
+    }    
 
-    Pstream::scatter(LADInterp);
+    //Pstream::scatter(LADInterp);
 
     // update maximum point
-    pmax = gMax(pInterp);
+    reduce(pmax, maxOp<point>());
 
 }
 
@@ -316,13 +329,11 @@ void interpcartesianToRotCartesian
 (
     point &pminRot,
     point &pmaxRot,
-    pointField &pInterpRot,
     scalarField &LADInterpRot,
     int &nxRot,
     int &nyRot,
     int &nzRot,
     const tensor &Tinv,
-    const pointField &pInterp,
     const scalarField &LADInterp,
     const point& pmin,
     const point& pmax,
@@ -339,45 +350,50 @@ void interpcartesianToRotCartesian
     nyRot = ceil( (pmaxRot.y()-pminRot.y()) / dp.y()) + 1;
     nzRot = ceil( (pmaxRot.z()-pminRot.z()) / dp.z()) + 1;
 
-    // Generate rotated cartesian interpolation grid
-    // coordinates
-    pInterpRot.setSize(nxRot*nyRot*nzRot, point::zero);
-    LADInterpRot.setSize(nxRot*nyRot*nzRot, pTraits<scalar>::zero);
-
     ////////////////////////////////////////////////////////////////////
     // Interpolate onto rotated cartesian grid
     int pIndex;
     point ptemp;
-
-    for (int k=0; k < nzRot; k++)
+    point ptempRot;
+    // keeping only on proc0
+    if (Pstream::master())
     {
-      for (int j=0; j < nyRot; j++)
-      {
-        for (int i=0; i < nxRot; i++)
+        // Generate rotated cartesian interpolation grid coordinates
+        LADInterpRot.setSize(nxRot*nyRot*nzRot, pTraits<scalar>::zero);
+        
+        for (int k=0; k < nzRot; k++)
         {
-          // index of node p
-          pIndex = (nxRot*nyRot)*k + j*nxRot + i;
+          for (int j=0; j < nyRot; j++)
+          {
+            for (int i=0; i < nxRot; i++)
+            {
+              // index of node p
+              pIndex = (nxRot*nyRot)*k + j*nxRot + i;
 
-          // x,y,z coordinates in rotated coordinate system
-          pInterpRot[pIndex].x() = pminRot.x() + i*dp.x();
-          pInterpRot[pIndex].y() = pminRot.y() + j*dp.y();
-          pInterpRot[pIndex].z() = pminRot.z() + k*dp.z();
+              // x,y,z coordinates in rotated coordinate system
+              ptempRot.x() = pminRot.x() + i*dp.x();
+              ptempRot.y() = pminRot.y() + j*dp.y();
+              ptempRot.z() = pminRot.z() + k*dp.z();
 
-          // coordinate of point in original coordinate system
-          ptemp = transform(Tinv, pInterpRot[pIndex]);
+              pmaxRot = max(pmaxRot, ptempRot);
+    
+              // coordinate of point in original coordinate system
+              ptemp = transform(Tinv, ptempRot);
 
-          // If point is within the bbox of original cartesian grid
-          if ( (ptemp.x() >= pmin.x()) && (ptemp.x() <= pmax.x()) &&
-               (ptemp.y() >= pmin.y()) && (ptemp.y() <= pmax.y()) &&
-               (ptemp.z() >= pmin.z()) && (ptemp.z() <= pmax.z()) )
-          LADInterpRot[pIndex] = interp3D(ptemp, pInterp, LADInterp, nx, ny);
+              // If point is within the bbox of original cartesian grid
+              if ( (ptemp.x() >= pmin.x()) && (ptemp.x() <= pmax.x()) &&
+                   (ptemp.y() >= pmin.y()) && (ptemp.y() <= pmax.y()) &&
+                   (ptemp.z() >= pmin.z()) && (ptemp.z() <= pmax.z()) )
+              LADInterpRot[pIndex] = interp3D(ptemp, LADInterp, nx, ny, pmin, dp);
 
+            }
+          }
         }
-      }
+
     }
 
     // update maximum point
-    pmaxRot = gMax(pInterpRot);
+    reduce(pmaxRot, maxOp<point>());
 
 }
 
@@ -392,24 +408,29 @@ void integrateLAD
 )
 {
     int pIndex, pIndexkp1;
-    LAIInterpRot.setSize(nxRot*nyRot*nzRot, pTraits<scalar>::zero);
 
-    for (int i=0; i < nxRot; i++)
+    // keeping only on proc0
+    if (Pstream::master())
     {
-      for (int j=0; j < nyRot; j++)
-      {
-        for (int k=(nzRot-2); k>=0; k--)
+        LAIInterpRot.setSize(nxRot*nyRot*nzRot, pTraits<scalar>::zero);
+
+        for (int i=0; i < nxRot; i++)
         {
-          // lower and upper row index
-          pIndex = (nxRot*nyRot)*k + j*nxRot + i;
-          pIndexkp1 = (nxRot*nyRot)*(k+1) + j*nxRot + i;
-          // trapezoidal integration
-          LAIInterpRot[pIndex] = LAIInterpRot[pIndexkp1] + 0.5*(LADInterpRot[pIndex]+LADInterpRot[pIndexkp1])*dp.z();
+          for (int j=0; j < nyRot; j++)
+          {
+            for (int k=(nzRot-2); k>=0; k--)
+            {
+              // lower and upper row index
+              pIndex = (nxRot*nyRot)*k + j*nxRot + i;
+              pIndexkp1 = (nxRot*nyRot)*(k+1) + j*nxRot + i;
+              // trapezoidal integration
+              LAIInterpRot[pIndex] = LAIInterpRot[pIndexkp1] + 0.5*(LADInterpRot[pIndex]+LADInterpRot[pIndexkp1])*dp.z();
 
+            }
+          }
         }
-      }
-    }
 
+    }
 }
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -523,7 +544,7 @@ int main(int argc, char *argv[])
     n1 /= mag(n1);
 
     // Mesh cell centers
-    pointField pmeshC = mesh.C();
+    const pointField& pmeshC = mesh.C();
 
     // mesh bounding box
     point pminO = gMin(pmeshC);
@@ -532,10 +553,6 @@ int main(int argc, char *argv[])
 
     // Set up searching engine for obstacles (copied from Aytac)
     #include "searchingEngine.H"
-
-    // Generate dummy data
-    scalarList zeroList_nMeshCells(nMeshCells, 0.0);
-    vectorList zeroListVectors_nMeshCells(nMeshCells, point::zero);
 
     ////// Determine BBOX of vegetation (original coordinate system)
     point pmin = gMax(pmeshC);
@@ -550,16 +567,15 @@ int main(int argc, char *argv[])
 
     Info << "Interpolation from fvMesh to Cartesian mesh...";
 
-    pointField pInterp;
     scalarField LADInterp;
     int nx, ny, nz;
     point dp;
 
-    interpfvMeshToCartesian(mesh, LAD, pmin, pmax, vegetationCell, pInterp, LADInterp, nx, ny, nz, dp, minCellSizeFactor);
+    interpfvMeshToCartesian(mesh, LAD, pmin, pmax, vegetationCell, LADInterp, nx, ny, nz, dp, minCellSizeFactor);
 
     Info << " took " << (std::clock()-tstartStep) / (double)CLOCKS_PER_SEC
          << " second(s)."<< endl;
-
+    
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -567,8 +583,6 @@ int main(int argc, char *argv[])
 
     // Coarse mesh faces
     #include "findCoarseMeshFaces.H"
-
-    scalarList zeroList_nCoarseFacesAll(vegNCoarseFacesAll, 0.0);
 
 
     ////////////////////////////////////////////////////////////////////////////
@@ -603,9 +617,9 @@ int main(int argc, char *argv[])
         scalarList &divqrsw = divqrswList[vectorID];
 
         // Initialize LAI
-        scalarList LAI = zeroList_nMeshCells;
-        kcLAIboundary = zeroList_nCoarseFacesAll;
-        divqrsw = zeroList_nMeshCells;
+        scalarList LAI(nMeshCells, 0.0);
+        kcLAIboundary.setSize(vegNCoarseFacesAll, 0.0);
+        divqrsw.setSize(nMeshCells, 0.0);
 
         // sunPosVector i
         vector n2 = sunPosVector[vectorID].second();
@@ -635,11 +649,10 @@ int main(int argc, char *argv[])
             calcVegBBOX(pmeshCRot, LAD, pminRot, pmaxRot, vegetationCell);
 
             // Generate rotated cartesian interpolation grid
-            pointField pInterpRot; // coordinates
             scalarField LADInterpRot; // interpolated LAD
             int nxRot, nyRot, nzRot;
 
-            interpcartesianToRotCartesian(pminRot, pmaxRot, pInterpRot, LADInterpRot, nxRot, nyRot, nzRot, Tinv, pInterp, LADInterp, pmin, pmax, nx, ny, dp);
+            interpcartesianToRotCartesian(pminRot, pmaxRot, LADInterpRot, nxRot, nyRot, nzRot, Tinv, LADInterp, pmin, pmax, nx, ny, dp);
 
             // Info << "gMin(LADInterpRot): " << gMin(LADInterpRot) << endl;
             // Info << "gMax(LADInterpRot): " << gMax(LADInterpRot) << endl;
@@ -649,15 +662,20 @@ int main(int argc, char *argv[])
 
             scalarField LAIInterpRot;
             integrateLAD(LADInterpRot, nxRot, nyRot, nzRot, dp, LAIInterpRot);
-
+            // scatter LAIInterpRot among all procs
+            Pstream::scatter(LAIInterpRot);
+            
             // Info << "gMin(LAIInterpRot): " << gMin(LAIInterpRot) << endl;
             // Info << "gMax(LAIInterpRot): " << gMax(LAIInterpRot) << endl;
 
             ////////////////////////////////////////////////////////////////////
             // Calculated short-wave radiation intensity
-
-            scalarField qrswInterpRot = IDN[vectorID].second()*Foam::exp(-kc*LAIInterpRot);
-
+            // keeping only on proc0
+            tmp<scalarField> qrswInterpRot;
+            if (Pstream::master())
+            {
+                qrswInterpRot = IDN[vectorID].second()*Foam::exp(-kc*LAIInterpRot);
+            }
             // Info << "qrswInterpRot: gMin: " << gMin(qrswInterpRot) << endl;
             // Info << "qrswInterpRot: gMax: " << gMax(qrswInterpRot) << endl;
 
@@ -668,19 +686,25 @@ int main(int argc, char *argv[])
 
             int pIndex, pIndexkp1;
 
-            for (int kiter = 0; kiter < (nzRot-1); kiter++)
+            // calculating only on proc0
+            if (Pstream::master())
             {
-                for (int jiter = 0; jiter < nyRot; jiter++)
+                const scalarField& qrswInterpRot_ = qrswInterpRot;
+                for (int kiter = 0; kiter < (nzRot-1); kiter++)
                 {
-                    for (int iiter = 0; iiter < nxRot; iiter++)
+                    for (int jiter = 0; jiter < nyRot; jiter++)
                     {
-                        pIndex = (nxRot*nyRot)*kiter + jiter*nxRot + iiter; // k
-                        pIndexkp1 = (nxRot*nyRot)*(kiter+1) + jiter*nxRot + iiter; // p+1 index (forward)
-
-                        divqrswInterpRot[pIndex] = -(qrswInterpRot[pIndexkp1] - qrswInterpRot[pIndex])/dp.z();
+                        for (int iiter = 0; iiter < nxRot; iiter++)
+                        {
+                            pIndex = (nxRot*nyRot)*kiter + jiter*nxRot + iiter; // k
+                            pIndexkp1 = (nxRot*nyRot)*(kiter+1) + jiter*nxRot + iiter; // p+1 index (forward)
+                            divqrswInterpRot[pIndex] = -(qrswInterpRot_[pIndexkp1] - qrswInterpRot_[pIndex])/dp.z();
+                        }
                     }
                 }
             }
+            // scatter divqrswInterpRot among all procs
+            Pstream::scatter(divqrswInterpRot);            
 
             //calcDiv(qrswInterpRot, divqrswInterpRot, nx, ny, nz, dp);
             // Info << "divqrswInterpRot: " << gMax(divqrswInterpRot) << endl;
@@ -741,11 +765,11 @@ int main(int argc, char *argv[])
                 {
                     ptemp = pmeshCRot[cellI];
 
-                    LAI[cellI] = interp3D(ptemp, pInterpRot, LAIInterpRot, nxRot, nyRot);
+                    LAI[cellI] = interp3D(ptemp, LAIInterpRot, nxRot, nyRot, pminRot, dp);
 
                     if (LAD[cellI] > 10*SMALL)
                     {
-                        divqrsw[cellI] = interp3D(ptemp, pInterpRot, divqrswInterpRot, nxRot, nyRot);
+                        divqrsw[cellI] = interp3D(ptemp, divqrswInterpRot, nxRot, nyRot, pminRot, dp);
                     }
                 }
                 else if (LAD[cellI] > 10*SMALL)
@@ -842,7 +866,7 @@ int main(int argc, char *argv[])
                         if (!vegCoarseFacePHitList[insideFaceI].hit())
                         {
                             ptemp = transform(T, vegLocalCoarseCf[faceNo]);
-                            kcLAIboundary[k] = kc*interp3D(ptemp, pInterpRot, LAIInterpRot, nxRot, nyRot);
+                            kcLAIboundary[k] = kc*interp3D(ptemp, LAIInterpRot, nxRot, nyRot, pminRot, dp);
                             //Info << "k = " << k << ", faceNo = " << faceNo << ", insideFaceNo = " << insideFaceNo << endl;
                         }
                         else
