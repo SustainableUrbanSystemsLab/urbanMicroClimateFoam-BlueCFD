@@ -476,7 +476,6 @@ int main(int argc, char *argv[])
       mesh
     );
 
-    wordList boundaryTypes = LAD.boundaryField().types();
     // Read sunPosVector list
     interpolationTable<vector> sunPosVector
     (
@@ -909,7 +908,7 @@ int main(int argc, char *argv[])
                ),
                mesh,
                dimensionedScalar("0", dimensionSet(0,0,0,0,0,0,0), 0.0),
-               boundaryTypes
+               zeroGradientFvPatchScalarField::typeName
              );
 
             volScalarField divqrswi
@@ -923,7 +922,7 @@ int main(int argc, char *argv[])
                 ),
                 mesh,
                 dimensionedScalar("0", dimensionSet(1,0,-3,0,0,0,0), 0.0),
-                boundaryTypes
+                zeroGradientFvPatchScalarField::typeName
             );
 
             forAll(LAIi, cellI)
@@ -937,7 +936,10 @@ int main(int argc, char *argv[])
             divqrswi.write();
 
             //runTime++;
-            runTime.setTime(runTime.value()+runTime.deltaT().value(),runTime.timeIndex()+1);
+            if (vectorID + 1 < sunPosVector.size())
+            {
+                runTime.setTime(sunPosVector[vectorID+1].first(),runTime.timeIndex()+1);
+            }
         }
 
         ////////////////////////////////////////////////////////////////////////
