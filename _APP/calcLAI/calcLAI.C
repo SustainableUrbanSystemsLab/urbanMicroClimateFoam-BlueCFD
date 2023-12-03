@@ -179,8 +179,7 @@ void calcVegBBOX
     const pointField &pmeshC,
     const volScalarField &LAD,
     point &pmin,
-    point &pmax,
-    int &vegetationCell
+    point &pmax
 )
 {
     point ptemp;
@@ -193,7 +192,6 @@ void calcVegBBOX
             ptemp = pmeshC[cellI];
             pmin = min(pmin,ptemp);
             pmax = max(pmax,ptemp);
-            vegetationCell = cellI;
         }
     }
 
@@ -218,7 +216,6 @@ void interpfvMeshToCartesian
     const volScalarField &LAD,
     point &pmin,
     point &pmax,
-    const int &vegetationCell,
     scalarField &LADInterp,
     int &nx,
     int &ny,
@@ -230,10 +227,6 @@ void interpfvMeshToCartesian
 
     // Define search mesh
     meshSearch ms(mesh);
-
-    // Define LAD interpolator to arbitrary locations
-    dictionary interpolationDict = mesh.schemesDict().subDict("interpolationSchemes"); // Read interpolation scheme
-//    autoPtr<interpolation<scalar> > LAD_interpolator = interpolation<scalar>::New(interpolationDict, LAD); // Define interpolator
 
     // Define cartesian interpolation grid
     scalar minCellV = gMin(mesh.V()); // Cartesian mesh resolution (determine from minimum cell size)
@@ -258,7 +251,7 @@ void interpfvMeshToCartesian
     DynamicList<label> pIndexDyn;
     ////////////////////////////////////////////////////////////////////////////
 
-    /////////////// (Step 2) Interpolate LAD onto cartesian interpolation mesh
+    /////////////// Interpolate LAD onto cartesian interpolation mesh
 
     int cellIndex;
     int pIndex;
@@ -550,16 +543,15 @@ int main(int argc, char *argv[])
     point pmaxO = gMax(pmeshC);
 
 
-    // Set up searching engine for obstacles (copied from Aytac)
+    // Set up searching engine for obstacles
     #include "searchingEngine.H"
 
     ////// Determine BBOX of vegetation (original coordinate system)
     point pmin = gMax(pmeshC);
     point pmax = gMin(pmeshC);
-    int vegetationCell = 0;
 
     // calculate vegetation bbox - decompose
-    calcVegBBOX(pmeshC, LAD, pmin, pmax, vegetationCell);
+    calcVegBBOX(pmeshC, LAD, pmin, pmax);
 
     ////// Define LAD interpolator to arbitrary locations
     tstartStep = std::clock();
@@ -570,11 +562,11 @@ int main(int argc, char *argv[])
     int nx, ny, nz;
     point dp;
 
-    interpfvMeshToCartesian(mesh, LAD, pmin, pmax, vegetationCell, LADInterp, nx, ny, nz, dp, minCellSizeFactor);
+    interpfvMeshToCartesian(mesh, LAD, pmin, pmax, LADInterp, nx, ny, nz, dp, minCellSizeFactor);
 
     Info << " took " << (std::clock()-tstartStep) / (double)CLOCKS_PER_SEC
          << " second(s)."<< endl;
-    
+
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -645,7 +637,7 @@ int main(int argc, char *argv[])
             point pminRot = gMax(pmeshCRot);
             point pmaxRot = gMin(pmeshCRot);
 
-            calcVegBBOX(pmeshCRot, LAD, pminRot, pmaxRot, vegetationCell);
+            calcVegBBOX(pmeshCRot, LAD, pminRot, pmaxRot);
 
             // Generate rotated cartesian interpolation grid
             scalarField LADInterpRot; // interpolated LAD
@@ -661,8 +653,6 @@ int main(int argc, char *argv[])
 
             scalarField LAIInterpRot;
             integrateLAD(LADInterpRot, nxRot, nyRot, nzRot, dp, LAIInterpRot);
-            // scatter LAIInterpRot among all procs
-            Pstream::scatter(LAIInterpRot);
             
             // Info << "gMin(LAIInterpRot): " << gMin(LAIInterpRot) << endl;
             // Info << "gMax(LAIInterpRot): " << gMax(LAIInterpRot) << endl;
@@ -680,14 +670,13 @@ int main(int argc, char *argv[])
 
             ////////////////////////////////////////////////////////////////////
             // Calculated divergence of short-wave radiation intensity - forward differencing
-
-            scalarField divqrswInterpRot(nxRot*nyRot*nzRot, pTraits<scalar>::zero);
-
+            scalarField divqrswInterpRot;
             int pIndex, pIndexkp1;
 
             // calculating only on proc0
             if (Pstream::master())
             {
+                divqrswInterpRot.setSize(nxRot*nyRot*nzRot, pTraits<scalar>::zero);
                 const scalarField& qrswInterpRot_ = qrswInterpRot;
                 for (int kiter = 0; kiter < (nzRot-1); kiter++)
                 {
@@ -701,9 +690,7 @@ int main(int argc, char *argv[])
                         }
                     }
                 }
-            }
-            // scatter divqrswInterpRot among all procs
-            Pstream::scatter(divqrswInterpRot);            
+            }         
 
             //calcDiv(qrswInterpRot, divqrswInterpRot, nx, ny, nz, dp);
             // Info << "divqrswInterpRot: " << gMax(divqrswInterpRot) << endl;
@@ -755,6 +742,9 @@ int main(int argc, char *argv[])
 
             surfacesMesh.findLine(startList, endList, pHitList);
 
+            DynamicList<point> ptempDyn;
+            DynamicList<label> ptempIndexDyn;
+
             // Updated LAI fields
             forAll(pHitList, rayI)
             {
@@ -763,19 +753,58 @@ int main(int argc, char *argv[])
                 if (!pHitList[rayI].hit())
                 {
                     ptemp = pmeshCRot[cellI];
-
-                    LAI[cellI] = interp3D(ptemp, LAIInterpRot, nxRot, nyRot, pminRot, dp);
-
-                    if (LAD[cellI] > 10*SMALL)
-                    {
-                        divqrsw[cellI] = interp3D(ptemp, divqrswInterpRot, nxRot, nyRot, pminRot, dp);
-                    }
+                    ptempDyn.append(ptemp);
+                    ptempIndexDyn.append(cellI);
                 }
                 else if (LAD[cellI] > 10*SMALL)
                 {
                     LAI[cellI] = 1000; // large enough to ensure qr = exp(-LAI*k)  \approx 0
                 }
             }
+            
+            List<DynamicList<point>> ptempDyn_(Pstream::nProcs());
+            ptempDyn_[Pstream::myProcNo()] = ptempDyn;
+            Pstream::gatherList(ptempDyn_);
+            
+            List<List<scalar>> LAI_(Pstream::nProcs());
+            LAI_[Pstream::myProcNo()].setSize(ptempDyn.size(), 0.0);
+            Pstream::gatherList(LAI_);
+            
+            List<List<scalar>> divqrsw_(Pstream::nProcs());
+            divqrsw_[Pstream::myProcNo()].setSize(ptempDyn.size(), 0.0);
+            Pstream::gatherList(divqrsw_);            
+            
+            if (Pstream::master())
+            {
+                for (label procI = 0; procI < Pstream::nProcs(); procI++)
+                {
+                    List<scalar>& LAILocal = LAI_[procI];
+                    List<scalar>& divqrswLocal = divqrsw_[procI];
+                    forAll (LAILocal, i)
+                    {
+                        LAILocal[i] = interp3D(ptempDyn_[procI][i], LAIInterpRot, nxRot, nyRot, pminRot, dp);
+                        divqrswLocal[i] = interp3D(ptempDyn_[procI][i], divqrswInterpRot, nxRot, nyRot, pminRot, dp);
+                    }
+                }
+            }
+
+            Pstream::listCombineScatter(LAI_);
+            Pstream::listCombineScatter(divqrsw_);
+            forAll (LAI_[Pstream::myProcNo()], i)
+            {
+                label cellI = ptempIndexDyn[i];
+                LAI[cellI] = LAI_[Pstream::myProcNo()][i];
+                if (LAD[cellI] > 10*SMALL)
+                {
+                    divqrsw[cellI] = divqrsw_[Pstream::myProcNo()][i];
+                }
+            }
+            
+            ptempDyn.clear();
+            ptempIndexDyn.clear();
+            ptempDyn_.clear();
+            LAI_.clear();
+            divqrsw_.clear();
 
             //Info << "gMin(LAI): " << gMin(LAI) << endl;
             //Info << "gMax(LAI): " << gMax(LAI) << endl;
@@ -865,7 +894,9 @@ int main(int argc, char *argv[])
                         if (!vegCoarseFacePHitList[insideFaceI].hit())
                         {
                             ptemp = transform(T, vegLocalCoarseCf[faceNo]);
-                            kcLAIboundary[k] = kc*interp3D(ptemp, LAIInterpRot, nxRot, nyRot, pminRot, dp);
+                            ptempDyn.append(ptemp);
+                            ptempIndexDyn.append(k);
+                            //kcLAIboundary[k] = kc*interp3D(ptemp, LAIInterpRot, nxRot, nyRot, pminRot, dp);
                             //Info << "k = " << k << ", faceNo = " << faceNo << ", insideFaceNo = " << insideFaceNo << endl;
                         }
                         else
@@ -885,6 +916,33 @@ int main(int argc, char *argv[])
             faceNo = 0;
             insideFaceI = 0;
 
+            ptempDyn_.setSize(Pstream::nProcs());
+            ptempDyn_[Pstream::myProcNo()] = ptempDyn;
+            Pstream::gatherList(ptempDyn_);
+
+            LAI_.setSize(Pstream::nProcs());
+            LAI_[Pstream::myProcNo()].setSize(ptempDyn.size(), 0.0);
+            Pstream::gatherList(LAI_);
+
+            if (Pstream::master())
+            {
+                for (label procI = 0; procI < Pstream::nProcs(); procI++)
+                {
+                    List<scalar>& LAILocal = LAI_[procI];
+                    forAll (LAILocal, i)
+                    {
+                        LAILocal[i] = kc*interp3D(ptempDyn_[procI][i], LAIInterpRot, nxRot, nyRot, pminRot, dp);
+                    }
+                }
+            }
+                       
+            Pstream::listCombineScatter(LAI_);
+            forAll (LAI_[Pstream::myProcNo()], i)
+            {
+                label faceI = ptempIndexDyn[i];
+                kcLAIboundary[faceI] = LAI_[Pstream::myProcNo()][i];
+            }
+            
             ////////////////////////////////////////////////////////////////////
             ////////////////////////////////////////////////////////////////////
             iter +=1;
