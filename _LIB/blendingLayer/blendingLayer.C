@@ -76,7 +76,6 @@ Foam::blendingLayer::blendingLayer
         mesh_,
         dimensionedScalar("bL",dimensionSet(0,0,0,0,0,0,0),-1)
     ), 
-    whichProc_(U.internalField().size(),-1),
     USource_
     (
         IOobject
@@ -253,14 +252,7 @@ void Foam::blendingLayer::initialize()
         List<label> nFaces_n = nFaces[Pstream::myProcNo()];
         if ((found >= startFace_n[patchId]) && (found < startFace_n[patchId] + nFaces_n[patchId]))
         {
-            whichProc_[cellId] = Pstream::myProcNo();
-        }
-        
-        label faceId = found - startFace_n[patchId];        
-        //check if the found face is really on the correct boundary.
-        //sometimes the nearest face is found on another boundary, e.g. ground
-        if(faceId <= nFaces_n[patchId]) 
-        {
+            label faceId = found - startFace_n[patchId];
             bL_.ref()[cellId] = faceId;
         }
         else
@@ -270,6 +262,7 @@ void Foam::blendingLayer::initialize()
         }
     }
 
+    reduce(blendingWarning, orOp<bool>());
     if(blendingWarning)
     {
         Info << "Warning: blendingLayer: boundary face could not be found for some blending cells. Maybe the terrain is not flat everywhere within the blending layer?" << endl;
@@ -289,29 +282,17 @@ void Foam::blendingLayer::getValues(volVectorField& USource_, const volVectorFie
     
     label patchId = -1;
     
-    List<List<vector>> UTarget_W(Pstream::nProcs());
     patchId = mesh_.boundaryMesh().findPatchID("west");
-    UTarget_W[Pstream::myProcNo()] = U.boundaryField()[patchId];
-    Pstream::gatherList(UTarget_W);
-    Pstream::scatterList(UTarget_W);    
+    List<vector> UTarget_W = U.boundaryField()[patchId];
     
-    List<List<vector>> UTarget_E(Pstream::nProcs());
     patchId = mesh_.boundaryMesh().findPatchID("east");
-    UTarget_E[Pstream::myProcNo()] = U.boundaryField()[patchId];
-    Pstream::gatherList(UTarget_E);
-    Pstream::scatterList(UTarget_E);      
+    List<vector> UTarget_E = U.boundaryField()[patchId];
     
-    List<List<vector>> UTarget_N(Pstream::nProcs());
     patchId = mesh_.boundaryMesh().findPatchID("north");
-    UTarget_N[Pstream::myProcNo()] = U.boundaryField()[patchId];
-    Pstream::gatherList(UTarget_N);
-    Pstream::scatterList(UTarget_N);  
+    List<vector> UTarget_N = U.boundaryField()[patchId];
         
-    List<List<vector>> UTarget_S(Pstream::nProcs());
     patchId = mesh_.boundaryMesh().findPatchID("south");
-    UTarget_S[Pstream::myProcNo()] = U.boundaryField()[patchId];
-    Pstream::gatherList(UTarget_S);
-    Pstream::scatterList(UTarget_S);      
+    List<vector> UTarget_S = U.boundaryField()[patchId];
 
     forAll (centres, cellI)
     {
@@ -321,7 +302,7 @@ void Foam::blendingLayer::getValues(volVectorField& USource_, const volVectorFie
             label faceId = bL_.internalField()[cellI];
             if(faceId >= 0)
             {
-                vector UTarget = UTarget_W[whichProc_[cellI]][faceId];
+                vector UTarget = UTarget_W[faceId];
                 scalar distance = cell.x() - minX;
                 scalar sinusInput = (dampingThickness - distance)/dampingThickness;
                 USource_.ref()[cellI] = (UTarget - U.internalField()[cellI]) * 
@@ -333,7 +314,7 @@ void Foam::blendingLayer::getValues(volVectorField& USource_, const volVectorFie
             label faceId = bL_.internalField()[cellI];
             if(faceId >= 0)
             {
-                vector UTarget = UTarget_E[whichProc_[cellI]][faceId];
+                vector UTarget = UTarget_E[faceId];
                 scalar distance = maxX - cell.x();
                 scalar sinusInput = (dampingThickness - distance)/dampingThickness;
                 USource_.ref()[cellI] = (UTarget - U.internalField()[cellI]) * 
@@ -345,7 +326,7 @@ void Foam::blendingLayer::getValues(volVectorField& USource_, const volVectorFie
             label faceId = bL_.internalField()[cellI];
             if(faceId >= 0)
             {
-                vector UTarget = UTarget_N[whichProc_[cellI]][faceId];
+                vector UTarget = UTarget_N[faceId];
                 scalar distance = maxY - cell.y();
                 scalar sinusInput = (dampingThickness - distance)/dampingThickness;
                 USource_.ref()[cellI] = (UTarget - U.internalField()[cellI]) * 
@@ -357,7 +338,7 @@ void Foam::blendingLayer::getValues(volVectorField& USource_, const volVectorFie
             label faceId = bL_.internalField()[cellI];
             if(faceId >= 0)
             {
-                vector UTarget = UTarget_S[whichProc_[cellI]][faceId];
+                vector UTarget = UTarget_S[faceId];
                 scalar distance = cell.y() - minY;
                 scalar sinusInput = (dampingThickness - distance)/dampingThickness;
                 USource_.ref()[cellI] = (UTarget - U.internalField()[cellI]) * 
@@ -377,29 +358,17 @@ void Foam::blendingLayer::getValues(volScalarField& TSource_, const volScalarFie
     
     label patchId = -1;
     
-    List<List<scalar>> TTarget_W(Pstream::nProcs());
     patchId = mesh_.boundaryMesh().findPatchID("west");
-    TTarget_W[Pstream::myProcNo()] = T.boundaryField()[patchId];
-    Pstream::gatherList(TTarget_W);
-    Pstream::scatterList(TTarget_W);    
+    List<scalar> TTarget_W = T.boundaryField()[patchId];
     
-    List<List<scalar>> TTarget_E(Pstream::nProcs());
     patchId = mesh_.boundaryMesh().findPatchID("east");
-    TTarget_E[Pstream::myProcNo()] = T.boundaryField()[patchId];
-    Pstream::gatherList(TTarget_E);
-    Pstream::scatterList(TTarget_E);      
+    List<scalar> TTarget_E = T.boundaryField()[patchId];
     
-    List<List<scalar>> TTarget_N(Pstream::nProcs());
     patchId = mesh_.boundaryMesh().findPatchID("north");
-    TTarget_N[Pstream::myProcNo()] = T.boundaryField()[patchId];
-    Pstream::gatherList(TTarget_N);
-    Pstream::scatterList(TTarget_N);  
+    List<scalar> TTarget_N = T.boundaryField()[patchId];
         
-    List<List<scalar>> TTarget_S(Pstream::nProcs());
     patchId = mesh_.boundaryMesh().findPatchID("south");
-    TTarget_S[Pstream::myProcNo()] = T.boundaryField()[patchId];
-    Pstream::gatherList(TTarget_S);
-    Pstream::scatterList(TTarget_S);      
+    List<scalar> TTarget_S = T.boundaryField()[patchId];
 
     forAll (centres, cellI)
     {
@@ -409,7 +378,7 @@ void Foam::blendingLayer::getValues(volScalarField& TSource_, const volScalarFie
             label faceId = bL_.internalField()[cellI];
             if(faceId >= 0)
             {
-                scalar TTarget = TTarget_W[whichProc_[cellI]][faceId];
+                scalar TTarget = TTarget_W[faceId];
                 scalar distance = cell.x() - minX;
                 scalar sinusInput = (dampingThickness - distance)/dampingThickness;
                 TSource_.ref()[cellI] = (TTarget - T.internalField()[cellI]) * 
@@ -421,7 +390,7 @@ void Foam::blendingLayer::getValues(volScalarField& TSource_, const volScalarFie
             label faceId = bL_.internalField()[cellI];
             if(faceId >= 0)
             {
-                scalar TTarget = TTarget_E[whichProc_[cellI]][faceId];
+                scalar TTarget = TTarget_E[faceId];
                 scalar distance = maxX - cell.x();
                 scalar sinusInput = (dampingThickness - distance)/dampingThickness;
                 TSource_.ref()[cellI] = (TTarget - T.internalField()[cellI]) * 
@@ -433,7 +402,7 @@ void Foam::blendingLayer::getValues(volScalarField& TSource_, const volScalarFie
             label faceId = bL_.internalField()[cellI];
             if(faceId >= 0)
             {
-                scalar TTarget = TTarget_N[whichProc_[cellI]][faceId];
+                scalar TTarget = TTarget_N[faceId];
                 scalar distance = maxY - cell.y();
                 scalar sinusInput = (dampingThickness - distance)/dampingThickness;
                 TSource_.ref()[cellI] = (TTarget - T.internalField()[cellI]) * 
@@ -445,7 +414,7 @@ void Foam::blendingLayer::getValues(volScalarField& TSource_, const volScalarFie
             label faceId = bL_.internalField()[cellI];
             if(faceId >= 0)
             {
-                scalar TTarget = TTarget_S[whichProc_[cellI]][faceId];
+                scalar TTarget = TTarget_S[faceId];
                 scalar distance = cell.y() - minY;
                 scalar sinusInput = (dampingThickness - distance)/dampingThickness;
                 TSource_.ref()[cellI] = (TTarget - T.internalField()[cellI]) * 

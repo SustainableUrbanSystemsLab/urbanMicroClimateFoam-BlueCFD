@@ -75,9 +75,6 @@ protected:
         // Field - blending layer boundary face Ids
         volScalarField bL_;
         
-        // Field - blending layer boundary face procNo to read values from
-        Field<label> whichProc_;        
-        
         // Field - blending layer U source
         volVectorField USource_;
         
