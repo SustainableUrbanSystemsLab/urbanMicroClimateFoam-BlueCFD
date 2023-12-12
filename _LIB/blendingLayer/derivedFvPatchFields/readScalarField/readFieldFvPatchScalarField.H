@@ -23,29 +23,29 @@ License
 
 Class
     Foam::
-    blendingLayerVelFvPatchVectorField
+    readFieldFvPatchScalarField
 
 Description
-    Reads lists of boundary values with spatial and temporal variation based 
-    on mesoscale simulations
+    Reads lists of boundary values with spatial and temporal variation based
+    on mesoscale simulation
 
     Written by Aytac Kubilay    
 
     Example usage:
         myPatchName
         {
-            type            blendingLayerVel;
-            inputTimeStep   3600;
-            value           uniform (1 1 0);
+            type            readScalarField;
+            inputTimeStep   3600;            
+            value           uniform 300.0;
         }
 
 SourceFiles
-    blendingLayerVelFvPatchVectorField.C
+    readFieldFvPatchScalarField.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef blendingLayerVelFvPatchVectorField_H
-#define blendingLayerVelFvPatchVectorField_H
+#ifndef readFieldFvPatchScalarField_H
+#define readFieldFvPatchScalarField_H
 
 #include "fvPatchFields.H"
 #include "fixedValueFvPatchFields.H"
@@ -56,68 +56,71 @@ namespace Foam
 {
 
 /*---------------------------------------------------------------------------*\
-    Class blendingLayerVelFvPatchVectorField Declaration
+    Class readFieldFvPatchScalarField Declaration
 \*---------------------------------------------------------------------------*/
 
-class blendingLayerVelFvPatchVectorField
+class readFieldFvPatchScalarField
 :
-    public fixedValueFvPatchVectorField
+    public fixedValueFvPatchScalarField
 {        
     // Private data
         
-        //mesoscale timestep interval
+        //mesoscale output timestep
         label inputTimeStep;
 
         //mesoscale target field
-        vectorField Utarget_Field;                     
+        scalarField Target_Field;
+        
+        //field name
+        word fieldName;
 
 public:
 
     //- Runtime type information
-    TypeName("blendingLayerVel");
+    TypeName("readScalarField");
 
 
     // Constructors
 
         //- Construct from patch and internal field
-        blendingLayerVelFvPatchVectorField
+        readFieldFvPatchScalarField
         (
             const fvPatch&,
-            const DimensionedField<vector, volMesh>&
+            const DimensionedField<scalar, volMesh>&
         );
 
         //- Construct from patch, internal field and dictionary
-        blendingLayerVelFvPatchVectorField
+        readFieldFvPatchScalarField
         (
             const fvPatch&,
-            const DimensionedField<vector, volMesh>&,
+            const DimensionedField<scalar, volMesh>&,
             const dictionary&
         );
 
         //- Construct by mapping given
         //  turbulentTemperatureCoupledBaffleMixedFvPatchScalarField onto a
         //  new patch
-        blendingLayerVelFvPatchVectorField
+        readFieldFvPatchScalarField
         (
             const
-            blendingLayerVelFvPatchVectorField&,
+            readFieldFvPatchScalarField&,
             const fvPatch&,
-            const DimensionedField<vector, volMesh>&,
+            const DimensionedField<scalar, volMesh>&,
             const fvPatchFieldMapper&
         );
         
         //- Construct as copy
-        blendingLayerVelFvPatchVectorField
+        readFieldFvPatchScalarField
         (
-            const blendingLayerVelFvPatchVectorField&
-        );        
+            const readFieldFvPatchScalarField&
+        );          
 
         //- Construct and return a clone
-        virtual tmp<fvPatchVectorField> clone() const
+        virtual tmp<fvPatchScalarField> clone() const
         {
-            return tmp<fvPatchVectorField>
+            return tmp<fvPatchScalarField>
             (
-                new blendingLayerVelFvPatchVectorField
+                new readFieldFvPatchScalarField
                 (
                     *this
                 )
@@ -125,21 +128,21 @@ public:
         }
 
         //- Construct as copy setting internal field reference
-        blendingLayerVelFvPatchVectorField
+        readFieldFvPatchScalarField
         (
-            const blendingLayerVelFvPatchVectorField&,
-            const DimensionedField<vector, volMesh>&
+            const readFieldFvPatchScalarField&,
+            const DimensionedField<scalar, volMesh>&
         );
 
         //- Construct and return a clone setting internal field reference
-        virtual tmp<fvPatchVectorField> clone
+        virtual tmp<fvPatchScalarField> clone
         (
-            const DimensionedField<vector, volMesh>& iF
+            const DimensionedField<scalar, volMesh>& iF
         ) const
         {
-            return tmp<fvPatchVectorField>
+            return tmp<fvPatchScalarField>
             (
-                new blendingLayerVelFvPatchVectorField
+                new readFieldFvPatchScalarField
                 (
                     *this,
                     iF
@@ -155,7 +158,6 @@ public:
 
         //- Write
         virtual void write(Ostream&) const;
-           
 };
 
 

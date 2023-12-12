@@ -23,7 +23,7 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "blendingLayerTempFvPatchScalarField.H"
+#include "readFieldFvPatchVectorField.H"
 #include "addToRunTimeSelectionTable.H"
 #include "volFields.H"
 #include "surfaceFields.H"
@@ -31,78 +31,83 @@ License
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-Foam::blendingLayerTempFvPatchScalarField::
-blendingLayerTempFvPatchScalarField
+Foam::readFieldFvPatchVectorField::
+readFieldFvPatchVectorField
 (
     const fvPatch& p,
-    const DimensionedField<scalar, volMesh>& iF
+    const DimensionedField<vector, volMesh>& iF
 )
 :
-    fixedValueFvPatchScalarField(p, iF),
-    inputTimeStep(3600),
-    Ttarget_Field(0)
+    fixedValueFvPatchVectorField(p, iF),
+    inputTimeStep(),
+    Target_Field(p.size()),
+    fieldName(iF.name())
 {
 }
 
 
-Foam::blendingLayerTempFvPatchScalarField::
-blendingLayerTempFvPatchScalarField
+Foam::readFieldFvPatchVectorField::
+readFieldFvPatchVectorField
 (
-    const blendingLayerTempFvPatchScalarField& ptf,
+    const readFieldFvPatchVectorField& ptf,
     const fvPatch& p,
-    const DimensionedField<scalar, volMesh>& iF,
+    const DimensionedField<vector, volMesh>& iF,
     const fvPatchFieldMapper& mapper
 )
 :
-    fixedValueFvPatchScalarField(ptf, p, iF, mapper),
+    fixedValueFvPatchVectorField(ptf, p, iF, mapper),
     inputTimeStep(ptf.inputTimeStep),
-    Ttarget_Field(ptf.Ttarget_Field)
+    Target_Field(ptf.Target_Field),
+    fieldName(ptf.fieldName)
 {}
 
 
-Foam::blendingLayerTempFvPatchScalarField::
-blendingLayerTempFvPatchScalarField
+Foam::readFieldFvPatchVectorField::
+readFieldFvPatchVectorField
 (
     const fvPatch& p,
-    const DimensionedField<scalar, volMesh>& iF,
+    const DimensionedField<vector, volMesh>& iF,
     const dictionary& dict
 )
 :
-    fixedValueFvPatchScalarField(p, iF, dict, false),
+    fixedValueFvPatchVectorField(p, iF, dict, false),
     inputTimeStep(readLabel(dict.lookup("inputTimeStep"))),
-    Ttarget_Field(Zero)
+    Target_Field(p.size()),
+    fieldName(iF.name())
 {
-    fvPatchScalarField::operator=(scalarField("value", dict, p.size()));
+    fvPatchVectorField::operator=(vectorField("value", dict, p.size()));
 }
 
-Foam::blendingLayerTempFvPatchScalarField::
-blendingLayerTempFvPatchScalarField
+Foam::readFieldFvPatchVectorField::
+readFieldFvPatchVectorField
 (
-    const blendingLayerTempFvPatchScalarField& ptf
+    const readFieldFvPatchVectorField& ptf
 )
 :
-    fixedValueFvPatchScalarField(ptf),
+    fixedValueFvPatchVectorField(ptf),
     inputTimeStep(ptf.inputTimeStep),
-    Ttarget_Field(ptf.Ttarget_Field)
+    Target_Field(ptf.Target_Field),
+    fieldName(ptf.fieldName)
 {}
 
 
-Foam::blendingLayerTempFvPatchScalarField::
-blendingLayerTempFvPatchScalarField
+Foam::readFieldFvPatchVectorField::
+readFieldFvPatchVectorField
 (
-    const blendingLayerTempFvPatchScalarField& ptf,
-    const DimensionedField<scalar, volMesh>& iF
+    const readFieldFvPatchVectorField& ptf,
+    const DimensionedField<vector, volMesh>& iF
 )
 :
-    fixedValueFvPatchScalarField(ptf, iF),
+    fixedValueFvPatchVectorField(ptf, iF),
     inputTimeStep(ptf.inputTimeStep),
-    Ttarget_Field(ptf.Ttarget_Field)
+    Target_Field(ptf.Target_Field),
+    fieldName(ptf.fieldName)
 {}
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-void Foam::blendingLayerTempFvPatchScalarField::updateCoeffs()
+void Foam::readFieldFvPatchVectorField::updateCoeffs()
 {
     if (updated())
     {
@@ -116,11 +121,11 @@ void Foam::blendingLayerTempFvPatchScalarField::updateCoeffs()
     if (timeIndex == 1)
     {
         label moduloTest = int(timeValue/inputTimeStep); 
-        word TtargetFile = "Ttarget_" + boundaryName + "/Ttarget_" + boundaryName +"_" + name(moduloTest*inputTimeStep);
-        IOList<scalar> Ttarget(
+        word TargetFile = fieldName + "target_" + boundaryName + "/" + fieldName + "target_" + boundaryName +"_" + name(moduloTest*inputTimeStep);
+        IOList<vector> Target(
             IOobject
             (
-                TtargetFile,
+                TargetFile,
                 db().time().caseConstant(),
                 db(),
                 IOobject::MUST_READ,
@@ -130,11 +135,11 @@ void Foam::blendingLayerTempFvPatchScalarField::updateCoeffs()
         /////interpolate between two input files if necessary/////
         if (timeValue/inputTimeStep - moduloTest > 0)
         {
-            word TtargetFile_B = "Ttarget_" + boundaryName + "/Ttarget_" + boundaryName +"_" + name(moduloTest*inputTimeStep+inputTimeStep);
-            IOList<scalar> Ttarget_B(
+            word TargetFile_B = fieldName + "target_" + boundaryName + "/" + fieldName + "target_" + boundaryName +"_" + name(moduloTest*inputTimeStep+inputTimeStep);
+            IOList<vector> Target_B(
                 IOobject
                 (
-                    TtargetFile_B,
+                    TargetFile_B,
                     db().time().caseConstant(),
                     db(),
                     IOobject::MUST_READ,
@@ -142,7 +147,7 @@ void Foam::blendingLayerTempFvPatchScalarField::updateCoeffs()
                 )            
             );
             scalar ratio = (timeValue-moduloTest*inputTimeStep)/inputTimeStep;
-            Ttarget = Ttarget*(1-ratio) + Ttarget_B*(ratio);       
+            Target = Target*(1-ratio) + Target_B*(ratio);       
         }
         //////////////////////////////////////////////////////////
 
@@ -172,33 +177,55 @@ void Foam::blendingLayerTempFvPatchScalarField::updateCoeffs()
             }
             label minGlobalFaceAddr_ = gMin(globalFaceAddr_); //get the minimum global address for this patch = startFace in global patch
 
-            List<scalar> Ttarget_;
-            Ttarget_.setSize(nFaces);
-            forAll(Ttarget_, i) //read correct values from global wdrFile
+            List<vector> Target_;
+            Target_.setSize(nFaces);
+            forAll(Target_, i) //read correct values from global wdrFile
             {
-                Ttarget_[i] = Ttarget[localFaceProcAddr[startFace + i] - 1 - minGlobalFaceAddr_]; //subtracted 1 to get global index, as localFaceProcAddr starts from 1, not 0
+                Target_[i] = Target[localFaceProcAddr[startFace + i] - 1 - minGlobalFaceAddr_]; //subtracted 1 to get global index, as localFaceProcAddr starts from 1, not 0
             }
             
-            Ttarget_Field = Ttarget_;                 
+            Target_Field = Target_;                 
         }
         else
         {
-            Ttarget_Field = Ttarget;
+            Target_Field = Target;
+        }      
+    }
+
+    /////ensure mass balance over all lateral boundaries//////    
+    word patches[] = {"west", "east", "north", "south"};
+    List<scalar> massFlux_WENS(4);
+    List<scalar> corrFactor_WENS(4);
+    forAll(massFlux_WENS,i)
+    {
+        label patchId = this->patch().boundaryMesh().findPatchID(patches[i]);
+        massFlux_WENS[i] = gSum(-1* this->patch().boundaryMesh().mesh().boundary()[patchId].lookupPatchField<surfaceScalarField, scalar>("phi"));        
+    }
+    Pstream::listCombineGather(massFlux_WENS, sumOp<scalar>());
+    Pstream::listCombineScatter(massFlux_WENS);
+
+    scalar corrFactor;
+    forAll(massFlux_WENS,i)
+    {
+        if (boundaryName == patches[i])
+        {
+            corrFactor = 1 - sign(massFlux_WENS[i]) * (sum(massFlux_WENS))/(sum(mag(massFlux_WENS)));
         }
-    }        
+    }
+    //////////////////////////////////////////////////////////
+    
+    operator==(Target_Field*corrFactor);
 
-    operator==(Ttarget_Field);
-
-    fixedValueFvPatchScalarField::updateCoeffs();
+    fixedValueFvPatchVectorField::updateCoeffs();
 }
 
 
-void Foam::blendingLayerTempFvPatchScalarField::write
+void Foam::readFieldFvPatchVectorField::write
 (
     Ostream& os
 ) const
 {
-    fvPatchScalarField::write(os);
+    fvPatchVectorField::write(os);
     os.writeKeyword("inputTimeStep")
         << inputTimeStep << token::END_STATEMENT << nl;       
     writeEntry("value", os);
@@ -211,8 +238,8 @@ namespace Foam
 {
     makePatchTypeField
     (
-        fvPatchScalarField,
-        blendingLayerTempFvPatchScalarField
+        fvPatchVectorField,
+        readFieldFvPatchVectorField
     );
 }
 
