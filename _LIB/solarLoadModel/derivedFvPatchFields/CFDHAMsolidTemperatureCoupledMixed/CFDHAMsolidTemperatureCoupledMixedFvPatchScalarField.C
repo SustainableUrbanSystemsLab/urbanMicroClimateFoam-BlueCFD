@@ -55,7 +55,8 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
     qrNbrName_("undefined-qrNbr"),
     qsNbrName_("undefined-qsNbr"),
     qrNbr(0),
-    qsNbr(0)
+    qsNbr(0),
+    timeOfLastRadUpdate(-1.0)
 {
     this->refValue() = 0.0;
     this->refGrad() = 0.0;
@@ -76,7 +77,8 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
     qrNbrName_(psf.qrNbrName_),
     qsNbrName_(psf.qsNbrName_),
     qrNbr(psf.qrNbr),
-    qsNbr(psf.qsNbr)    
+    qsNbr(psf.qsNbr),
+    timeOfLastRadUpdate(psf.timeOfLastRadUpdate)
 {}
 
 
@@ -92,7 +94,8 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
     qrNbrName_(dict.lookupOrDefault<word>("qrNbr", "none")),
     qsNbrName_(dict.lookupOrDefault<word>("qsNbr", "none")),
     qrNbr(Zero),
-    qsNbr(Zero)    
+    qsNbr(Zero),
+    timeOfLastRadUpdate(-1.0)
 {
     if (!isA<mappedPatchBase>(this->patch().patch()))
     {
@@ -134,7 +137,8 @@ CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
     qrNbrName_(psf.qrNbrName_),
     qsNbrName_(psf.qsNbrName_),
     qrNbr(psf.qrNbr),
-    qsNbr(psf.qsNbr) 
+    qsNbr(psf.qsNbr),
+    timeOfLastRadUpdate(psf.timeOfLastRadUpdate)
 {}
 
 
@@ -287,7 +291,15 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
     dictionary controlDict_ = time.controlDict();
     const scalar deltaT_(readScalar(controlDict_.lookup("deltaT")));
     label moduloTest = int(time.value()/deltaT_);
-    
+    bool firstIter = false;
+    if(time.value()/deltaT_ - moduloTest < SMALL)
+    {
+        if(timeOfLastRadUpdate != time.value())
+        {
+            firstIter = true;
+        }
+    }
+
     //-- Access vegetation region and populate radiation if vegetation exists,
     //otherwise use radiation from air region --//
     regionProperties rp(time);
@@ -295,7 +307,7 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
 
     if (vegNames.size()>0)
     {
-        if(time.value()/deltaT_ - moduloTest < SMALL) //update qs and qr once at the beginning
+        if((firstIter) or (time.value() - timeOfLastRadUpdate >= 600.0)) //update qs and qr once at the beginning
         {
             const word& vegiRegion = "vegetation";
             const scalar mppVegDistance = 0;
@@ -322,11 +334,12 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
                 qsNbr = vegiNbrPatch.lookupPatchField<volScalarField, scalar>(qsNbrName_);
                 mppVeg.distribute(qsNbr);
             }
+            timeOfLastRadUpdate = time.value();
         }
     }
     else
     {
-        if(time.value()/deltaT_ - moduloTest < SMALL) //update qs and qr once at the beginning
+        if((firstIter) or (time.value() - timeOfLastRadUpdate >= 600.0)) //update qs and qr once at the beginning
         {
             if (qrNbrName_ != "none")
             {
@@ -337,7 +350,8 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
             {
                 qsNbr = nbrPatch.lookupPatchField<volScalarField, scalar>(qsNbrName_);
                 mpp.distribute(qsNbr);
-            }   
+            }
+            timeOfLastRadUpdate = time.value();
         }
     }
     //////////////////////////////

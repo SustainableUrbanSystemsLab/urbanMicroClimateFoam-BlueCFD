@@ -77,6 +77,8 @@ class CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField
         //veg qs
         scalarField qsNbr;                 
 
+        scalar timeOfLastRadUpdate;
+
 public:
 
     //- Runtime type information

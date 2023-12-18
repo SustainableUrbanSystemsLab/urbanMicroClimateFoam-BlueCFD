@@ -52,6 +52,8 @@ Description
 
 #include "vegetationModel.H"
 
+#include "mixedFvPatchFields.H"
+
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 int main(int argc, char *argv[])

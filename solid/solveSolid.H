@@ -7,6 +7,24 @@
     scalar solidInternalTime = 0;
     scalar timeToOutput = pts.deltaTValue();
     bool timeStepDecrease = false;
+    
+    scalar timeAfterLastRadUpdate = 0;
+    
+    //store old T//////////
+    PtrList<volScalarField::Boundary> T_old(fluidRegions.size());
+    forAll(fluidRegions, i)
+    {
+        rhoThermo& thermo = thermoFluid[i];
+        T_old.set
+        (
+            i,
+            new volScalarField::Boundary
+            (
+                thermo.T().boundaryField()
+            )
+        );
+    }
+    ///////////////////////
 
     while ( solidInternalTime < pts.deltaTValue() )
     {         
@@ -77,6 +95,7 @@
 
             solidInternalTime += runTime.deltaT().value();
             timeToOutput = pts.deltaTValue() - solidInternalTime;
+            timeAfterLastRadUpdate += runTime.deltaT().value();
             if (timeToOutput >= 0.0)
             {
                 runTime.setTime(runTime.value()+runTime.deltaT().value(),runTime.timeIndex()+1);
@@ -84,9 +103,79 @@
             }
             #include "setSolidRegionDeltaT.H"
         }
+        
+        if (timeToOutput > 0.0 && timeAfterLastRadUpdate >= 600.0)
+        {
+            //update thermal radiation fluxes
+            forAll(fluidRegions, i)
+            {
+                Info << "Updating T boundary fields..." << endl;
+                rhoThermo& thermo = thermoFluid[i];
+                thermo.T().correctBoundaryConditions();
+            }
+            if (vegRegions.size() > 0)
+            {
+                forAll(vegRegions, i)
+                {
+                    Info << "Updating T boundary fields..." << endl;
+                    volScalarField& vegT = TVeg[i];                   
+                    vegT.correctBoundaryConditions();
+                    Info << "Updating long-wave radiation heat transfer for region: " << vegRegions[i].name() << endl;
+                    radiation::radiationModel& rad = radiation2[i];
+                    rad.correct();
+                }
+            }
+            else
+            {
+                forAll(fluidRegions, i)
+                {
+                    Info << "Updating long-wave radiation heat transfer for region: " << fluidRegions[i].name() << endl;
+                    radiation::radiationModel& rad = radiation[i];
+                    rad.correct();
+                }
+            }
+            timeAfterLastRadUpdate = 0;
+        }        
 
         Info << "timeToOutput: " << timeToOutput << endl;
     }
+
+    //restore old T////////
+    forAll(fluidRegions, i)
+    {
+        rhoThermo& thermo = thermoFluid[i];
+        
+        volScalarField::Boundary& TBf = thermo.T().boundaryFieldRef();
+        const volScalarField::Boundary& refTBf = T_old[i];
+        
+        forAll(TBf, patchi)
+        {
+            //restore patch value fields
+            forAll(TBf[patchi], facei)
+            {
+                TBf[patchi][facei] = refTBf[patchi][facei];
+            }
+            
+            //restore patch refValue fields
+            if
+            (   
+                isA<mixedFvPatchScalarField>(TBf[patchi])
+             && isA<mixedFvPatchScalarField>(refTBf[patchi])
+            )
+            {
+                refCast<mixedFvPatchScalarField>
+                (TBf[patchi]).refValue() =
+                refCast<const mixedFvPatchScalarField>
+                (refTBf[patchi]).refValue();
+            }
+        }
+    }
+    forAll(vegRegions, i)
+    {
+        volScalarField& vegT = TVeg[i];                   
+        vegT.correctBoundaryConditions();
+    }
+    ///////////////////////
 
     runTime.TimeState::operator=(pts); //restore time state
 }
