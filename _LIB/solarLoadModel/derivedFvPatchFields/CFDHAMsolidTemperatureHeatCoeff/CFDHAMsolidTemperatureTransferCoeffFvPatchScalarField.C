@@ -323,8 +323,14 @@ void CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField::updateCoeffs()
     {
         if(timeOfLastRadUpdate != time.value())
         {
-            firstIter = true;
+            firstIter = true; //check if first internal iteration
         }
+    }
+    bool radUpdateNow = false;
+    if ((firstIter) or (time.value() - timeOfLastRadUpdate >= 600.0)) //update rad once at the beginning and every 600 s
+    {
+        radUpdateNow = true;
+        timeOfLastRadUpdate = time.value();
     }
 
     //-- Access vegetation region and populate radiation if vegetation exists,
@@ -334,7 +340,7 @@ void CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField::updateCoeffs()
 
     if (vegNames.size()>0)
     {
-        if((firstIter) or (time.value() - timeOfLastRadUpdate >= 600.0)) //update qs and qr once at the beginning
+        if(radUpdateNow)
         {
             const word& vegiRegion = "vegetation";
             const scalar mppVegDistance = 0;
@@ -361,12 +367,11 @@ void CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField::updateCoeffs()
                 qsNbr = vegiNbrPatch.lookupPatchField<volScalarField, scalar>(qsNbrName_);
                 mppVeg.distribute(qsNbr);
             }
-            timeOfLastRadUpdate = time.value();
         }
     }
     else
     {
-        if((firstIter) or (time.value() - timeOfLastRadUpdate >= 600.0)) //update qs and qr once at the beginning
+        if(radUpdateNow)
         {
             if (qrNbrName_ != "none")
             {
@@ -378,7 +383,6 @@ void CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField::updateCoeffs()
                 qsNbr = nbrPatch.lookupPatchField<volScalarField, scalar>(qsNbrName_);
                 mpp.distribute(qsNbr);
             }
-            timeOfLastRadUpdate = time.value();
         }   
     }
     //////////////////////////////
@@ -407,8 +411,8 @@ void CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField::updateCoeffs()
 
             if (grassPatches.contains(nbrPatch.name()))//if patch is covered with grass
             {
-                if(time.value()/deltaT_ - moduloTest < SMALL) //update qs and qr once at the beginning
-                {                    
+                if(radUpdateNow)
+                {
                     scalarField TgNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("Tg");
                         mpp.distribute(TgNbr);
     

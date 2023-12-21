@@ -296,8 +296,14 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
     {
         if(timeOfLastRadUpdate != time.value())
         {
-            firstIter = true;
+            firstIter = true; //check if first internal iteration
         }
+    }
+    bool radUpdateNow = false;
+    if ((firstIter) or (time.value() - timeOfLastRadUpdate >= 600.0)) //update rad once at the beginning and every 600 s
+    {
+        radUpdateNow = true;
+        timeOfLastRadUpdate = time.value();
     }
 
     //-- Access vegetation region and populate radiation if vegetation exists,
@@ -307,7 +313,7 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
 
     if (vegNames.size()>0)
     {
-        if((firstIter) or (time.value() - timeOfLastRadUpdate >= 600.0)) //update qs and qr once at the beginning
+        if(radUpdateNow) //update qs and qr once at the beginning
         {
             const word& vegiRegion = "vegetation";
             const scalar mppVegDistance = 0;
@@ -339,7 +345,7 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
     }
     else
     {
-        if((firstIter) or (time.value() - timeOfLastRadUpdate >= 600.0)) //update qs and qr once at the beginning
+        if(radUpdateNow) //update qs and qr once at the beginning
         {
             if (qrNbrName_ != "none")
             {
@@ -380,7 +386,7 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
 
             if (grassPatches.contains(nbrPatch.name()))//if patch is covered with grass
             {
-                if(time.value()/deltaT_ - moduloTest < SMALL) //update qs and qr once at the beginning
+                if(radUpdateNow) //update qs and qr once at the beginning
                 {                
                     scalarField TgNbr = nbrPatch.lookupPatchField<volScalarField, scalar>("Tg");
                         mpp.distribute(TgNbr);
