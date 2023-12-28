@@ -3,4 +3,6 @@ vegetationModel/vegetationModelNew.C
 noVegetation/noVegetation.C
 simplifiedVegetation/simplifiedVegetation.C
 
+derivedFvPatchFields/mappedLeafTemperature/mappedLeafTempFvPatchScalarField.C
+
 LIB=$(FOAM_USER_LIBBIN)/libvegetationModels
