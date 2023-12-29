@@ -279,7 +279,7 @@ void Foam::grass::simpleGrass::calculate
         scalarField E(scalarField(Qs_abs.size(),0.0));
 
         ////calculate grass leaf temperature///////////
-        label maxIter = 500;
+        label maxIter = 100;
         for (label i=1; i<=maxIter; i++)
         {
             if (i==1 && gMin(Tg) < SMALL)
@@ -298,6 +298,23 @@ void Foam::grass::simpleGrass::calculate
             scalarField Qr2substrate = 6*(Ts-Tg); //thermal radiation between grass and surface - Malys et al 2014
 
             scalarField Tg_new = Tc + (Qr2surrounding + Qr2substrate + Qs_abs - Qlat)/ (h_ch*LAI_);
+
+            scalar Tg_min = 250.0;
+            scalar Tg_max = 400.0;
+            if((gMin(Tg_new) < Tg_min) or (gMax(Tg_new) > Tg_max))
+            {
+                Info << "Warning, bounding Tg..." << endl;
+                Tg_new = min
+                (
+                    Tg_new,
+                    Tg_max
+                );
+                Tg_new = max
+                (
+                    Tg_new,
+                    Tg_min
+                );
+            }
 
             // info
             Info << " max grass leaf temp Tg=" << gMax(Tg_new)
