@@ -460,7 +460,7 @@ void Foam::vegetation::simplifiedVegetation::calculate(volVectorField& U, volSca
     volScalarField new_Tl("new_Tl", Tl_);
 
     // info
-    Info << "    max leaf temp tl=" << max(T.internalField())
+    Info << "    max leaf temp tl=" << max(new_Tl.internalField())
          << "k, iteration i=0" << endl;
 
 //    const fvMesh& vegiMesh = mesh_.time().lookupObject<fvMesh>("vegetation");
@@ -473,7 +473,10 @@ void Foam::vegetation::simplifiedVegetation::calculate(volVectorField& U, volSca
     int i;
 
     // solve leaf temperature, iteratively.
-    int maxIter = 500;
+    scalar Tl_min = 250.0;
+    scalar Tl_max = 400.0;
+    bool boundTl = false;
+    int maxIter = 100;
     for (i=1; i<=maxIter; i++)
     {
         // Solve aerodynamc, stomatal resistance
@@ -502,7 +505,29 @@ void Foam::vegetation::simplifiedVegetation::calculate(volVectorField& U, volSca
                 // Calculate new leaf temperature
                 new_Tl[cellI] = T[cellI] + (Rn_[cellI] - Qlat_[cellI])*(ra_[cellI]/(2.0*rhoa_.value()*cpa_.value()*LAD_[cellI]));
 
+                if((new_Tl[cellI] < Tl_min) or (new_Tl[cellI] > Tl_max))
+                {
+                    boundTl = true;
+                    new_Tl[cellI] = min
+                    (
+                        new_Tl[cellI],
+                        Tl_max
+                    );
+                    new_Tl[cellI] = max
+                    (
+                        new_Tl[cellI],
+                        Tl_min
+                    );
+                }
+
             }
+        }
+        
+        reduce(boundTl, orOp<bool>());
+        if(boundTl)
+        {
+            Info << "Warning, bounding Tl..." << endl;
+            boundTl = false;
         }
 
         // info
