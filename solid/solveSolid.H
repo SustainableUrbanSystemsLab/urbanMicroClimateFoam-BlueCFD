@@ -67,7 +67,8 @@
             //Heat transfer////////////////
             #include "TsEqn.H" 
             //Firstly, test if all Ts values are valid
-            if (gMin(Ts) <= 0 || gMin(Ts.boundaryField()) <= 0)
+            if (gMin(Ts) <= 0 || gMin(Ts.boundaryField()) <= 0
+                || gMax(Ts) >= 423.15 || gMax(Ts.boundaryField()) >= 423.15)
             {           
                 Info << "This is going to crash (Ts)! Decreasing timestep and reverting fields..." << endl;
                 timeStepDecrease = true;
