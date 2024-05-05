@@ -2,6 +2,6 @@
 
     volScalarField& vegT = TVeg[i];
 
-    radiation::radiationModel& rad = radiation2[i];
+    radiationModel& rad = radiation2[i];
     solarLoad::solarLoadModel& sol = solarLoad2[i];
  

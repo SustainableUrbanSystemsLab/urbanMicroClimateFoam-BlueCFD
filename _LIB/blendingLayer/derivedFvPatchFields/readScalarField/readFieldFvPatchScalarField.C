@@ -206,7 +206,7 @@ void Foam::readFieldFvPatchScalarField::write
     fvPatchScalarField::write(os);
     os.writeKeyword("inputTimeStep")
         << inputTimeStep << token::END_STATEMENT << nl;       
-    writeEntry("value", os);
+    writeEntry(os, "value", *this);
 }
 
 

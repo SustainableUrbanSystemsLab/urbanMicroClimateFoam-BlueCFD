@@ -145,7 +145,7 @@ void Foam::mappedLeafTempFvPatchScalarField::write(Ostream& os) const
 {
     fvPatchScalarField::write(os);
     mappedPatchFieldBase<scalar>::write(os);
-    this->writeEntry("value", os);
+    writeEntry(os, "value", *this);
 }
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

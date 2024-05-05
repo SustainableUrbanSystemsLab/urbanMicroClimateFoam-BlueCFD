@@ -165,7 +165,7 @@ write
 {
     fixedValueFvPatchScalarField::write(os);
     solarRadiationCoupledBase::write(os);
-    qso_.writeEntry("qso", os);
+    writeEntry(os, "qso", qso_);
 }
 
 

@@ -129,8 +129,8 @@ Foam::scalarField Foam::solarRadiationCoupledBase::albedo() const
 
             const polyMesh& nbrMesh = mpp.sampleMesh();
 
-            const radiation::radiationModel& radiation =
-                nbrMesh.lookupObject<radiation::radiationModel>
+            const radiationModel& radiation =
+                nbrMesh.lookupObject<radiationModel>
                 (
                     "radiationProperties"
                 );
@@ -179,9 +179,8 @@ Foam::scalarField Foam::solarRadiationCoupledBase::albedo() const
 
 void Foam::solarRadiationCoupledBase::write(Ostream& os) const
 {
-    os.writeKeyword("albedoMode") << albedoMethodTypeNames_[method_]
-        << token::END_STATEMENT << nl;
-    albedo_.writeEntry("albedo", os);
+    writeEntry(os, "albedoMode", albedoMethodTypeNames_[method_]);
+    writeEntry(os, "albedo", albedo_);
 }
 
 

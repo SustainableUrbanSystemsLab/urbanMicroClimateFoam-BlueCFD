@@ -150,7 +150,6 @@ void CFDHAMsolidMoistureTransferCoeffFvPatchScalarField::updateCoeffs()
         refCast<const fvMesh>(nbrMesh).boundary()[samplePatchI];
 
     scalar rhol=1.0e3; scalar Rv=8.31451*1000/(18.01534);                        
-    scalar Dm = 2.5e-5; scalar Sct = 0.7;
 
     scalarField& pcp = *this;
 
@@ -215,8 +214,6 @@ void CFDHAMsolidMoistureTransferCoeffFvPatchScalarField::updateCoeffs()
         pv_o_
     );     
     scalarField g_conv = betacoeff_*(pv_oValue(time.value())-pv_s); 
-    //scalarField g_conv = rhoNbr*(Dm + nutNbr/Sct) * (wcNbr-(0.62198*pv_s/1e5)) *deltaCoeff_; 
-//    scalarField g_cond = (Krel+K_v)*fieldpc.snGrad();      scalarField g_conv = rhoNbr*(Dm + nutNbr/Sct) * (wcNbr-(0.62198*pv_s/1e5)) *deltaCoeff_; 
     
     // term with temperature gradient:
     scalarField K_pt(pcp.size(), 0.0);

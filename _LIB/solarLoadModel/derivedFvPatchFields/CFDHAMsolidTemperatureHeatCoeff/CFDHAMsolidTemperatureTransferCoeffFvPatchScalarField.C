@@ -183,7 +183,6 @@ void CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField::updateCoeffs()
     scalar cap_v = 1880; scalar Tref = 273.15; scalar L_v = 2.5e6; scalar cap_l = 4182;
     //scalar cp = 1005; //specific heat of air [J/(kg K)]
     //scalar muair = 1.8e-5; scalar Pr = 0.7;
-    scalar Dm = 2.5e-5; scalar Sct = 0.7;
     scalar rhol=1.0e3; scalar Rv=8.31451*1000/(18.01534);
 
     scalarField& Tp = *this;
@@ -258,7 +257,6 @@ void CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField::updateCoeffs()
         pv_o_
     );     
     scalarField g_conv = betacoeff_*(pv_oValue(time.value())-pv_s);     
-    //scalarField g_conv = rhoNbr*(Dm + nutNbr/Sct) * (wcNbr-(0.62198*pv_s/1e5)) *deltaCoeff_; 
     scalarField LE = (cap_v*(Tp-Tref)+L_v)*g_conv;//Latent and sensible heat transfer due to vapor exchange   */
 
     scalarField K_v(Tp.size(), 0.0);

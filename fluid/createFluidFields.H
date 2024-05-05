@@ -8,7 +8,7 @@ PtrList<compressible::turbulenceModel> turbulence(fluidRegions.size());
 PtrList<volScalarField> p_rghFluid(fluidRegions.size());
 PtrList<volScalarField> ghFluid(fluidRegions.size());
 PtrList<surfaceScalarField> ghfFluid(fluidRegions.size());
-PtrList<radiation::radiationModel> radiation(fluidRegions.size());
+PtrList<radiationModel> radiation(fluidRegions.size());
 PtrList<solarLoad::solarLoadModel> solarLoad(fluidRegions.size());
 PtrList<grass::grassModel> grass(fluidRegions.size());
 PtrList<vegetation::vegetationModel> vegetation(fluidRegions.size());
@@ -61,7 +61,7 @@ forAll(fluidRegions, i)
     radiation.set
     (
         i,
-        radiation::radiationModel::New(thermoFluid[i].T())
+        radiationModel::New(thermoFluid[i].T())
     );
     
     solarLoad.set

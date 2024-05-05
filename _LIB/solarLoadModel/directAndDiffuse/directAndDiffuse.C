@@ -153,8 +153,8 @@ void Foam::solarLoad::directAndDiffuse::initialise()
         new mapDistribute
         (
             consMapDim[0],
-            Xfer<labelListList>(subMap),
-            Xfer<labelListList>(constructMap)
+            move(subMap),
+            move(constructMap)
         )
     );
 

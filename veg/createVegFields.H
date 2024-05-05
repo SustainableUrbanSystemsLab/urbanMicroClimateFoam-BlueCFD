@@ -1,6 +1,6 @@
 // Initialise fluid field pointer lists
 PtrList<rhoThermo> thermoVeg(vegRegions.size());
-PtrList<radiation::radiationModel> radiation2(vegRegions.size());
+PtrList<radiationModel> radiation2(vegRegions.size());
 PtrList<solarLoad::solarLoadModel> solarLoad2(vegRegions.size());
 PtrList<volScalarField> TVeg(vegRegions.size());
 
@@ -31,7 +31,7 @@ forAll(vegRegions, i)
     radiation2.set
     (
         i,
-        radiation::radiationModel::New(TVeg[i])
+        radiationModel::New(TVeg[i])
     );
     
     solarLoad2.set

@@ -24,7 +24,7 @@
         initialMassFluid[i]
     );
 
-    radiation::radiationModel& rad = radiation[i];
+    radiationModel& rad = radiation[i];
     solarLoad::solarLoadModel& sol = solarLoad[i];
     grass::grassModel& gra = grass[i];
     vegetation::vegetationModel& veg = vegetation[i];

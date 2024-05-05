@@ -319,8 +319,8 @@ Foam::distributedTriSurfaceMeshBugFix::distributeSegments
         new mapDistribute
         (
             segmentI,       // size after construction
-            sendMap.xfer(),
-            constructMap.xfer()
+            move(sendMap),
+            move(constructMap)
         )
     );
 }
@@ -573,8 +573,8 @@ Foam::distributedTriSurfaceMeshBugFix::calcLocalQueries
         new mapDistribute
         (
             segmentI,       // size after construction
-            sendMap.xfer(),
-            constructMap.xfer()
+            move(sendMap),
+            move(constructMap)
         )
     );
     const mapDistribute& map = mapPtr();
@@ -726,8 +726,8 @@ Foam::distributedTriSurfaceMeshBugFix::calcLocalQueries
         new mapDistribute
         (
             segmentI,       // size after construction
-            sendMap.xfer(),
-            constructMap.xfer()
+            move(sendMap),
+            move(constructMap)
         )
     );
     return mapPtr;
@@ -2251,8 +2251,8 @@ void Foam::distributedTriSurfaceMeshBugFix::distribute
         new mapDistribute
         (
             allTris.size(),
-            faceSendMap.xfer(),
-            faceConstructMap.xfer()
+            move(faceSendMap),
+            move(faceConstructMap)
         )
     );
     pointMap.reset
@@ -2260,8 +2260,8 @@ void Foam::distributedTriSurfaceMeshBugFix::distribute
         new mapDistribute
         (
             allPoints.size(),
-            pointSendMap.xfer(),
-            pointConstructMap.xfer()
+            move(pointSendMap),
+            move(pointConstructMap)
         )
     );
 

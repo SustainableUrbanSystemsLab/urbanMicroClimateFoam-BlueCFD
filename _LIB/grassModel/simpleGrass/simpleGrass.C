@@ -32,7 +32,6 @@ License
 #include "mixedFvPatchFields.H"
 #include "mappedPatchBase.H"
 
-#include "hashedWordList.H"
 #include "regionProperties.H"
 
 using namespace Foam::constant;

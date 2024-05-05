@@ -122,7 +122,7 @@
                     volScalarField& vegT = TVeg[i];                   
                     vegT.correctBoundaryConditions();
                     Info << "Updating long-wave radiation heat transfer for region: " << vegRegions[i].name() << endl;
-                    radiation::radiationModel& rad = radiation2[i];
+                    radiationModel& rad = radiation2[i];
                     rad.correct();
                 }
             }
@@ -131,7 +131,7 @@
                 forAll(fluidRegions, i)
                 {
                     Info << "Updating long-wave radiation heat transfer for region: " << fluidRegions[i].name() << endl;
-                    radiation::radiationModel& rad = radiation[i];
+                    radiationModel& rad = radiation[i];
                     rad.correct();
                 }
             }

@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2019 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -22,10 +22,10 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::radiation::viewFactorSky
+    Foam::radiationModels::viewFactorSky
 
 Description
-    View factor radiation model. 
+    View factor radiation model.
     Sky temperature is used for non-wall patches, e.g. side and top boundaries.
     Written by Aytac Kubilay based on the original viewFactor model.
     
@@ -56,12 +56,13 @@ SourceFiles
 #include "scalarListIOList.H"
 #include "mapDistribute.H"
 #include "volFields.H"
+#include "hashedWordList.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
 {
-namespace radiation
+namespace radiationModels
 {
 
 /*---------------------------------------------------------------------------*\
@@ -72,7 +73,7 @@ class viewFactorSky
 :
     public radiationModel
 {
-    // Private data
+    // Private Data
 
         //- Agglomeration List
         labelListIOList finalAgglom_;
@@ -83,7 +84,7 @@ class viewFactorSky
         //- Coarse mesh
         singleCellFvMesh coarseMesh_;
 
-        //- Net radiative heat flux [W/m2]
+        //- Net radiative heat flux [W/m^2]
         volScalarField qr_;
 
         //- View factor matrix
@@ -109,6 +110,9 @@ class viewFactorSky
 
         //- Pivot Indices for LU decomposition
         labelList pivotIndices_;
+        
+        //- List of grass patches
+        hashedWordList grassPatches;
 
 
     // Private Member Functions
@@ -120,17 +124,11 @@ class viewFactorSky
         void insertMatrixElements
         (
             const globalIndex& index,
-            const label fromProcI,
+            const label fromProci,
             const labelListList& globalFaceFaces,
             const scalarListList& viewFactors,
             scalarSquareMatrix& matrix
         );
-
-        //- Disallow default bitwise copy construct
-        viewFactorSky(const viewFactorSky&);
-
-        //- Disallow default bitwise assignment
-        void operator=(const viewFactorSky&);
 
 
 public:
@@ -147,12 +145,15 @@ public:
         //- Construct from components
         viewFactorSky(const dictionary& dict, const volScalarField& T);
 
+        //- Disallow default bitwise copy construction
+        viewFactorSky(const viewFactorSky&) = delete;
+
 
     //- Destructor
     virtual ~viewFactorSky();
 
 
-    // Member functions
+    // Member Functions
 
         // Edit
 
@@ -173,6 +174,12 @@ public:
 
         //- Const access to total radiative heat flux field
         inline const volScalarField& qr() const;
+
+
+    // Member Operators
+
+        //- Disallow default bitwise assignment
+        void operator=(const viewFactorSky&) = delete;
 };
 
 
@@ -182,7 +189,7 @@ public:
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-} // End namespace radiation
+} // End namespace radiationModels
 } // End namespace Foam
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

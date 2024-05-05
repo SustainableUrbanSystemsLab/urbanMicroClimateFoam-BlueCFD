@@ -228,7 +228,7 @@ void Foam::readFieldFvPatchVectorField::write
     fvPatchVectorField::write(os);
     os.writeKeyword("inputTimeStep")
         << inputTimeStep << token::END_STATEMENT << nl;       
-    writeEntry("value", os);
+    writeEntry(os, "value", *this);
 }
 
 
