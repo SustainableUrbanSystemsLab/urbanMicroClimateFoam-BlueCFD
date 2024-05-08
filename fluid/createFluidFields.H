@@ -4,7 +4,8 @@ PtrList<volScalarField> rhoFluid(fluidRegions.size());
 PtrList<volVectorField> UFluid(fluidRegions.size());
 PtrList<surfaceScalarField> phiFluid(fluidRegions.size());
 PtrList<uniformDimensionedVectorField> gFluid(fluidRegions.size());
-PtrList<compressible::turbulenceModel> turbulence(fluidRegions.size());
+PtrList<compressible::momentumTransportModel> turbulence(fluidRegions.size());
+PtrList<fluidThermophysicalTransportModel> fluidThermophysicalTransport(fluidRegions.size());
 PtrList<volScalarField> p_rghFluid(fluidRegions.size());
 PtrList<volScalarField> ghFluid(fluidRegions.size());
 PtrList<surfaceScalarField> ghfFluid(fluidRegions.size());
@@ -16,11 +17,8 @@ PtrList<volScalarField> wFluid(fluidRegions.size());
 PtrList<volScalarField> gcrFluid(fluidRegions.size());
 
 List<scalar> initialMassFluid(fluidRegions.size());
-List<label> pRefCellFluid(fluidRegions.size(),0);
-List<scalar> pRefValueFluid(fluidRegions.size(),0.0);
 
-PtrList<dimensionedScalar> rhoMax(fluidRegions.size());
-PtrList<dimensionedScalar> rhoMin(fluidRegions.size());
+PtrList<pressureControl> pressureControlFluid(fluidRegions.size());
 
 PtrList<IOMRFZoneList> MRFfluid(fluidRegions.size());
 PtrList<fv::options> fluidFvOptions(fluidRegions.size());
@@ -176,13 +174,24 @@ forAll(fluidRegions, i)
     turbulence.set
     (
         i,
-        compressible::turbulenceModel::New
+        compressible::momentumTransportModel::New
         (
             rhoFluid[i],
             UFluid[i],
             phiFluid[i],
             thermoFluid[i]
         ).ptr()
+    );
+    
+    Info<< "    Adding to thermophysical transport\n" << endl;
+    fluidThermophysicalTransport.set
+    (
+        i,
+        fluidThermophysicalTransportModel::New
+        (
+            turbulence[i],
+            thermoFluid[i]
+        )
     );
 
     Info<< "    Adding to ghFluid\n" << endl;
@@ -223,36 +232,16 @@ forAll(fluidRegions, i)
 
     initialMassFluid[i] = fvc::domainIntegrate(rhoFluid[i]).value();
 
-    setRefCell
-    (
-        thermoFluid[i].p(),
-        p_rghFluid[i],
-        fluidRegions[i].solutionDict().subDict("SIMPLE"),
-        pRefCellFluid[i],
-        pRefValueFluid[i]
-    );
-
-    rhoMax.set
+    pressureControlFluid.set 
     (
         i,
-        new dimensionedScalar
+        new pressureControl
         (
-            fluidRegions[i].solutionDict().subDict("SIMPLE").lookup
-            (
-                "rhoMax"
-            )
-        )
-    );
-
-    rhoMin.set
-    (
-        i,
-        new dimensionedScalar
-        (
-            fluidRegions[i].solutionDict().subDict("SIMPLE").lookup
-            (
-                "rhoMin"
-            )
+            thermoFluid[i].p(),
+            p_rghFluid[i],
+            rhoFluid[i],
+            fluidRegions[i].solutionDict().subDict("SIMPLE"),
+            thermoFluid[i].incompressible()
         )
     );
 

@@ -6,10 +6,10 @@
     (
         fvm::div(phi, U)
       + MRF.DDt(rho, U)
-      + turb.divDevRhoReff(U)
+      + turb.divDevTau(U)
      ==
+        fvOptions(rho, U)
       - fvm::SuSp(gra.Cf()*rho*mag(U), U)
-      + fvOptions(rho, U)
       - fvm::SuSp(veg.Cf()*rho*mag(U), U) // vegetation momentum source
     );
     fvVectorMatrix& UEqn = tUEqn.ref();

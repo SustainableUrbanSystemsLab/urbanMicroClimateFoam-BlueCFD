@@ -33,7 +33,7 @@ License
 
 #include "vectorIOList.H"
 
-#include "interpolationTable.H"
+#include "TableFile.H"
 
 #include "mappedPatchBase.H"
 
@@ -721,19 +721,27 @@ void Foam::solarLoad::directAndDiffuse::calculate()
     
     Time& time = const_cast<Time&>(mesh_.time());   
     // Read sunPosVector list
-    interpolationTable<vector> sunPosVector
+    dictionary sunPosVectorIO;
+    sunPosVectorIO.add(
+        "file", 
+        fileName
+        (
+            mesh_.time().constant()
+            /"sunPosVector"
+        )
+    );
+    Function1s::TableFile<vector> sunPosVector
     (
-        mesh_.time().rootPath()
-        /mesh_.time().globalCaseName()
-        /mesh_.time().constant()
-        /"sunPosVector"
-    );            
+        "sunPosVector",
+        sunPosVectorIO
+    );           
     // look for the correct range
     label lo = 0;
     label hi = 0;
-    for (label i = 0; i < sunPosVector.size(); ++i)
+    scalarField sunPosVector_x = sunPosVector.x();
+    forAll(sunPosVector_x, i)
     {
-        if (time.value() >= sunPosVector[i].first())
+        if (time.value() >= sunPosVector_x[i])
         {
             lo = hi = i;
         }
@@ -746,7 +754,7 @@ void Foam::solarLoad::directAndDiffuse::calculate()
     scalar hi_fraction = 0; 
     if (lo != hi) //if timestep is between two time values in sunPosVector
     {
-        hi_fraction = (time.value() - sunPosVector[lo].first()) / (sunPosVector[hi].first() - sunPosVector[lo].first());
+        hi_fraction = (time.value() - sunPosVector_x[lo]) / (sunPosVector_x[hi] - sunPosVector_x[lo]);
     }  
 
     if (Pstream::master())

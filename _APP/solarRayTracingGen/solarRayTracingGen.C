@@ -67,7 +67,7 @@ Description
 
 #include "regionProperties.H"
 
-#include "interpolationTable.H"
+#include "TableFile.H"
 
 using namespace Foam;
 
@@ -189,27 +189,54 @@ int main(int argc, char *argv[])
     vector skyPos = viewFactorDict.lookup("skyPosVector");
 
     // Read sunPosVector list
-    interpolationTable<vector> sunPosVector
-    (
-        runTime.time().rootPath()
-        /runTime.time().globalCaseName()
-        /runTime.time().constant()
-        /"sunPosVector"
-    );  
-    interpolationTable<scalar> IDN // direct solar radiation intensity flux
-    (
-        runTime.time().rootPath()
-        /runTime.time().globalCaseName()
-        /runTime.time().constant()
-        /"IDN"
-    );    
-    interpolationTable<scalar> Idif // diffuse solar radiation intensity flux
-    (
-        runTime.time().rootPath()
-        /runTime.time().globalCaseName()
-        /runTime.time().constant()
-        /"Idif"
+    dictionary sunPosVectorIO;
+    sunPosVectorIO.add(
+        "file", 
+        fileName
+        (
+            mesh.time().constant()
+            /"sunPosVector"
+        )
     );
+    Function1s::TableFile<vector> sunPosVector
+    (
+        "sunPosVector",
+        sunPosVectorIO
+    );
+    // Read solar radiation intensity flux
+    dictionary IDNIO;
+    IDNIO.add(
+        "file", 
+        fileName
+        (
+            mesh.time().constant()
+            /"IDN"
+        )
+    );
+    Function1s::TableFile<scalar> IDN
+    (
+        "IDN",
+        IDNIO
+    );
+    // Read diffuse solar radiation intensity flux
+    dictionary IdifIO;
+    IdifIO.add(
+        "file", 
+        fileName
+        (
+            mesh.time().constant()
+            /"Idif"
+        )
+    );
+    Function1s::TableFile<scalar> Idif
+    (
+        "Idif",
+        IdifIO
+    );
+    
+    vectorField sunPosVector_y = sunPosVector.y();
+    scalarField IDN_y = IDN.y();
+    scalarField Idif_y = Idif.y();
 
     const label debug = viewFactorDict.lookupOrDefault<label>("debug", 0);
 
@@ -511,14 +538,14 @@ int main(int argc, char *argv[])
     List<point> solarEnd(solarStart.size()); List<point> solarEndFINE(solarStartFINE.size()); 
 
     // Number of visible faces from local index
-    labelListList nVisibleFaceFacesList(sunPosVector.size()); labelListList nVisibleFaceFacesListFINE(sunPosVector.size()); 
+    labelListList nVisibleFaceFacesList(sunPosVector_y.size()); labelListList nVisibleFaceFacesListFINE(sunPosVector_y.size()); 
     labelListList visibleFaceFaces(nCoarseFaces); labelListList visibleFaceFacesFINE(nFineFaces); 
 
-    forAll(sunPosVector, vectorId)
+    forAll(sunPosVector_y, vectorId)
     {   
         labelList nVisibleFaceFaces(nCoarseFaces, 0); labelList nVisibleFaceFacesFINE(nFineFaces, 0);
 
-        vector sunPos = sunPosVector[vectorId].second();
+        vector sunPos = sunPosVector_y[vectorId];
 
         //List<pointIndexHit> hitInfo(1);
         forAll(solarStart, pointI)
@@ -693,7 +720,7 @@ int main(int argc, char *argv[])
             IOobject::NO_WRITE,
             false
         ),
-        sunPosVector.size()
+        sunPosVector_y.size()
     );   
     scalarListIOList sunViewCoeff
     (
@@ -706,7 +733,7 @@ int main(int argc, char *argv[])
             IOobject::NO_WRITE,
             false
         ),
-        sunPosVector.size()
+        sunPosVector_y.size()
     );
     scalarListIOList skyViewCoeff
     (
@@ -719,7 +746,7 @@ int main(int argc, char *argv[])
             IOobject::NO_WRITE,
             false
         ),
-        sunPosVector.size()
+        sunPosVector_y.size()
     );    
     
     scalarList init(nCoarseFacesAll, 0.0);
@@ -761,9 +788,9 @@ int main(int argc, char *argv[])
             << exit(FatalError);
     }        
 
-    forAll(sunPosVector, vectorId)
+    forAll(sunPosVector_y, vectorId)
     {    
-        vector sunPos = sunPosVector[vectorId].second();
+        vector sunPos = sunPosVector_y[vectorId];
 
         forAll(viewFactorsPatches, patchID)
         {
@@ -793,7 +820,7 @@ int main(int argc, char *argv[])
                 {
                      label faceI = fineFaces[k];
                      cosPhi = (localFINESf[fineFaceNo+faceI] & sunPos)/(mag(localFINESf[fineFaceNo+faceI])*mag(sunPos) + SMALL);
-                     solarLoadFineFaces[vectorId][fineFaceNo+faceI] = nVisibleFaceFacesListFINE[vectorId][fineFaceNo+faceI]*mag(cosPhi) * IDN[vectorId].second();                                                  
+                     solarLoadFineFaces[vectorId][fineFaceNo+faceI] = nVisibleFaceFacesListFINE[vectorId][fineFaceNo+faceI]*mag(cosPhi) * IDN_y[vectorId];                                                  
                 }
                                 
                 scalar nVisibleFaceFacesListFINE_avg = 0;
@@ -808,7 +835,7 @@ int main(int argc, char *argv[])
 
                 cosPhi = (localCoarseSf[faceNo] & sunPos)/(mag(localCoarseSf[faceNo])*mag(sunPos) + SMALL);                
                 //sunViewCoeff[vectorId][faceNoAll] = nVisibleFaceFacesList[vectorId][faceNo]*mag(cosPhi) * IDN[vectorId].second();
-                sunViewCoeff[vectorId][faceNoAll] = nVisibleFaceFacesListFINE_avg*mag(cosPhi) * IDN[vectorId].second();
+                sunViewCoeff[vectorId][faceNoAll] = nVisibleFaceFacesListFINE_avg*mag(cosPhi) * IDN_y[vectorId];
 
                 if (vegNames.size()>0)
                 {
@@ -816,14 +843,14 @@ int main(int argc, char *argv[])
                     //if LAIboundary value is positive and if the surface is looking towards the sun, update sunViewCoeff
                     //nVisibleFaceFacesListFINE_avg indicates the ratio of coarseFace that see the sun
                     {
-                        sunViewCoeff[vectorId][faceNoAll] += (1 - nVisibleFaceFacesListFINE_avg) * mag(cosPhi) * IDN[vectorId].second() * Foam::exp(-kcLAIboundaryList[vectorId][faceNoAll]); // beer-lambert law
+                        sunViewCoeff[vectorId][faceNoAll] += (1 - nVisibleFaceFacesListFINE_avg) * mag(cosPhi) * IDN_y[vectorId] * Foam::exp(-kcLAIboundaryList[vectorId][faceNoAll]); // beer-lambert law
                         forAll(fineFaces, k)
                         {
                              label faceI = fineFaces[k];
                              cosPhi = (localFINESf[fineFaceNo+faceI] & sunPos)/(mag(localFINESf[fineFaceNo+faceI])*mag(sunPos) + SMALL);
                              if(!nVisibleFaceFacesListFINE[vectorId][fineFaceNo+faceI])
                              {
-                                 solarLoadFineFaces[vectorId][fineFaceNo+faceI] = mag(cosPhi) * IDN[vectorId].second() * Foam::exp(-kcLAIboundaryList[vectorId][faceNoAll]); // beer-lambert law;
+                                 solarLoadFineFaces[vectorId][fineFaceNo+faceI] = mag(cosPhi) * IDN_y[vectorId] * Foam::exp(-kcLAIboundaryList[vectorId][faceNoAll]); // beer-lambert law;
                              }
                         }
                     }
@@ -833,7 +860,7 @@ int main(int argc, char *argv[])
                 radAngleBetween = Foam::acos( min(max(cosPhi, -1), 1) );
                 degAngleBetween = radToDeg(radAngleBetween);
                 if (degAngleBetween > 90 && degAngleBetween <= 180){degAngleBetween=90 - (degAngleBetween-90);}
-                skyViewCoeff[vectorId][faceNoAll] = (1-0.5*(degAngleBetween/90)) * Idif[vectorId].second();               
+                skyViewCoeff[vectorId][faceNoAll] = (1-0.5*(degAngleBetween/90)) * Idif_y[vectorId];               
  
                 faceNoAll++;
                 j++;

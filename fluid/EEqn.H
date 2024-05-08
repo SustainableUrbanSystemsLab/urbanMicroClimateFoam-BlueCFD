@@ -10,7 +10,7 @@
           ? fvc::div(phi, volScalarField("Ekp", 0.5*magSqr(U) + p/rho))
           : fvc::div(phi, volScalarField("K", 0.5*magSqr(U)))
         )
-      - fvm::laplacian(turb.alphaEff(), he)
+      + fluidThermophys.divq(he)
      ==
         rho*(U&g)
       + rad.Sh(thermo, he)

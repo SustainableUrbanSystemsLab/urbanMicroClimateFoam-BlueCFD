@@ -37,8 +37,8 @@ Description
 
 #include "fvCFD.H"
 #include "rhoThermo.H"
-#include "turbulentFluidThermoModel.H"
-#include "fixedGradientFvPatchFields.H"
+#include "fluidThermoMomentumTransportModel.H"
+#include "fluidThermophysicalTransportModel.H"
 #include "regionProperties.H"
 #include "buildingMaterialModel.H"
 #include "solidThermo.H"
@@ -46,6 +46,7 @@ Description
 #include "solarLoadModel.H"
 #include "grassModel.H"
 #include "simpleControlFluid.H"
+#include "pressureControl.H"
 #include "fvOptions.H"
 
 #include "blendingLayer.H"

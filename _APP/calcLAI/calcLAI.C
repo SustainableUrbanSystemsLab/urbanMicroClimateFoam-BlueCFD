@@ -70,7 +70,7 @@ Description
 #include "unitConversion.H"
 //#include "fvIOoptionList.H"
 
-#include "interpolationTable.H"
+#include "TableFile.H"
 
 using namespace Foam;
 
@@ -470,13 +470,22 @@ int main(int argc, char *argv[])
     );
 
     // Read sunPosVector list
-    interpolationTable<vector> sunPosVector
-    (
-        runTime.time().rootPath()
-        /runTime.time().globalCaseName()
-        /runTime.time().constant()
-        /"sunPosVector"
+    dictionary sunPosVectorIO;
+    sunPosVectorIO.add(
+        "file", 
+        fileName
+        (
+            mesh.time().constant()
+            /"sunPosVector"
+        )
     );
+    Function1s::TableFile<vector> sunPosVector
+    (
+        "sunPosVector",
+        sunPosVectorIO
+    );
+    scalarField sunPosVector_x = sunPosVector.x();
+    vectorField sunPosVector_y = sunPosVector.y();
 
     scalarListIOList divqrswList
     (
@@ -489,16 +498,25 @@ int main(int argc, char *argv[])
             IOobject::NO_WRITE,
             false
         ),
-        sunPosVector.size()
+        sunPosVector_y.size()
     );
 
-    interpolationTable<scalar> IDN // direct solar radiation intensity flux
+    // Read solar radiation intensity flux
+    dictionary IDNIO;
+    IDNIO.add(
+        "file", 
+        fileName
+        (
+            mesh.time().constant()
+            /"IDN"
+        )
+    );
+    Function1s::TableFile<scalar> IDN
     (
-        runTime.time().rootPath()
-        /runTime.time().globalCaseName()
-        /runTime.time().constant()
-        /"IDN"
+        "IDN",
+        IDNIO
     ); 
+    scalarField IDN_y = IDN.y();
 
     IOdictionary vegetationProperties
     (
@@ -595,7 +613,7 @@ int main(int argc, char *argv[])
   	label j = 0;
   	label k = 0;
 
-    forAll(sunPosVector, vectorID)
+    forAll(sunPosVector_y, vectorID)
     {
         // start clock
         tstartStep = std::clock();
@@ -613,7 +631,7 @@ int main(int argc, char *argv[])
         divqrsw.setSize(nMeshCells, 0.0);
 
         // sunPosVector i
-        vector n2 = sunPosVector[vectorID].second();
+        vector n2 = sunPosVector_y[vectorID];
         n2 /= mag(n2);
 
         // only if sun is above the horizon
@@ -663,7 +681,7 @@ int main(int argc, char *argv[])
             tmp<scalarField> qrswInterpRot;
             if (Pstream::master())
             {
-                qrswInterpRot = IDN[vectorID].second()*Foam::exp(-kc*LAIInterpRot);
+                qrswInterpRot = IDN_y[vectorID]*Foam::exp(-kc*LAIInterpRot);
             }
             // Info << "qrswInterpRot: gMin: " << gMin(qrswInterpRot) << endl;
             // Info << "qrswInterpRot: gMax: " << gMax(qrswInterpRot) << endl;
@@ -994,9 +1012,9 @@ int main(int argc, char *argv[])
             divqrswi.write();
 
             //runTime++;
-            if (vectorID + 1 < sunPosVector.size())
+            if (vectorID + 1 < sunPosVector_y.size())
             {
-                runTime.setTime(sunPosVector[vectorID+1].first(),runTime.timeIndex()+1);
+                runTime.setTime(sunPosVector_x[vectorID+1],runTime.timeIndex()+1);
             }
         }
 

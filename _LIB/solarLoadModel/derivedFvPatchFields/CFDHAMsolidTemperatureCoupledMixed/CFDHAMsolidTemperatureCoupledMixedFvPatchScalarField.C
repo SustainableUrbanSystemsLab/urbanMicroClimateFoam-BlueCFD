@@ -29,7 +29,7 @@ License
 #include "volFields.H"
 #include "mappedPatchBase.H"
 #include "fixedValueFvPatchFields.H"
-#include "interpolationTable.H"
+#include "TableFile.H"
 #include "uniformDimensionedFields.H"
 
 #include "hashedWordList.H"
@@ -249,40 +249,64 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
 
     fileName rainTempFile
     (
-       nbrMesh.time().rootPath()
-       /nbrMesh.time().globalCaseName()
-       /"0/air/rainTemp"
+       "$FOAM_CASE/0/air/rainTemp"
     );
     scalar rainTemp = 293.15;
     if(isFile(rainTempFile))
     {
 //        Info << "Found rainTemp file..." << endl;
-        interpolationTable<scalar> rT
-        (
+        dictionary rainTempIO;
+        rainTempIO.add(
+            "file", 
             rainTempFile
         );
-        rainTemp = rT(time.value());
+        Function1s::TableFile<scalar> rT
+        (
+            "rainTemp",
+            rainTempIO
+        );
+        rainTemp = rT.value(time.value());
     }
     else
     {
 //        Info << "Calculating rainTemp..." << endl;
         // Calculate rain temperature - approximation for wet-bulb temp///////////
         //obtain Tambient - can find a better way to import this value?
-        interpolationTable<scalar> Tambient
+        dictionary TambientIO;
+        TambientIO.add(
+            "file", 
+            fileName
+            (
+                "$FOAM_CASE/0/air/Tambient"
+            )
+        );
+        Function1s::TableFile<scalar> Tambient
         (
-            "$FOAM_CASE/0/air/Tambient"
-        ); 
+            "Tambient",
+            TambientIO
+        );
         
-        interpolationTable<scalar> wambient
+        dictionary wambientIO;
+        wambientIO.add(
+            "file", 
+            fileName
+            (
+                "$FOAM_CASE/0/air/wambient"
+            )
+        );
+        Function1s::TableFile<scalar> wambient
         (
-            "$FOAM_CASE/0/air/wambient"
-        );     
+            "wambient",
+            wambientIO
+        );      
         ///////////
-        scalar saturationPressure = 133.322*pow(10,(8.07131-(1730.63/(233.426+Tambient(time.value())-273.15))));
-        scalar airVaporPressure = wambient(time.value())*1e5/0.621945;
+        scalar Tambient_ = Tambient.value(time.value());
+        scalar wambient_ = wambient.value(time.value());
+        scalar saturationPressure = 133.322*pow(10,(8.07131-(1730.63/(233.426+Tambient_-273.15))));
+        scalar airVaporPressure = wambient_*1e5/0.621945;
         scalar relhum = airVaporPressure/saturationPressure*100;
-        scalar dewPointTemp = Tambient(time.value()) - (100-relhum)/5;
-        rainTemp = Tambient(time.value()) - (Tambient(time.value())-dewPointTemp)/3;
+        scalar dewPointTemp = Tambient_ - (100-relhum)/5;
+        rainTemp = Tambient_ - (Tambient_-dewPointTemp)/3;
     }
     //////////////////////////////////////////////////////////////////////////
 
@@ -384,7 +408,7 @@ void CFDHAMsolidTemperatureCoupledMixedFvPatchScalarField::updateCoeffs()
             const dictionary& modelCoeffs = grassProperties.subDict(grassModel + "Coeffs");
             hashedWordList grassPatches = modelCoeffs.lookup("grassPatches");
 
-            if (grassPatches.contains(nbrPatch.name()))//if patch is covered with grass
+            if (grassPatches.found(nbrPatch.name()))//if patch is covered with grass
             {
                 if(radUpdateNow) //update qs and qr once at the beginning
                 {                

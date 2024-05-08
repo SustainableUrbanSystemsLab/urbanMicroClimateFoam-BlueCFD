@@ -25,6 +25,7 @@ while ((simpleControlFluid.run(runTime) || runTime.timeIndex() <= minFluidIterat
         veg.correct(U, thermo.T(), w);
 
         turb.correct();
+        fluidThermophys.correct();
     }
 
     Info << nl;

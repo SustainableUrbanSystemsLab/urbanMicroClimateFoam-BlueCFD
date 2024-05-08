@@ -9,7 +9,8 @@
     volScalarField& gcr = gcrFluid[i];  
     surfaceScalarField& phi = phiFluid[i]; 
 
-    compressible::turbulenceModel& turb = turbulence[i];
+    compressible::momentumTransportModel& turb = turbulence[i];
+    fluidThermophysicalTransportModel& fluidThermophys = fluidThermophysicalTransport[i];
 
     volScalarField& p = thermo.p();
     const volScalarField& psi = thermo.psi();
@@ -23,14 +24,13 @@
         dimMass,
         initialMassFluid[i]
     );
+    
+    pressureControl& pControl = pressureControlFluid[i];
 
     radiationModel& rad = radiation[i];
     solarLoad::solarLoadModel& sol = solarLoad[i];
     grass::grassModel& gra = grass[i];
     vegetation::vegetationModel& veg = vegetation[i];
-
-    const label pRefCell = pRefCellFluid[i];
-    const scalar pRefValue = pRefValueFluid[i];
 
     volScalarField& p_rgh = p_rghFluid[i];
 
@@ -39,12 +39,12 @@
     const surfaceScalarField& ghf = ghfFluid[i];
 
 
-bool blending =
-    runTime.controlDict().lookupOrDefault<bool>("blending", false);
-blendingLayer bL(U, thermo.T());
-if (blending)
-{
-    bL.initialize();
-}
+    bool blending =
+        runTime.controlDict().lookupOrDefault<bool>("blending", false);
+    blendingLayer bL(U, thermo.T());
+    if (blending)
+    {
+        bL.initialize();
+    }
 
 

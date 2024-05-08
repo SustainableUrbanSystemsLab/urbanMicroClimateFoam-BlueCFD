@@ -31,7 +31,7 @@ License
 #include "addToRunTimeSelectionTable.H"
 
 #include "wallFvPatch.H"
-#include "interpolationTable.H"
+#include "TableFile.H"
 
 #include "mappedPatchBase.H"
 
@@ -420,27 +420,40 @@ void Foam::radiationModels::viewFactorSky::calculate()
     Time& time = const_cast<Time&>(mesh_.time());
     //label timestep = ceil( (time.value()/3600)-1E-6 ); timestep = timestep%24;
     
-    interpolationTable<scalar> Tambient
+    dictionary TambientIO;
+    TambientIO.add(
+        "file", 
+        fileName
+        (
+            "$FOAM_CASE/0/air/Tambient"
+        )
+    );
+    Function1s::TableFile<scalar> Tambient
     (
-        "$FOAM_CASE/0/air/Tambient"
+        "Tambient",
+        TambientIO
     );
     //////////////////////////////////////////////////////////////////////////
     fileName cloudCoverFile
     (
-       mesh_.time().rootPath()
-       /mesh_.time().globalCaseName()
-       /"0/air/cloudCover"
+       "$FOAM_CASE/0/air/cloudCover"
     );
     
     scalar cc = 0; //cloud cover
     if(isFile(cloudCoverFile))
     {
         Info << "Reading cloud cover values..." << endl;
-        interpolationTable<scalar> cloudCover
-        (
+        dictionary cloudCoverIO;
+        cloudCoverIO.add(
+            "file", 
             cloudCoverFile
         );
-        cc = cloudCover(time.value());
+        Function1s::TableFile<scalar> cloudCover
+        (
+            "cloudCover",
+            cloudCoverIO
+        );        
+        cc = cloudCover.value(time.value());
     }
     else
     {
@@ -481,7 +494,7 @@ void Foam::radiationModels::viewFactorSky::calculate()
         const scalarField& Tp = T_.boundaryField()[patchID];
         const scalarField& sf = mesh_.magSf().boundaryField()[patchID];
         scalarField Tg_(T_.size(), -1.0);
-        if (grassPatches.contains(mesh_.boundary()[patchID].name()))
+        if (grassPatches.found(mesh_.boundary()[patchID].name()))
         {
             if(mesh_.name() == "vegetation")
             {
@@ -546,13 +559,14 @@ void Foam::radiationModels::viewFactorSky::calculate()
                     label facei = fineFaces[j];
                     if (!isA<wallFvPatch>(mesh_.boundary()[patchID])) // added to take into account sky temperature
                     {
-                        scalar ec = (1-0.84*cc)*(0.527 + 0.161*Foam::exp(8.45*(1-273/Tambient(time.value())))) +0.84*cc; //cloud emissivity
-                        scalar Tsky = pow(9.365574E-6*(1-cc)*pow(Tambient(time.value()),6) + pow(Tambient(time.value()),4)*cc*ec ,0.25); // Swinbank model (1963, Cole 1976)
+                        scalar Tambient_ = Tambient.value(time.value());
+                        scalar ec = (1-0.84*cc)*(0.527 + 0.161*Foam::exp(8.45*(1-273/Tambient_))) +0.84*cc; //cloud emissivity
+                        scalar Tsky = pow(9.365574E-6*(1-cc)*pow(Tambient_,6) + pow(Tambient_,4)*cc*ec ,0.25); // Swinbank model (1963, Cole 1976)
                         T4ave[coarseI] += (pow4(Tsky)*sf[facei])/area;
                     }
                     else
                     {
-                        if (grassPatches.contains(mesh_.boundary()[patchID].name()))//use Tg if patch is covered with grass
+                        if (grassPatches.found(mesh_.boundary()[patchID].name()))//use Tg if patch is covered with grass
                         {
                             T4ave[coarseI] += (pow4(Tg_[facei])*sf[facei])/area;
                         }

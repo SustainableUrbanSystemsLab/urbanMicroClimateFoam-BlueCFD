@@ -54,8 +54,6 @@ SourceFiles
 #include "mapDistribute.H"
 #include "volFields.H"
 
-#include "interpolationTable.H"
-
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
@@ -131,10 +129,7 @@ class directAndDiffuse
         bool constAlbedo_;
 
         //- timestepsInADay
-        label timestepsInADay_;    
-        
-        //- sunPosVector
-        interpolationTable<vector> sunPosVector;        
+        label timestepsInADay_;         
 
         //- Iterations Counter
         label iterCounter_;

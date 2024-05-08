@@ -29,7 +29,7 @@ License
 #include "volFields.H"
 #include "mappedPatchBase.H"
 #include "fixedValueFvPatchFields.H"
-#include "interpolationTable.H"
+#include "TableFile.H"
 #include "uniformDimensionedFields.H"
 
 #include "hashedWordList.H"
@@ -242,21 +242,35 @@ void CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField::updateCoeffs()
 
     Time& time = const_cast<Time&>(nbrMesh.time());
     
-    interpolationTable<scalar> TambValue
-    (
+    dictionary TambValueIO;
+    TambValueIO.add(
+        "file", 
         Tamb_
-    ); 
-    scalarField q_conv = hcoeff_*(TambValue(time.value())-Tp); 
+    );
+    Function1s::TableFile<scalar> TambValue
+    (
+        "TambValue",
+        TambValueIO
+    );
+    scalar TambValue_ = TambValue.value(time.value());
+    scalarField q_conv = hcoeff_*(TambValue_-Tp); 
     //scalarField q_conv = (muair/Pr + alphatNbr)*cp*(TcNbr-Tp)*deltaCoeff_; 
             
     scalarField pvsat_s = exp(6.58094e1-7.06627e3/Tp-5.976*log(Tp));
     scalarField pv_s = pvsat_s*exp((pc)/(rhol*Rv*Tp));
 
-    interpolationTable<scalar> pv_oValue
-    (
+    dictionary pv_oValueIO;
+    pv_oValueIO.add(
+        "file", 
         pv_o_
-    );     
-    scalarField g_conv = betacoeff_*(pv_oValue(time.value())-pv_s);     
+    );
+    Function1s::TableFile<scalar> pv_oValue
+    (
+        "pv_oValue",
+        pv_oValueIO
+    );
+    scalar pv_oValue_ = pv_oValue.value(time.value());
+    scalarField g_conv = betacoeff_*(pv_oValue_-pv_s);     
     scalarField LE = (cap_v*(Tp-Tref)+L_v)*g_conv;//Latent and sensible heat transfer due to vapor exchange   */
 
     scalarField K_v(Tp.size(), 0.0);
@@ -274,40 +288,64 @@ void CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField::updateCoeffs()
 
     fileName rainTempFile
     (
-       nbrMesh.time().rootPath()
-       /nbrMesh.time().globalCaseName()
-       /"0/air/rainTemp"
+       "$FOAM_CASE/0/air/rainTemp"
     );
     scalar rainTemp = 293.15;
     if(isFile(rainTempFile))
     {
 //        Info << "Found rainTemp file..." << endl;
-        interpolationTable<scalar> rT
-        (
+        dictionary rainTempIO;
+        rainTempIO.add(
+            "file", 
             rainTempFile
         );
-        rainTemp = rT(time.value());
+        Function1s::TableFile<scalar> rT
+        (
+            "rainTemp",
+            rainTempIO
+        );
+        rainTemp = rT.value(time.value());
     }
     else
     {
 //        Info << "Calculating rainTemp..." << endl;
         // Calculate rain temperature - approximation for wet-bulb temp///////////
         //obtain Tambient - can find a better way to import this value?
-        interpolationTable<scalar> Tambient
+        dictionary TambientIO;
+        TambientIO.add(
+            "file", 
+            fileName
+            (
+                "$FOAM_CASE/0/air/Tambient"
+            )
+        );
+        Function1s::TableFile<scalar> Tambient
         (
-            "$FOAM_CASE/0/air/Tambient"
-        ); 
+            "Tambient",
+            TambientIO
+        );
         
-        interpolationTable<scalar> wambient
+        dictionary wambientIO;
+        wambientIO.add(
+            "file", 
+            fileName
+            (
+                "$FOAM_CASE/0/air/wambient"
+            )
+        );
+        Function1s::TableFile<scalar> wambient
         (
-            "$FOAM_CASE/0/air/wambient"
-        );     
+            "wambient",
+            wambientIO
+        );   
         ///////////
-        scalar saturationPressure = 133.322*pow(10,(8.07131-(1730.63/(233.426+Tambient(time.value())-273.15))));
-        scalar airVaporPressure = wambient(time.value())*1e5/0.621945;
+        scalar Tambient_ = Tambient.value(time.value());
+        scalar wambient_ = wambient.value(time.value());
+        scalar saturationPressure = 133.322*pow(10,(8.07131-(1730.63/(233.426+Tambient_-273.15))));
+        scalar airVaporPressure = wambient_*1e5/0.621945;
         scalar relhum = airVaporPressure/saturationPressure*100;
-        scalar dewPointTemp = Tambient(time.value()) - (100-relhum)/5;
-        rainTemp = Tambient(time.value()) - (Tambient(time.value())-dewPointTemp)/3;
+        scalar dewPointTemp = Tambient_ - (100-relhum)/5;
+        rainTemp = Tambient_ - (Tambient_-dewPointTemp)/3;
     }
     //////////////////////////////////////////////////////////////////////////
 
@@ -407,7 +445,7 @@ void CFDHAMsolidTemperatureTransferCoeffFvPatchScalarField::updateCoeffs()
             const dictionary& modelCoeffs = grassProperties.subDict(grassModel + "Coeffs");
             hashedWordList grassPatches = modelCoeffs.lookup("grassPatches");
 
-            if (grassPatches.contains(nbrPatch.name()))//if patch is covered with grass
+            if (grassPatches.found(nbrPatch.name()))//if patch is covered with grass
             {
                 if(radUpdateNow)
                 {

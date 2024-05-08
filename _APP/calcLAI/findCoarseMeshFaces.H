@@ -35,7 +35,7 @@
             IOobject::NO_WRITE,
             false
         ),
-        sunPosVector.size()
+        sunPosVector_y.size()
     );
 
     labelListIOList vegFinalAgglom

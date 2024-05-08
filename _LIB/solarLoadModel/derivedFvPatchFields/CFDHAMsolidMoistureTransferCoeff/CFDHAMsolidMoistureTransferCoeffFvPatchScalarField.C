@@ -29,7 +29,7 @@ License
 #include "volFields.H"
 #include "mappedPatchBase.H"
 #include "fixedValueFvPatchFields.H"
-#include "interpolationTable.H"
+#include "TableFile.H"
 #include "uniformDimensionedFields.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -209,11 +209,18 @@ void CFDHAMsolidMoistureTransferCoeffFvPatchScalarField::updateCoeffs()
     
     Time& time = const_cast<Time&>(nbrMesh.time());
     
-    interpolationTable<scalar> pv_oValue
-    (
+    dictionary pv_oValueIO;
+    pv_oValueIO.add(
+        "file", 
         pv_o_
-    );     
-    scalarField g_conv = betacoeff_*(pv_oValue(time.value())-pv_s); 
+    );
+    Function1s::TableFile<scalar> pv_oValue
+    (
+        "pv_oValue",
+        pv_oValueIO
+    );
+    scalar pv_oValue_ = pv_oValue.value(time.value());
+    scalarField g_conv = betacoeff_*(pv_oValue_-pv_s); 
     
     // term with temperature gradient:
     scalarField K_pt(pcp.size(), 0.0);
