@@ -37,7 +37,7 @@ License
 #include "geomDecomp.H"
 #include "vectorList.H"
 #include "PackedBoolList.H"
-#include "PatchTools.H"
+#include "PatchTools.T.H"
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 

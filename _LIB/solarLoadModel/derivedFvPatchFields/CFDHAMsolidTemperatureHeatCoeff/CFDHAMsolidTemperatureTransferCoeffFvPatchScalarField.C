@@ -29,7 +29,7 @@ License
 #include "volFields.H"
 #include "mappedPatchBase.H"
 #include "fixedValueFvPatchFields.H"
-#include "TableFile.H"
+#include "TableFile.T.H"
 #include "uniformDimensionedFields.H"
 
 #include "hashedWordList.H"

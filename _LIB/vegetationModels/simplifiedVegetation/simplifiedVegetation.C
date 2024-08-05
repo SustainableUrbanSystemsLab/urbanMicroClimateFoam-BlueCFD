@@ -30,7 +30,7 @@ Vegetation model implemented by L. Manickathan, Empa, February 2017
 #include "simplifiedVegetation.H"
 #include "addToRunTimeSelectionTable.H"
 
-#include "TableFile.H"
+#include "TableFile.T.H"
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 

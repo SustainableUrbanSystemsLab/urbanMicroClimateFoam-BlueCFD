@@ -21,12 +21,13 @@ EXE_INC = \
     -I$(LIB_SRC)/atmosphericModels/lnInclude
 
 EXE_LIBS = \
-    $(FOAM_USER_LIBBIN)/libsolarLoad.so \
-    $(FOAM_USER_LIBBIN)/libgrassModel.so \
-    $(FOAM_USER_LIBBIN)/libbuildingMaterialModel.so \
-    $(FOAM_USER_LIBBIN)/libsimpleControlFluid.so \
-    $(FOAM_USER_LIBBIN)/libblendingLayer.so \
-    $(FOAM_USER_LIBBIN)/libvegetationModels.so \
+    -L$(FOAM_USER_LIBBIN) \
+	-lsolarLoad \
+    -lgrassModel \
+    -lbuildingMaterialModel \
+    -lsimpleControlFluid \
+    -lblendingLayer \
+    -lvegetationModels \
     -lfiniteVolume \
     -lthermophysicalTransportModels \
     -lfluidThermophysicalModels \

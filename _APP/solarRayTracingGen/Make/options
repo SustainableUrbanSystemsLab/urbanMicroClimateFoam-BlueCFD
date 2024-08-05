@@ -16,4 +16,6 @@ EXE_LIBS = \
     -ldistributed \
     -lradiationModels \
     -lregionModels \
-    $(FOAM_USER_LIBBIN)/libdistributedBugFix.so
+    -L$(FOAM_USER_LIBBIN) \
+	-ldistributedBugFix
+	

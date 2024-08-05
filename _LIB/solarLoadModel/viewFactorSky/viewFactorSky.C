@@ -31,7 +31,7 @@ License
 #include "addToRunTimeSelectionTable.H"
 
 #include "wallFvPatch.H"
-#include "TableFile.H"
+#include "TableFile.T.H"
 
 #include "mappedPatchBase.H"
 

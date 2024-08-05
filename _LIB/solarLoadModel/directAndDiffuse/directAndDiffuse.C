@@ -33,7 +33,7 @@ License
 
 #include "vectorIOList.H"
 
-#include "TableFile.H"
+#include "TableFile.T.H"
 
 #include "mappedPatchBase.H"
 

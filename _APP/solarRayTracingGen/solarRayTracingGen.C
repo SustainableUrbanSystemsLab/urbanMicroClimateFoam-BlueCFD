@@ -45,13 +45,13 @@ Description
 #include "meshTools.H"
 #include "plane.H"
 #include "uindirectPrimitivePatch.H"
-#include "DynamicField.H"
+#include "DynamicField.T.H"
 #include "IFstream.H"
 #include "unitConversion.H"
 
 #include "mathematicalConstants.H"
 #include "scalarMatrices.H"
-#include "CompactListList.H"
+#include "CompactListList.T.H"
 #include "labelIOList.H"
 #include "labelListIOList.H"
 #include "scalarListIOList.H"
@@ -67,7 +67,7 @@ Description
 
 #include "regionProperties.H"
 
-#include "TableFile.H"
+#include "TableFile.T.H"
 
 using namespace Foam;
 

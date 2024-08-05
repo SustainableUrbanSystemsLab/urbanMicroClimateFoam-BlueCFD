@@ -24,7 +24,7 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "blendingLayer.H"
-#include "Tuple2.H"
+#include "Tuple2.T.H"
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
